@@ -1,0 +1,19 @@
+
+<div class="row-fluid">
+    <div class="col-lg-10">
+        <div ng-repeat="graph in graphs" class="col-lg-5"">
+            <graph data="graph" params="params"></graph>
+        </div>
+    </div>
+    <div class="col-lg-2">
+        <table>
+        <tr ng-repeat="(k,v) in sliders">
+            <td>{{v.label}}</td>
+            <td>
+                <slider value="params[k]" min="v.min" max="v.max"></slider>
+            </td>
+            <td>{{ params[k] | number:2 }}</td>
+        </tr>
+        </table>
+    </div>
+</div>
