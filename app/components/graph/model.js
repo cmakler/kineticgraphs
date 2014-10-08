@@ -12,11 +12,12 @@ angular.module('kineticGraphs.model', [])
 
             $scope.params = {
                 price: 10,
-                quantity: 20
+                elasticity: 1
             };
 
             $scope.sliders = {
-                price: {name: 'P', label: 'Price', min: 5, max: 55}
+                price: {name: 'P', label: 'Price', min: 5, max: 60},
+                elasticity: {name: 'E', label: 'Slope', min: 0, max: 10}
             };
 
             $scope.graphs = [
@@ -24,18 +25,44 @@ angular.module('kineticGraphs.model', [])
                     x_axis: {title: "Quantity", min: 0, max: 100, ticks: 10},
                     y_axis: {title: "Price", min: 0, max: 60, ticks: 5},
                     functions: {
-                        demand: {functionType: 'linear-function', slope: -1, intercept: 30, options: {yIndependent: true, reverseAxes: true, minZero: true}}
+                        demand: {
+                            functionType: 'linear',
+                            slope: -0.5,
+                            intercept: 40,
+                            options: {yIndependent: true, minZero: true}
+                        },
+                        supply: {
+                            functionType: 'linear',
+                            slope: 'elasticity',
+                            intercept: 10,
+                            options: {yIndependent: true, minZero: true}}
                     },
                     objects: [
                         {type: 'point', functionName: 'demand', inputValue: 'price', droplines: 'both'},
-                        {type: 'function', functionName: 'demand'}
+                        {type: 'function', functionName: 'demand', color:'blue'},
+                        {type: 'point', functionName: 'supply', inputValue: 'price', droplines: 'both'},
+                        {type: 'function', functionName: 'supply', color: 'orange'}
                     ]
                 },
                 {
                     x_axis: {title: "Quantity", min: 0, max: 20, ticks: 10},
                     y_axis: {title: "Price", min: 0, max: 60, ticks: 5},
+                    functions: {
+                        total_cost: {
+                            functionType: 'polynomial',
+                            coefficients: [ {power: 2, coefficient: 0.01}, {power: 1, coefficient: 'elasticity'}, {power: 0, coefficient: -4} ],
+                            options: {yIndependent: false}
+                        },
+                        indifference_curve: {
+                            functionType: 'logLinearContourFunction',
+                            alpha: 0.5,
+                            beta: 0.5
+                        }
+                    },
                     objects: [
-                        {type: 'dot', x: 'quantity', y: 'price', droplines: 'vertical'}
+                        {type: 'point', functionName: 'total_cost', inputValue: 'price', droplines: 'both'},
+                        {type: 'function', functionName: 'total_cost', color: 'purple'},
+                        {type: 'function', functionName: 'indifference_curve', color: 'green'}
                     ]
                 }
             ];
@@ -151,11 +178,21 @@ angular.module('kineticGraphs.model', [])
 
                 var plot_as_points = d3.set(['point','dot']),
                     plot_as_lines = d3.set(['line','segment']),
-                    plot_as_curves = d3.set(['function','linear-function']);
+                    plot_as_curves = d3.set(['function','linear']);
 
                 function paramValue(d) {
                     if (typeof d == 'string') {
                         return params[d];
+                    } else if (d instanceof Array) {
+                        return d.map(function(x) { return paramValue(x)})
+                    } else if (d instanceof Object) {
+                        var response = {};
+                        for (var key in d) {
+                            if (d.hasOwnProperty(key)) {
+                                response[key] = paramValue(d[key])
+                            }
+                        }
+                        return response;
                     } else {
                         return d;
                     }
@@ -184,8 +221,14 @@ angular.module('kineticGraphs.model', [])
                 // TODO this is fragile, assumes way too much
                 function namedFunction(name) {
                     var f = graph_data.functions[name];
-                    if (f.functionType == 'linear-function') {
-                        return linearFunction(f.slope, f.intercept, f.options);
+                    if (f.functionType == 'linear') {
+                        return linearFunction(paramValue(f.slope), paramValue(f.intercept), f.options);
+                    }
+                    if (f.functionType == 'polynomial') {
+                        return polynomialFunction(paramValue(f.coefficients), f.options);
+                    }
+                    if (f.functionType == 'logLinearContourFunction') {
+                        return logLinearContourFunction(f.alpha, f.beta);
                     }
                 }
 
@@ -195,34 +238,68 @@ angular.module('kineticGraphs.model', [])
                     return fn(dep);
                 }
 
-                function curvePoints(functionDefinition) {
-
-                    function addPointToCurve(point, curve) {
-                        if (pointInPlottedArea(point)) {
-                            curve.push(point);
-                        }
-                        return curve;
-                    }
+                function curvePoints(functionDefinition, options) {
 
                     var curve = [];
 
-                    if (functionDefinition.functionType == 'linear-function') {
-                        var m = paramValue(functionDefinition.slope),
-                            b = paramValue(functionDefinition.intercept);
+                    var domain_min, domain_max, range_min, range_max, step;
 
-                        curve = addPointToCurve({x: x_axis.min, y: b + m * x_axis.min}, curve);    // left intercept
-                        curve = addPointToCurve({x: (y_axis.max - b) / m, y: y_axis.max}, curve);  // top intercept
-                        curve = addPointToCurve({x: x_axis.max, y: b + m * x_axis.max}, curve);    // right intercept
-                        curve = addPointToCurve({x: (y_axis.min - b) / m, y: y_axis.min}, curve);  // bottom intercept
+                    if (options && options.yIndependent) {
+                        domain_min = y_axis.min;
+                        domain_max = y_axis.max;
 
                     } else {
-                        for (var dep = x_axis.min; dep < x_axis.max; dep += (x_axis.max - x_axis.min) * 0.01) {
-                            var point = functionDefinition(dep);
-                            if (pointInPlottedArea(point)) {
-                                curve.push(point)
+                        domain_min = x_axis.min;
+                        domain_max = x_axis.max;
+                    }
+
+                    step = (domain_max - domain_min) * 0.01;
+
+                    for (var dep = domain_min; dep < domain_max; dep += step) {
+                        var point = functionDefinition(dep);
+                        if (pointInPlottedArea(point)) {
+                            curve.push(point)
+                        } else {
+                            // If this curve is off the plotted area, but an adjacent curve is in the plotted area,
+                            // add the point which is directly on the boundary of the plotted area
+                            var adjacent_point;
+
+                            if (pointInPlottedArea(functionDefinition(dep - step))) {
+                                adjacent_point = functionDefinition(dep - step);
+                            } else if (pointInPlottedArea(functionDefinition(dep + step))) {
+                                adjacent_point = functionDefinition(dep + step);
+                            } else continue;
+
+                            var edge_point = {};
+                            // Now figure out which way out of the plotted area this is
+                            if (point.x < x_axis.min) {
+
+                                edge_point.x = x_axis.min;
+                                edge_point.y = adjacent_point.y + (point.y - adjacent_point.y) * (x_axis.min - adjacent_point.x)/(point.x - adjacent_point.x)
+
+                            } else if(point.x > x_axis.max) {
+
+                                edge_point.x = x_axis.max;
+                                edge_point.y = adjacent_point.y + (point.y - adjacent_point.y) * (x_axis.max - adjacent_point.x) / (point.x - adjacent_point.x)
+
+                            } else if (point.y < y_axis.min) {
+
+                                edge_point.x = adjacent_point.x + (point.x - adjacent_point.x) * (y_axis.min - adjacent_point.y) / (point.y - adjacent_point.y)
+                                edge_point.y = y_axis.min;
+
+                            } else if (point.y > y_axis.max) {
+
+                                edge_point.x = adjacent_point.x + (point.x - adjacent_point.x) * (y_axis.max - adjacent_point.y) / (point.y - adjacent_point.y)
+                                edge_point.y = y_axis.max;
+
                             }
+
+                            curve.push(edge_point);
+
+
                         }
                     }
+
 
                     var curveFunction = d3.svg.line()
                         .x(function (d) {
@@ -295,7 +372,8 @@ angular.module('kineticGraphs.model', [])
                     if(plot_as_curves.has(object_type)) {
 
                         if (object_definition.has('functionName')) {
-                            plotted_shapes.curves.push(curvePoints(namedFunction(object_definition.get('functionName'))));
+                            var n = object_definition.get('functionName');
+                            plotted_shapes.curves.push({points: curvePoints(namedFunction(n), graph_data.functions[n].options), color: object_definition.get('color')});
                         }
 
                     }
@@ -334,9 +412,11 @@ angular.module('kineticGraphs.model', [])
                 curves.exit().remove();
                 curves.enter().append('svg:path')
                     .attr('stroke-width',2)
-                    .attr('stroke','green')
+                    .attr('stroke',function(d) {
+                        return d.color
+                    })
                     .attr('fill','none');
-                curves.attr('d',function(d) {return d})
+                curves.attr('d',function(d) {return d.points})
 
                 circles = circles.data(data.circles);
                 circles.exit().remove();

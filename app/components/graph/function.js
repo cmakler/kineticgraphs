@@ -12,7 +12,7 @@ function returnCoordinates(xVal,yVal,options) {
         xVal = Math.max(0, xVal);
         yVal = Math.max(0, yVal);
     }
-    if (options && options.reverseAxes) {
+    if (options && options.yIndependent) {
         return {x: yVal, y: xVal}
     } else {
         return {x: xVal, y: yVal}
@@ -39,10 +39,10 @@ function linearFunction(slope, intercept, options) {
     var m = slope,
         b = intercept;
 
-    if(options && options.yIndependent) {
+    /*if(options && options.yIndependent) {
         m = 1/slope;
         b = -intercept/slope;
-    }
+    }*/
     return polynomialFunction(
         [
             {power: 1, coefficient: m},
