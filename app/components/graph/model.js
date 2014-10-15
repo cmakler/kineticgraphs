@@ -11,61 +11,67 @@ angular.module('kineticGraphs.model', [])
         function controller($scope, $window) {
 
             $scope.params = {
-                price: 10,
-                elasticity: 1
+                px: 3,
+                py: 4,
+                income: 60,
+                alpha: 0.5,
+                beta: 0.5
             };
 
             $scope.sliders = {
-                price: {name: 'P', label: 'Price', min: 5, max: 60},
-                elasticity: {name: 'E', label: 'Slope', min: 0, max: 10}
+                px: {name: 'Px', label: 'Px', min: 1, max: 6, precision: 0.05},
+                py: {name: 'Py', label: 'Py', min: 1, max: 6, precision: 0.05},
+                income: {name: 'I', label: 'Income', min: 24, max: 60, precision: 1},
+                alpha: {name: 'a', label: 'a', min: 0, max: 1, precision: 0.05},
+                beta: {name: 'b', label: 'b', min:0, max: 1, precision: 0.05}
             };
 
             $scope.graphs = [
+
                 {
-                    x_axis: {title: "Quantity", min: 0, max: 100, ticks: 10},
-                    y_axis: {title: "Price", min: 0, max: 60, ticks: 5},
+                    x_axis: {title: "Good X", min: 0, max: 60, ticks: 10},
+                    y_axis: {title: "Good Y", min: 0, max: 60, ticks: 10},
+                    dimensions: {width: 600, height: 600},
                     functions: {
-                        demand: {
-                            functionType: 'linear',
-                            slope: -0.5,
-                            intercept: 40,
-                            options: {yIndependent: true, minZero: true}
-                        },
-                        supply: {
-                            functionType: 'linear',
-                            slope: 'elasticity',
-                            intercept: 10,
-                            options: {yIndependent: true, minZero: true}}
-                    },
-                    objects: [
-                        {type: 'point', functionName: 'demand', inputValue: 'price', droplines: 'both'},
-                        {type: 'function', functionName: 'demand', color:'blue'},
-                        {type: 'point', functionName: 'supply', inputValue: 'price', droplines: 'both'},
-                        {type: 'function', functionName: 'supply', color: 'orange'}
-                    ]
-                },
-                {
-                    x_axis: {title: "Quantity", min: 0, max: 20, ticks: 10},
-                    y_axis: {title: "Price", min: 0, max: 60, ticks: 5},
-                    functions: {
-                        total_cost: {
-                            functionType: 'polynomial',
-                            coefficients: [ {power: 2, coefficient: 0.01}, {power: 1, coefficient: 'elasticity'}, {power: 0, coefficient: -4} ],
-                            options: {yIndependent: false}
+                        budget_constraint: {
+                            functionType: 'budgetConstraint',
+                            px: 'px',
+                            py: 'py',
+                            income: 'income'
                         },
                         indifference_curve: {
-                            functionType: 'logLinearContourFunction',
-                            alpha: 0.5,
-                            beta: 0.5
+                            functionType: 'optimalCobbDouglassIndifferenceCurve',
+                            alpha: 'alpha',
+                            beta: 'beta',
+                            px: 'px',
+                            py: 'py',
+                            income: 'income'
+                        },
+                        suboptimal_indifference_curve: {
+                            functionType: 'cobbDouglassIndifferenceCurve',
+                            alpha: 'alpha',
+                            beta: 'beta',
+                            point: {x: 10, y: 10}
+                        },
+                        optimal_bundle: {
+                            functionType: 'optimalCobbDouglassBundle',
+                            alpha: 'alpha',
+                            beta: 'beta',
+                            px: 'px',
+                            py: 'py',
+                            income: 'income'
                         }
                     },
                     objects: [
-                        {type: 'point', functionName: 'total_cost', inputValue: 'price', droplines: 'both'},
-                        {type: 'function', functionName: 'total_cost', color: 'purple'},
-                        {type: 'function', functionName: 'indifference_curve', color: 'green'}
+                        {type: 'function', functionName: 'indifference_curve', color: 'green', fill: 'lightgreen', fillPoint: {x: 60, y: 60}},
+                        {type: 'function', functionName: 'suboptimal_indifference_curve', color: 'green', fill: 'lightgreen', fillPoint: {x: 60, y: 60}},
+                        {type: 'function', functionName: 'budget_constraint', color: 'blue', fill: 'lightblue', fillPoint: {x: 0, y: 0}},
+                        {type: 'point', functionName: 'optimal_bundle', droplines: 'both', xLabel: 'X*', yLabel: 'Y*'}
                     ]
                 }
             ];
+
+
 
             angular.element($window).on('resize', function () {
                 $scope.$apply()
@@ -86,6 +92,8 @@ angular.module('kineticGraphs.model', [])
 
         function link(scope, el) {
             el = el[0];
+
+            var raw_value = scope.value // needed to help smoothe slider motion
 
             var width = 150,
                 height = 40,
@@ -116,8 +124,9 @@ angular.module('kineticGraphs.model', [])
                         .attr("r", radius * 0.8);
                 })
                 .on("drag", function () {
-                    var dragPosition = parseFloat(scope.value) + positionDelta(d3.event.dx);
-                    scope.value = Math.max(scope.min, Math.min(scope.max, dragPosition));
+                    var dragPosition = parseFloat(raw_value) + positionDelta(d3.event.dx);
+                    raw_value = Math.max(scope.min, Math.min(scope.max, dragPosition));
+                    scope.value = Math.round(raw_value/parseFloat(scope.precision))*scope.precision;
                     scope.$apply();
                 })
                 .on("dragend", function () {
@@ -140,7 +149,7 @@ angular.module('kineticGraphs.model', [])
         return {
             link: link,
             restrict: 'E',
-            scope: { value: '=', min: '=', max: '=' }
+            scope: { value: '=', min: '=', max: '=', precision: '=' }
         };
     })
 
@@ -163,7 +172,7 @@ angular.module('kineticGraphs.model', [])
             var x_axis_domain = [x_axis.min || 0, x_axis.max || 10],
                 y_axis_domain = [y_axis.min || 0, y_axis.max || 10];
 
-            var graph_width, graph_height, x, y, circles, lines, curves;
+            var graph_width, graph_height, x, y, circles, lines, curves, labels;
 
             scope.$watchCollection('params', drawObjects);
             scope.$watch(function () { return el.parentElement.clientWidth }, resize);
@@ -174,7 +183,7 @@ angular.module('kineticGraphs.model', [])
                 var object_definitions = graph_data.objects;
 
                 // reset plotted shapes
-                var plotted_shapes = {'circles' : [], 'lines': [], 'curves': []};
+                var plotted_shapes = {'circles' : [], 'lines': [], 'curves': [], 'labels': []};
 
                 var plot_as_points = d3.set(['point','dot']),
                     plot_as_lines = d3.set(['line','segment']),
@@ -198,29 +207,25 @@ angular.module('kineticGraphs.model', [])
                     }
                 }
 
-                function coord(d, scale) {
-                    return scale(paramValue(d))
-                }
 
                 function xCoord(d) {
-                    return coord(d.x, x)
+                    return x(paramValue(d.x))
                 }
 
                 function yCoord(d) {
-                    return coord(d.y, y)
+                    return y(paramValue(d.y))
                 }
 
                 function pointInPlottedArea(point) {
                     return (point.x >= x_axis.min && point.x <= x_axis.max && point.y >= y_axis.min && point.y <= y_axis.max)
                 }
 
-                function pointOnGraph(point) {
-                    return (point.x >= 0 && point.x <= graph_width && point.y >= 0 && point.y <= graph_height)
-                }
-
                 // TODO this is fragile, assumes way too much
                 function namedFunction(name) {
                     var f = graph_data.functions[name];
+                    return new KineticGraphFunction(f.functionType, paramValue(f));
+                    /*
+                    return
                     if (f.functionType == 'linear') {
                         return linearFunction(paramValue(f.slope), paramValue(f.intercept), f.options);
                     }
@@ -228,21 +233,39 @@ angular.module('kineticGraphs.model', [])
                         return polynomialFunction(paramValue(f.coefficients), f.options);
                     }
                     if (f.functionType == 'logLinearContourFunction') {
-                        return logLinearContourFunction(f.alpha, f.beta);
+                        return logLinearContourFunction(paramValue(f.alpha), paramValue(f.beta), paramValue(f.point));
                     }
+                    if (f.functionType == 'linearContourFunction') {
+                        return linearContourFunction(paramValue(f.alpha), paramValue(f.beta), paramValue(f.point));
+                    }
+                    if (f.functionType == 'cobbDouglassIndifferenceCurve') {
+                        return cobbDouglassIndifferenceCurve(paramValue(f.alpha), paramValue(f.beta), paramValue(f.point));
+                    }
+                    if (f.functionType == 'budgetConstraint') {
+                        return budgetConstraint(paramValue(f.px), paramValue(f.py), paramValue(f.income));
+                    }
+                    if (f.functionType == 'optimalCobbDouglassBundle') {
+                        return optimalCobbDouglassBundle(paramValue(f.alpha), paramValue(f.beta), paramValue(f.px), paramValue(f.py), paramValue(f.income));
+                    }
+                    if (f.functionType == 'optimalCobbDouglassIndifferenceCurve') {
+                        return optimalCobbDouglassIndifferenceCurve(paramValue(f.alpha), paramValue(f.beta), paramValue(f.px), paramValue(f.py), paramValue(f.income));
+                    }*/
                 }
 
                 function pointCoordinates(functionName, inputValue) {
-                    var dep = paramValue(inputValue);
                     var fn = namedFunction(functionName);
-                    return fn(dep);
+                    if(inputValue) {
+                        return fn(paramValue(inputValue));
+                    } else {
+                        return fn;
+                    }
                 }
 
                 function curvePoints(functionDefinition, options) {
 
                     var curve = [];
 
-                    var domain_min, domain_max, range_min, range_max, step;
+                    var domain_min, domain_max, step;
 
                     if (options && options.yIndependent) {
                         domain_min = y_axis.min;
@@ -253,7 +276,7 @@ angular.module('kineticGraphs.model', [])
                         domain_max = x_axis.max;
                     }
 
-                    step = (domain_max - domain_min) * 0.01;
+                    step = (domain_max - domain_min) / graph_width;
 
                     for (var dep = domain_min; dep < domain_max; dep += step) {
                         var point = functionDefinition(dep);
@@ -298,17 +321,10 @@ angular.module('kineticGraphs.model', [])
 
 
                         }
+
                     }
 
-
-                    var curveFunction = d3.svg.line()
-                        .x(function (d) {
-                            return x(d.x);
-                        }).y(function (d) {
-                            return y(d.y);
-                        }).interpolate("linear");
-
-                    return curveFunction(curve);
+                    return curve;
                 }
 
 
@@ -317,6 +333,10 @@ angular.module('kineticGraphs.model', [])
                     object_definition = d3.map(object_definition);
 
                     var object_type = object_definition.get('type');
+
+                    function pointOnGraph(point) {
+                        return (point.x >= 0 && point.x <= graph_width && point.y >= 0 && point.y <= graph_height)
+                    }
 
                     // Add shapes for plotting point
                     if(plot_as_points.has(object_type)) {
@@ -332,7 +352,7 @@ angular.module('kineticGraphs.model', [])
 
                         // Get plotted values of x and y if the point (x,y) is the result of a function
 
-                        if (object_definition.has('functionName') && object_definition.has('inputValue')) {
+                        if (object_definition.has('functionName')) {
                             var pointCoords = pointCoordinates(object_definition.get('functionName'), object_definition.get('inputValue'));
                             cx = xCoord(pointCoords);
                             cy = yCoord(pointCoords);
@@ -343,19 +363,25 @@ angular.module('kineticGraphs.model', [])
                         var object_class = object_definition.get('class') || '';
 
                         if (pointOnGraph({x: cx, y: cy})) {
-                            plotted_shapes.circles.push({shape: 'circle', class: object_class, cx: cx, cy: cy});
+                            plotted_shapes.circles.push({class: object_class, cx: cx, cy: cy});
                             console.log('plotted point cx is ' + cx)
 
                             if(object_definition.has('droplines')) {
 
                                 // Add a vertical dropline unless droplines == horizontal
                                 if(object_definition.get('droplines') != 'horizontal') {
-                                    plotted_shapes.lines.push({shape: 'line', class: object_class + ' dropline', x1: cx, y1: cy, x2: cx, y2: graph_height + 25});
+                                    plotted_shapes.lines.push({class: object_class + ' dropline', x1: cx, y1: cy, x2: cx, y2: graph_height + 25});
+                                    if(object_definition.get('xLabel')){
+                                        plotted_shapes.labels.push({text: object_definition.get('xLabel'), x: cx, y: graph_height + 40, anchor:'middle'})
+                                    }
                                 }
 
                                 // Add a horizontal dropline unless droplines == vertical
                                 if (object_definition.get('droplines') != 'vertical') {
-                                    plotted_shapes.lines.push({shape: 'line', class: object_class + ' dropline', x1: cx, y1: cy, x2: -25, y2: cy});
+                                    plotted_shapes.lines.push({class: object_class + ' dropline', x1: cx, y1: cy, x2: -25, y2: cy});
+                                    if (object_definition.get('yLabel')) {
+                                        plotted_shapes.labels.push({text: object_definition.get('yLabel'), x: -40, y: cy + 5, anchor: 'right'})
+                                    }
                                 }
 
                             }
@@ -372,8 +398,22 @@ angular.module('kineticGraphs.model', [])
                     if(plot_as_curves.has(object_type)) {
 
                         if (object_definition.has('functionName')) {
+
+                            var curveFunction = d3.svg.line()
+                                .x(function (d) {
+                                    return x(d.x);
+                                }).y(function (d) {
+                                    return y(d.y);
+                                }).interpolate("linear");
+
                             var n = object_definition.get('functionName');
-                            plotted_shapes.curves.push({points: curvePoints(namedFunction(n), graph_data.functions[n].options), color: object_definition.get('color')});
+                            var c = curvePoints(namedFunction(n), graph_data.functions[n].options);
+                            if(object_definition.get('fill') && object_definition.get('fillPoint')) {
+                                var fc = c.slice(0); // copy curve definition so we can append a value without altering the original
+                                fc.push(paramValue(object_definition.get('fillPoint')));
+                                plotted_shapes.curves.push({points: curveFunction(fc), color: 'none', fill: object_definition.get('fill')});
+                            }
+                            plotted_shapes.curves.push({points: curveFunction(c), color: object_definition.get('color'), fill: 'none'});
                         }
 
                     }
@@ -415,7 +455,10 @@ angular.module('kineticGraphs.model', [])
                     .attr('stroke',function(d) {
                         return d.color
                     })
-                    .attr('fill','none');
+                    .attr('fill',function(d) {
+                        return d.fill
+                    })
+                    .attr('fill-opacity',0.5);
                 curves.attr('d',function(d) {return d.points})
 
                 circles = circles.data(data.circles);
@@ -428,6 +471,27 @@ angular.module('kineticGraphs.model', [])
                     .attr('cy', function (d) {
                         return d.cy
                     });
+
+                labels = labels.data(data.labels);
+                labels.exit().remove();
+                labels.enter().append("svg:text");
+                labels
+                    .attr("x", function (d) {
+                        return d.x
+                    })
+                    .attr("y", function (d) {
+                        return d.y
+                    })
+                    .attr("text-anchor", function (d) {
+                        return d.anchor
+                    })
+                    .attr("font-size", 14)
+                    .attr("font-style", "oblique")
+                    .text(function (d) {
+                        return d.text
+                    });
+
+
 
 
             }
@@ -491,6 +555,7 @@ angular.module('kineticGraphs.model', [])
                 curves = scope.vis.append('g').attr('class', 'graph-objects').selectAll('g.curve');
                 lines = scope.vis.append('g').attr('class', 'graph-objects').selectAll('g.line');
                 circles = scope.vis.append('g').attr('class', 'graph-objects').selectAll('g.circle');
+                labels = scope.vis.append('g').attr('class', 'graph-objects').selectAll('g.text');
 
                 drawObjects();
             }
