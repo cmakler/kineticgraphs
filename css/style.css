@@ -1,0 +1,71 @@
+body {
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+    color: #00B7FF;
+}
+
+.mainPage {
+    margin-top: 65px;
+}
+
+.axis text {
+    font: 18px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.curve {
+    stroke-width: 4px;
+}
+
+.dropline {
+    stroke-dasharray: 10, 10;
+    stroke-width: 2px;
+}
+
+.budgetline {
+    stroke-width: 2px;
+    color: blue;
+}
+
+.calendar {
+    padding: 5px;
+}
+
+.today-date, .empty-date, .lecture-date, .section-date {
+    border: thin grey solid;
+    text-align: center;
+    font-size: x-small;
+    height: 300px;
+    margin: 20px;
+}
+
+.calendar-date {
+    color: grey;
+    font-size: x-small;
+    text-align: center;
+}
+
+.calendar-row {
+    height: 30%;
+    border-bottom: 1px black solid;
+}
+
+.today-date {
+    background-color: lightgreen;
+}
+
+.empty-date .calendar-date {
+    color: lightgray;
+}
+
+.missing {
+    text-decoration: underline;
+}
