@@ -3,15 +3,15 @@
  */
 
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObject.ts"/>
+/// <reference path="composite.ts"/>
 
 module KineticGraphs
 {
-    export interface IPoint extends IGraphObject {
+    export interface IPoint extends IComposite {
         coordinates: ICoordinates;
     }
 
-    export interface IPointScope extends IGraphObjectScope {
+    export interface IPointScope extends ICompositeScope {
         coordinates: () => ICoordinates;
     }
 
@@ -39,8 +39,8 @@ module KineticGraphs
         return {
             restrict: 'E',
             require: '^graph',
-            link: (scope: IPointScope, element:JQuery, attributes, graph: IGraphController) => {
-                graph.addObject(new Point(scope));
+            link: (scope: IPointScope, element:JQuery, attributes, graph: IGraph) => {
+                graph.addComposite(new Point(scope));
             },
             scope: {coordinates: '&'}
         }

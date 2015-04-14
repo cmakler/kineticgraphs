@@ -24,7 +24,7 @@ module KineticGraphs
     // The link function registers the axis with the parent graph
     export function Axis(): ng.IDirective {
 
-        function link(scope: IAxisScope, element:JQuery, attributes, graph: IGraphController) {
+        function link(scope: IAxisScope, element:JQuery, attributes, graph: IGraph) {
 
             var axis:IAxis = {
                 dim: scope.dim,

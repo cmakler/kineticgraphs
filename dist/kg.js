@@ -89,7 +89,7 @@ var KineticGraphs;
             restrict: 'E',
             require: '^graph',
             link: function (scope, element, attributes, graph) {
-                graph.addObject(new Point(scope));
+                graph.addComposite(new Point(scope));
             },
             scope: { coordinates: '&' }
         };
@@ -109,7 +109,7 @@ var KineticGraphs;
             this.$scope = $scope;
             // add an object to the array of graph objects
             this.addObject = function (newObject) {
-                this.$scope.graphObjects.push(newObject);
+                this.$scope.composites.push(newObject);
             };
             // define axis elements for the graph
             // and create the D3 scales for the x and y dimensions
