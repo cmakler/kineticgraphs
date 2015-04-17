@@ -13,10 +13,10 @@ module KineticGraphs
     export class ModelController
     {
 
-        constructor(public $scope:IModelScope)
+        constructor(public $scope:IModelScope, $window:ng.IWindowService)
         {
 
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 400, height: 400}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
 
             $scope.params = {x: 20, xAxisLabel: 'Quantity'};
 
@@ -36,7 +36,10 @@ module KineticGraphs
                 })
             }
 
-            $scope.$watchCollection('params',updateGraphs)
+            $scope.$watchCollection('params',updateGraphs);
+
+            // Resize all elements when window changes size
+            angular.element($window).on('resize', updateGraphs);
 
         }
 

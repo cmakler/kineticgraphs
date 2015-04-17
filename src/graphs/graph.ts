@@ -32,7 +32,7 @@ module KineticGraphs
         composites: IComposite[];
 
         updateGraph:(graphDefinition: IGraphDefinition) => IGraph;
-        renderGraph:(element: JQuery, elementDimensions: IDimensions, margins: IMargins, graphDimensions: IDimensions, xAxis: IAxis, yAxis: IAxis) => void;
+        renderGraph:(element: JQuery, elementDimensions: IDimensions, margins: IMargins, xAxis: IAxis, yAxis: IAxis) => void;
     }
 
     export class Graph implements IGraph
@@ -54,45 +54,39 @@ module KineticGraphs
 
         updateGraph = function(graphDefinition) {
 
-            // Calculate the dimensions of the graph element
-            function calculateElementDimensions(clientWidth: number, dimensions?: IDimensions) {
+            // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
+            function updateDimensions(clientWidth: number, dimensions?: IDimensions) {
 
-                // Set default to the width of the enclosing div, with a height of 500
-                var elementDimensions: IDimensions = {width: clientWidth, height: 500};
+                // Set default to the width of the enclosing element, with a height of 500
+                var newDimensions: IDimensions = {width: clientWidth, height: 500};
 
-                if (dimensions) {
-
-                    // Override with given attributes if they exist
-                    if(dimensions.hasOwnProperty('height')) {
-                        elementDimensions.height = dimensions.height;
-                    }
-                    if(dimensions.hasOwnProperty('width')) {
-                        elementDimensions.width = Math.min(dimensions.width, elementDimensions.width);
-                    }
+                // If the author has specified a height, override
+                if (dimensions && dimensions.hasOwnProperty('height')) {
+                    newDimensions.height = dimensions.height;
                 }
 
-                return elementDimensions;
+                // If the author has specified a width less than the graph element clientWidth, override
+                if(dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
+                    newDimensions.width = dimensions.width;
+                }
+
+                return newDimensions;
             }
+
+
 
             if(graphDefinition) {
 
+                // Establish dimensions of the graph
                 var element = $('#' + graphDefinition.element_id)[0];
-
-                var elementDimensions = calculateElementDimensions(element.clientWidth, graphDefinition.dimensions);
-
+                var dimensions = updateDimensions(element.clientWidth, graphDefinition.dimensions);
                 var margins = graphDefinition.margins || {top: 20, left: 100, bottom: 100, right: 20};
-
-                // Establish inner dimensions of graph (element dimensions minus margins)
-                var graphDimensions = {
-                    width: elementDimensions.width - margins.left - margins.right,
-                    height: elementDimensions.height - margins.top - margins.bottom
-                };
 
                 // Update axis objects
                 this.xAxis.update(graphDefinition.xAxis);
                 this.yAxis.update(graphDefinition.yAxis);
 
-                this.renderGraph(element,elementDimensions, margins, graphDimensions, this.xAxis, this.yAxis);
+                this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis);
 
                 return this;
 
@@ -100,7 +94,7 @@ module KineticGraphs
 
         };
 
-        renderGraph = function(element,elementDimensions, margins, graphDimensions, xAxis, yAxis) {
+        renderGraph = function(element,elementDimensions, margins, xAxis, yAxis) {
 
             if(element) {
 
@@ -114,9 +108,15 @@ module KineticGraphs
                     .append("g")
                     .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
 
+                // Establish dimensions of axes (element dimensions minus margins)
+                var axisDimensions = {
+                    width: elementDimensions.width - margins.left - margins.right,
+                    height: elementDimensions.height - margins.top - margins.bottom
+                };
+
                 // draw axes
-                xAxis.draw(this.vis,graphDimensions);
-                yAxis.draw(this.vis,graphDimensions);
+                xAxis.draw(this.vis,axisDimensions);
+                yAxis.draw(this.vis,axisDimensions);
             }
 
         };
