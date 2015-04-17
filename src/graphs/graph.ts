@@ -1,63 +1,101 @@
 /// <reference path="../kg.ts"/>
 /// <reference path="helpers.ts"/>
-/// <reference path="axes.ts"/>
+/// <reference path="axis.ts"/>
 /// <reference path="composites/composite.ts"/>
 /// <reference path="composites/point.ts"/>
 
 module KineticGraphs
 {
 
+    // Graph definition objects
+    export interface IGraphDefinition
+    {
+        element_id: string;
+        dimensions?: IDimensions;
+        margins?: IMargins;
+        xAxis: IAxisDefinition;
+        yAxis: IAxisDefinition;
+        composites?: ICompositeDefinition[];
+    }
+
     // Additions to the scope of a graph
     export interface IGraph
     {
+        graphDefinition: IGraphDefinition;
 
         element: JQuery;
+        elementDimensions: IDimensions;
+        graphDimensions: IDimensions;
+        margins: IMargins;
         vis: D3.Selection;
-        height: number;
-        width: number;
-        axes: IAxes;
-        composites: IComposite[];
-        renderGraph:(scope:IModelScope) => void;
-        updateGraph:(scope:IModelScope) => void;
 
+        xAxis: IAxisDefinition;
+        yAxis: IAxisDefinition;
+
+        composites: IComposite[];
+
+        updateGraph:(graphDefinition: IGraphDefinition) => void;
+        renderGraph:(scope:IModelScope) => void;
     }
 
     export class Graph implements IGraph
     {
-        public height;
-        public width;
-        public axes;
-        public composites;
+        public element;
+        public elementDimensions;
+        public graphDimensions;
+        public margins;
         public vis;
 
-        constructor(public element:JQuery) {
-            this.axes = new Axes(element.attr('axes'));
-            this.composites = [];
+        public xAxis;
+        public yAxis;
+
+        public composites;
+
+
+        constructor(public graphDefinition:IGraphDefinition) {
+            this.element = $('#' + graphDefinition.element_id)[0];
+            this.xAxis = new XAxis();
+            this.yAxis = new YAxis();
+            this.updateGraph(graphDefinition);
         }
 
-        renderGraph = function(scope) {
+        updateGraph = function(graphDefinition) {
 
-            // Get attributes of <graph> element
-            var element = this.element[0],
-                attributes:NamedNodeMap = element.attributes;
+            var elementDimensions: IDimensions = {width: this.element.clientWidth, height: 500};
 
-            // Establish default dimensions of graph
-            var elementDimensions: IDimensions = {width: element.parentElement.clientWidth, height: 500},
-                margin: IMargins = {top: 20, left: 100, bottom: 100, right: 20};
+            if (graphDefinition.hasOwnProperty('dimensions')) {
 
-            // Override with given attributes if they exist
-            if(attributes.hasOwnProperty('height')) {
-                elementDimensions.height = +attributes['height'].value;
+                var dim = graphDefinition.dimensions;
+                // Override with given attributes if they exist
+                if(dim.hasOwnProperty('height')) {
+                    elementDimensions.height = dim.height;
+                }
+                if(dim.hasOwnProperty('width')) {
+                    elementDimensions.width = Math.min(dim.width, elementDimensions.width);
+                }
             }
-            if(attributes.hasOwnProperty('width')) {
-                elementDimensions.width = Math.min(attributes['width'].value, elementDimensions.width);
-            }
+
+            this.margins = graphDefinition.margins || {top: 20, left: 100, bottom: 100, right: 20};
+
+            this.elementDimensions = elementDimensions;
 
             // Establish inner dimensions of graph (element dimensions minus margins)
-            var graphDimensions: IDimensions = {
-                width: elementDimensions.width - margin.left - margin.right,
-                height: elementDimensions.height - margin.top - margin.bottom
+            this.graphDimensions = {
+                width: this.elementDimensions.width - this.margins.left - this.margins.right,
+                height: this.elementDimensions.height - this.margins.top - this.margins.bottom
             };
+
+            // Update axis objects
+            this.xAxis.update(graphDefinition.xAxis);
+            this.yAxis.update(graphDefinition.yAxis);
+
+            this.renderGraph();
+
+        };
+
+        renderGraph = function() {
+
+            var element = this.element;
 
             if (this.vis) {
                 d3.select(element).select('svg').remove();
@@ -66,34 +104,19 @@ module KineticGraphs
 
             this.vis = d3.select(element)
                 .append("svg")
-                .attr("width", elementDimensions.width)
-                .attr("height", elementDimensions.height)
+                .attr("width", this.elementDimensions.width)
+                .attr("height", this.elementDimensions.height)
                 .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
 
-            this.axes.update(scope);
-            this.axes.draw(this.vis,graphDimensions);
-
-            this.updateGraph(scope);
-        };
-
-        updateGraph = function(scope) {
+            // draw axes
+            this.xAxis.draw(this.vis,this.graphDimensions);
+            this.yAxis.draw(this.vis,this.graphDimensions);
 
         };
 
-    }
 
 
-
-    // Creation of graph from element and children
-    export function graphDirective(): ng.IDirective {
-
-        return {
-            restrict: 'E',
-            link: function(scope: IModelScope, element: JQuery) {
-                scope.graphs.push(new Graph(element));
-            }
-        }
     }
 
 }

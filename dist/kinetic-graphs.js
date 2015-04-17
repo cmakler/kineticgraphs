@@ -46,6 +46,7 @@ var KineticGraphs;
             }
             this.title = axisDefinition.title || '';
             this.ticks = axisDefinition.ticks || 5;
+            return this;
         };
         Axis.prototype.draw = function (vis, graph_definition) {
             // overridden by child class
@@ -90,24 +91,6 @@ var KineticGraphs;
         return YAxis;
     })(Axis);
     KineticGraphs.YAxis = YAxis;
-    var Axes = (function () {
-        function Axes(attributeString) {
-            this.attributeString = attributeString;
-            this.x = new XAxis();
-            this.y = new YAxis();
-        }
-        Axes.prototype.update = function (scope) {
-            var attrs = scope.$eval(this.attributeString);
-            this.x.update(attrs['x']);
-            this.y.update(attrs['y']);
-        };
-        Axes.prototype.draw = function (vis, graph_dimensions) {
-            this.x.draw(vis, graph_dimensions);
-            this.y.draw(vis, graph_dimensions);
-        };
-        return Axes;
-    })();
-    KineticGraphs.Axes = Axes;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../graph.ts"/>
 /**
@@ -133,72 +116,83 @@ var KineticGraphs;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="helpers.ts"/>
-/// <reference path="axes.ts"/>
+/// <reference path="axis.ts"/>
 /// <reference path="composites/composite.ts"/>
 /// <reference path="composites/point.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var Graph = (function () {
-        function Graph(element) {
-            this.element = element;
-            this.renderGraph = function (scope) {
-                // Get attributes of <graph> element
-                var element = this.element[0], attributes = element.attributes;
-                // Establish default dimensions of graph
-                var elementDimensions = { width: element.parentElement.clientWidth, height: 500 }, margin = { top: 20, left: 100, bottom: 100, right: 20 };
-                // Override with given attributes if they exist
-                if (attributes.hasOwnProperty('height')) {
-                    elementDimensions.height = +attributes['height'].value;
+        function Graph(graphDefinition) {
+            this.graphDefinition = graphDefinition;
+            this.updateGraph = function (graphDefinition) {
+                var elementDimensions = { width: this.element.clientWidth, height: 500 };
+                if (graphDefinition.hasOwnProperty('dimensions')) {
+                    var dim = graphDefinition.dimensions;
+                    // Override with given attributes if they exist
+                    if (dim.hasOwnProperty('height')) {
+                        elementDimensions.height = dim.height;
+                    }
+                    if (dim.hasOwnProperty('width')) {
+                        elementDimensions.width = Math.min(dim.width, elementDimensions.width);
+                    }
                 }
-                if (attributes.hasOwnProperty('width')) {
-                    elementDimensions.width = Math.min(attributes['width'].value, elementDimensions.width);
-                }
+                this.margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
+                this.elementDimensions = elementDimensions;
                 // Establish inner dimensions of graph (element dimensions minus margins)
-                var graphDimensions = {
-                    width: elementDimensions.width - margin.left - margin.right,
-                    height: elementDimensions.height - margin.top - margin.bottom
+                this.graphDimensions = {
+                    width: this.elementDimensions.width - this.margins.left - this.margins.right,
+                    height: this.elementDimensions.height - this.margins.top - this.margins.bottom
                 };
+                // Update axis objects
+                this.xAxis.update(graphDefinition.xAxis);
+                this.yAxis.update(graphDefinition.yAxis);
+                this.renderGraph();
+            };
+            this.renderGraph = function () {
+                var element = this.element;
                 if (this.vis) {
                     d3.select(element).select('svg').remove();
                     d3.select(element).selectAll('div').remove();
                 }
-                this.vis = d3.select(element).append("svg").attr("width", elementDimensions.width).attr("height", elementDimensions.height).append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-                this.axes.update(scope);
-                this.axes.draw(this.vis, graphDimensions);
-                this.updateGraph(scope);
+                this.vis = d3.select(element).append("svg").attr("width", this.elementDimensions.width).attr("height", this.elementDimensions.height).append("g").attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
+                // draw axes
+                this.xAxis.draw(this.vis, this.graphDimensions);
+                this.yAxis.draw(this.vis, this.graphDimensions);
             };
-            this.updateGraph = function (scope) {
-            };
-            this.axes = new KineticGraphs.Axes(element.attr('axes'));
-            this.composites = [];
+            this.element = $('#' + graphDefinition.element_id)[0];
+            this.xAxis = new KineticGraphs.XAxis();
+            this.yAxis = new KineticGraphs.YAxis();
+            this.updateGraph(graphDefinition);
         }
         return Graph;
     })();
     KineticGraphs.Graph = Graph;
-    // Creation of graph from element and children
-    function graphDirective() {
-        return {
-            restrict: 'E',
-            link: function (scope, element) {
-                scope.graphs.push(new Graph(element));
-            }
-        };
-    }
-    KineticGraphs.graphDirective = graphDirective;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts" />
 var KineticGraphs;
 (function (KineticGraphs) {
     var ModelController = (function () {
         function ModelController($scope) {
+            //$scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 400, height: 400}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
             this.$scope = $scope;
-            $scope.params = {};
-            $scope.graphs = [];
-            $scope.render = function () {
-                $scope.graphs.forEach(function (graph) {
-                    graph.renderGraph($scope);
+            $scope.params = { x: 20, xAxisLabel: 'Quantity' };
+            function createGraphs() {
+                var graphs = [];
+                if ($scope.graphDefinitions) {
+                    $scope.graphDefinitions.forEach(function (graphDefinition) {
+                        graphs.push(new KineticGraphs.Graph($scope.$eval(graphDefinition)));
+                    });
+                }
+                return graphs;
+            }
+            function updateGraphs() {
+                $scope.graphs = $scope.graphs || createGraphs();
+                $scope.graphs.forEach(function (graph, index) {
+                    var updatedDefinition = $scope.$eval($scope.graphDefinitions[index]);
+                    graph.updateGraph(updatedDefinition);
                 });
-            };
+            }
+            $scope.$watchCollection('params', updateGraphs);
         }
         return ModelController;
     })();
@@ -209,5 +203,5 @@ var KineticGraphs;
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
 /// <reference path="graphs/graph.ts" />
 /// <reference path="model/model.ts" />
-angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController).directive('graph', KineticGraphs.graphDirective);
+angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
 //# sourceMappingURL=kinetic-graphs.js.map

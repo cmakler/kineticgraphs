@@ -3,6 +3,11 @@
 module KineticGraphs
 {
 
+    export interface ICompositeDefinition
+    {
+
+    }
+
     export interface IComposite
     {
 

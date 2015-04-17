@@ -13,8 +13,9 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <button ng-click="render()">Render</button>
-    <graph width="500" height="500" axes="{x: {min: 0, max: 20, title: 'X axis'}, y: {min: 0, max: 10, title: 'Y axis'}}" composites="[ {point: {x: 2,y:4}}, {point: {x: 3, y: 5} ]"></graph>
+    <div id="graph"></div>
+    <input type="range" min="0" max="20" ng-model="params.x">
+    <input type="text" ng-model="params.xAxisLabel">
 </div>
 <script src="dist/kinetic-graphs.js"></script>
 </body>

@@ -8,4 +8,3 @@
 
 angular.module('KineticGraphs', [])
     .controller('KineticGraphCtrl', KineticGraphs.ModelController)
-    .directive('graph', KineticGraphs.graphDirective)

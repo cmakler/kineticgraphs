@@ -3,8 +3,6 @@
 module KineticGraphs
 {
 
-
-
     export interface IAxisDefinition
     {
         min?: number;
@@ -15,7 +13,6 @@ module KineticGraphs
 
     export interface IAxis
     {
-        pixelLength: number;
         scaleFunction: (pixelLength: number, domain: IDomain) => D3.Scale.LinearScale;
         scale: D3.Scale.LinearScale;
         update: (axisDefinition: IAxisDefinition) => void;
@@ -27,7 +24,6 @@ module KineticGraphs
 
     export class Axis implements IAxis{
 
-        public pixelLength;
         public scale;
 
         public domain: IDomain;
@@ -51,6 +47,8 @@ module KineticGraphs
 
             this.title = axisDefinition.title || '';
             this.ticks = axisDefinition.ticks || 5;
+
+            return this;
 
         }
 
@@ -109,42 +107,6 @@ module KineticGraphs
                 .text(this.title);
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks))
         }
-    }
-
-    export interface IAxes
-    {
-        x: Axis;
-        y: Axis;
-        update: (scope:IModelScope) => void;
-        draw: (vis, x_translation, y_translation) => void;
-    }
-
-    export class Axes implements IAxes {
-
-        public x;
-        public y;
-
-        constructor(private attributeString:string) {
-            this.x = new XAxis();
-            this.y = new YAxis();
-        }
-
-        update(scope) {
-
-            var attrs=scope.$eval(this.attributeString);
-
-            this.x.update(attrs['x']);
-            this.y.update(attrs['y']);
-
-        }
-
-        draw(vis,graph_dimensions) {
-            this.x.draw(vis,graph_dimensions);
-            this.y.draw(vis,graph_dimensions);
-        }
-
-
-
     }
 
 }
