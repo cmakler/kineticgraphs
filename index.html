@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html ng-app="KineticGraphs">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Hello World</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!--<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.1.min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.js"></script>-->
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
+</head>
+<body>
+<div ng-controller="KineticGraphCtrl">
+    <button ng-click="render()">Render</button>
+    <graph width="500" height="500" axes="{x: {min: 0, max: 20, title: 'X axis'}, y: {min: 0, max: 10, title: 'Y axis'}}" composites="[ {point: {x: 2,y:4}}, {point: {x: 3, y: 5} ]"></graph>
+</div>
+<script src="dist/kinetic-graphs.js"></script>
+</body>
+</html>

@@ -4,10 +4,25 @@
 
 module KineticGraphs
 {
-    export interface IRange
+    export interface IDomain
     {
         min: number;
         max: number;
+        toArray: () => number[];
+    }
+
+    export class Domain implements IDomain
+    {
+
+        constructor(public min: number, public max: number) {
+            this.min = this.min || 0;
+            this.max = this.max || 10;
+        }
+
+        toArray() {
+            return [this.min, this.max]
+        }
+
     }
 
     export interface IDimensions
@@ -29,4 +44,5 @@ module KineticGraphs
         x: number;
         y: number;
     }
+
 }
