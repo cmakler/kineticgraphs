@@ -125,41 +125,47 @@ var KineticGraphs;
         function Graph(graphDefinition) {
             this.graphDefinition = graphDefinition;
             this.updateGraph = function (graphDefinition) {
-                var elementDimensions = { width: this.element.clientWidth, height: 500 };
-                if (graphDefinition.hasOwnProperty('dimensions')) {
-                    var dim = graphDefinition.dimensions;
-                    // Override with given attributes if they exist
-                    if (dim.hasOwnProperty('height')) {
-                        elementDimensions.height = dim.height;
+                // Calculate the dimensions of the graph element
+                function calculateElementDimensions(clientWidth, dimensions) {
+                    // Set default to the width of the enclosing div, with a height of 500
+                    var elementDimensions = { width: clientWidth, height: 500 };
+                    if (dimensions) {
+                        // Override with given attributes if they exist
+                        if (dimensions.hasOwnProperty('height')) {
+                            elementDimensions.height = dimensions.height;
+                        }
+                        if (dimensions.hasOwnProperty('width')) {
+                            elementDimensions.width = Math.min(dimensions.width, elementDimensions.width);
+                        }
                     }
-                    if (dim.hasOwnProperty('width')) {
-                        elementDimensions.width = Math.min(dim.width, elementDimensions.width);
-                    }
+                    return elementDimensions;
                 }
-                this.margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
-                this.elementDimensions = elementDimensions;
-                // Establish inner dimensions of graph (element dimensions minus margins)
-                this.graphDimensions = {
-                    width: this.elementDimensions.width - this.margins.left - this.margins.right,
-                    height: this.elementDimensions.height - this.margins.top - this.margins.bottom
-                };
-                // Update axis objects
-                this.xAxis.update(graphDefinition.xAxis);
-                this.yAxis.update(graphDefinition.yAxis);
-                this.renderGraph();
+                if (graphDefinition) {
+                    var element = $('#' + graphDefinition.element_id)[0];
+                    var elementDimensions = calculateElementDimensions(element.clientWidth, graphDefinition.dimensions);
+                    var margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
+                    // Establish inner dimensions of graph (element dimensions minus margins)
+                    var graphDimensions = {
+                        width: elementDimensions.width - margins.left - margins.right,
+                        height: elementDimensions.height - margins.top - margins.bottom
+                    };
+                    // Update axis objects
+                    this.xAxis.update(graphDefinition.xAxis);
+                    this.yAxis.update(graphDefinition.yAxis);
+                    this.renderGraph(element, elementDimensions, margins, graphDimensions, this.xAxis, this.yAxis);
+                    return this;
+                }
             };
-            this.renderGraph = function () {
-                var element = this.element;
-                if (this.vis) {
+            this.renderGraph = function (element, elementDimensions, margins, graphDimensions, xAxis, yAxis) {
+                if (element) {
                     d3.select(element).select('svg').remove();
                     d3.select(element).selectAll('div').remove();
+                    this.vis = d3.select(element).append("svg").attr("width", elementDimensions.width).attr("height", elementDimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+                    // draw axes
+                    xAxis.draw(this.vis, graphDimensions);
+                    yAxis.draw(this.vis, graphDimensions);
                 }
-                this.vis = d3.select(element).append("svg").attr("width", this.elementDimensions.width).attr("height", this.elementDimensions.height).append("g").attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
-                // draw axes
-                this.xAxis.draw(this.vis, this.graphDimensions);
-                this.yAxis.draw(this.vis, this.graphDimensions);
             };
-            this.element = $('#' + graphDefinition.element_id)[0];
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
             this.updateGraph(graphDefinition);
@@ -173,8 +179,8 @@ var KineticGraphs;
 (function (KineticGraphs) {
     var ModelController = (function () {
         function ModelController($scope) {
-            //$scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 400, height: 400}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
             this.$scope = $scope;
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 400, height: 400}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
             $scope.params = { x: 20, xAxisLabel: 'Quantity' };
             function createGraphs() {
                 var graphs = [];

@@ -24,26 +24,20 @@ module KineticGraphs
         graphDefinition: IGraphDefinition;
 
         element: JQuery;
-        elementDimensions: IDimensions;
-        graphDimensions: IDimensions;
-        margins: IMargins;
         vis: D3.Selection;
 
-        xAxis: IAxisDefinition;
-        yAxis: IAxisDefinition;
+        xAxis: IAxis;
+        yAxis: IAxis;
 
         composites: IComposite[];
 
-        updateGraph:(graphDefinition: IGraphDefinition) => void;
-        renderGraph:(scope:IModelScope) => void;
+        updateGraph:(graphDefinition: IGraphDefinition) => IGraph;
+        renderGraph:(element: JQuery, elementDimensions: IDimensions, margins: IMargins, graphDimensions: IDimensions, xAxis: IAxis, yAxis: IAxis) => void;
     }
 
     export class Graph implements IGraph
     {
         public element;
-        public elementDimensions;
-        public graphDimensions;
-        public margins;
         public vis;
 
         public xAxis;
@@ -52,8 +46,7 @@ module KineticGraphs
         public composites;
 
 
-        constructor(public graphDefinition:IGraphDefinition) {
-            this.element = $('#' + graphDefinition.element_id)[0];
+        constructor(public graphDefinition?:IGraphDefinition) {
             this.xAxis = new XAxis();
             this.yAxis = new YAxis();
             this.updateGraph(graphDefinition);
@@ -61,57 +54,70 @@ module KineticGraphs
 
         updateGraph = function(graphDefinition) {
 
-            var elementDimensions: IDimensions = {width: this.element.clientWidth, height: 500};
+            // Calculate the dimensions of the graph element
+            function calculateElementDimensions(clientWidth: number, dimensions?: IDimensions) {
 
-            if (graphDefinition.hasOwnProperty('dimensions')) {
+                // Set default to the width of the enclosing div, with a height of 500
+                var elementDimensions: IDimensions = {width: clientWidth, height: 500};
 
-                var dim = graphDefinition.dimensions;
-                // Override with given attributes if they exist
-                if(dim.hasOwnProperty('height')) {
-                    elementDimensions.height = dim.height;
+                if (dimensions) {
+
+                    // Override with given attributes if they exist
+                    if(dimensions.hasOwnProperty('height')) {
+                        elementDimensions.height = dimensions.height;
+                    }
+                    if(dimensions.hasOwnProperty('width')) {
+                        elementDimensions.width = Math.min(dimensions.width, elementDimensions.width);
+                    }
                 }
-                if(dim.hasOwnProperty('width')) {
-                    elementDimensions.width = Math.min(dim.width, elementDimensions.width);
-                }
+
+                return elementDimensions;
             }
 
-            this.margins = graphDefinition.margins || {top: 20, left: 100, bottom: 100, right: 20};
+            if(graphDefinition) {
 
-            this.elementDimensions = elementDimensions;
+                var element = $('#' + graphDefinition.element_id)[0];
 
-            // Establish inner dimensions of graph (element dimensions minus margins)
-            this.graphDimensions = {
-                width: this.elementDimensions.width - this.margins.left - this.margins.right,
-                height: this.elementDimensions.height - this.margins.top - this.margins.bottom
-            };
+                var elementDimensions = calculateElementDimensions(element.clientWidth, graphDefinition.dimensions);
 
-            // Update axis objects
-            this.xAxis.update(graphDefinition.xAxis);
-            this.yAxis.update(graphDefinition.yAxis);
+                var margins = graphDefinition.margins || {top: 20, left: 100, bottom: 100, right: 20};
 
-            this.renderGraph();
+                // Establish inner dimensions of graph (element dimensions minus margins)
+                var graphDimensions = {
+                    width: elementDimensions.width - margins.left - margins.right,
+                    height: elementDimensions.height - margins.top - margins.bottom
+                };
+
+                // Update axis objects
+                this.xAxis.update(graphDefinition.xAxis);
+                this.yAxis.update(graphDefinition.yAxis);
+
+                this.renderGraph(element,elementDimensions, margins, graphDimensions, this.xAxis, this.yAxis);
+
+                return this;
+
+            }
 
         };
 
-        renderGraph = function() {
+        renderGraph = function(element,elementDimensions, margins, graphDimensions, xAxis, yAxis) {
 
-            var element = this.element;
+            if(element) {
 
-            if (this.vis) {
                 d3.select(element).select('svg').remove();
                 d3.select(element).selectAll('div').remove();
+
+                this.vis = d3.select(element)
+                    .append("svg")
+                    .attr("width", elementDimensions.width)
+                    .attr("height", elementDimensions.height)
+                    .append("g")
+                    .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+
+                // draw axes
+                xAxis.draw(this.vis,graphDimensions);
+                yAxis.draw(this.vis,graphDimensions);
             }
-
-            this.vis = d3.select(element)
-                .append("svg")
-                .attr("width", this.elementDimensions.width)
-                .attr("height", this.elementDimensions.height)
-                .append("g")
-                .attr("transform", "translate(" + this.margins.left + "," + this.margins.top + ")");
-
-            // draw axes
-            this.xAxis.draw(this.vis,this.graphDimensions);
-            this.yAxis.draw(this.vis,this.graphDimensions);
 
         };
 

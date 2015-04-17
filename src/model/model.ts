@@ -16,7 +16,7 @@ module KineticGraphs
         constructor(public $scope:IModelScope)
         {
 
-            //$scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 400, height: 400}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 400, height: 400}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
 
             $scope.params = {x: 20, xAxisLabel: 'Quantity'};
 
@@ -24,7 +24,6 @@ module KineticGraphs
                 var graphs = [];
                 if($scope.graphDefinitions) {
                     $scope.graphDefinitions.forEach(function(graphDefinition) {graphs.push(new Graph($scope.$eval(graphDefinition)))});
-
                 }
                 return graphs;
             }
