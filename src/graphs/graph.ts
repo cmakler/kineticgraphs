@@ -31,8 +31,8 @@ module KineticGraphs
 
         composites: IComposite[];
 
-        updateGraph:(graphDefinition: IGraphDefinition) => IGraph;
-        renderGraph:(element: JQuery, elementDimensions: IDimensions, margins: IMargins, xAxis: IAxis, yAxis: IAxis) => void;
+        updateGraph:(graphDefinition: IGraphDefinition, redraw?: boolean) => IGraph;
+        renderGraph:(element: JQuery, elementDimensions: IDimensions, margins: IMargins, xAxis: IAxis, yAxis: IAxis, redraw: boolean) => void;
     }
 
     export class Graph implements IGraph
@@ -52,7 +52,10 @@ module KineticGraphs
             this.updateGraph(graphDefinition);
         }
 
-        updateGraph = function(graphDefinition) {
+        updateGraph = function(graphDefinition, redraw?) {
+
+            // Set redraw to true by default
+            if(redraw == undefined) { redraw = true };
 
             // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
             function updateDimensions(clientWidth: number, dimensions?: IDimensions) {
@@ -74,7 +77,6 @@ module KineticGraphs
             }
 
 
-
             if(graphDefinition) {
 
                 // Establish dimensions of the graph
@@ -86,17 +88,20 @@ module KineticGraphs
                 this.xAxis.update(graphDefinition.xAxis);
                 this.yAxis.update(graphDefinition.yAxis);
 
-                this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis);
-
-                return this;
+                // Render the graph
+                this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis, redraw);
 
             }
 
+            return this;
+
         };
 
-        renderGraph = function(element,elementDimensions, margins, xAxis, yAxis) {
+        renderGraph = function(element,elementDimensions, margins, xAxis, yAxis, redraw) {
 
-            if(element) {
+            if(element && redraw) {
+
+                console.log('redrawing!')
 
                 d3.select(element).select('svg').remove();
                 d3.select(element).selectAll('div').remove();

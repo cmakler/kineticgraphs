@@ -4,8 +4,9 @@ module KineticGraphs
 {
     export interface IModelScope extends ng.IScope
     {
-        params: {};
-        graphDefinitions: string[];
+        params: {}; // parameters of the model that do not require redrawing the entire graph
+        graphParams: {}; // parameters of the model that do require redrawing the entire graph
+        graphDefinitions: string[]; // definitions of the graph
         graphs: IGraph[];
         render: () => void;
     }
@@ -16,9 +17,9 @@ module KineticGraphs
         constructor(public $scope:IModelScope, $window:ng.IWindowService)
         {
 
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
 
-            $scope.params = {x: 20, xAxisLabel: 'Quantity'};
+            $scope.graphParams = {x: 20, xAxisLabel: 'Quantity'};
 
             function createGraphs() {
                 var graphs = [];
@@ -28,18 +29,27 @@ module KineticGraphs
                 return graphs;
             }
 
-            function updateGraphs() {
+            function redrawGraphs() {
+                updateGraphs(true)
+            }
+
+            function redrawObjects() {
+                updateGraphs(false)
+            }
+
+            function updateGraphs(redraw) {
                 $scope.graphs = $scope.graphs || createGraphs();
                 $scope.graphs.forEach(function(graph:IGraph,index) {
                     var updatedDefinition = $scope.$eval($scope.graphDefinitions[index]);
-                    graph.updateGraph(updatedDefinition);
+                    graph.updateGraph(updatedDefinition,redraw);
                 })
             }
 
-            $scope.$watchCollection('params',updateGraphs);
+            $scope.$watchCollection('params',redrawObjects);
+            $scope.$watchCollection('graphParams',redrawGraphs);
 
             // Resize all elements when window changes size
-            angular.element($window).on('resize', updateGraphs);
+            angular.element($window).on('resize', redrawGraphs);
 
         }
 

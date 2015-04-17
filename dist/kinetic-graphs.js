@@ -124,7 +124,12 @@ var KineticGraphs;
     var Graph = (function () {
         function Graph(graphDefinition) {
             this.graphDefinition = graphDefinition;
-            this.updateGraph = function (graphDefinition) {
+            this.updateGraph = function (graphDefinition, redraw) {
+                // Set redraw to true by default
+                if (redraw == undefined) {
+                    redraw = true;
+                }
+                ;
                 // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
                 function updateDimensions(clientWidth, dimensions) {
                     // Set default to the width of the enclosing element, with a height of 500
@@ -147,12 +152,14 @@ var KineticGraphs;
                     // Update axis objects
                     this.xAxis.update(graphDefinition.xAxis);
                     this.yAxis.update(graphDefinition.yAxis);
-                    this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis);
-                    return this;
+                    // Render the graph
+                    this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis, redraw);
                 }
+                return this;
             };
-            this.renderGraph = function (element, elementDimensions, margins, xAxis, yAxis) {
-                if (element) {
+            this.renderGraph = function (element, elementDimensions, margins, xAxis, yAxis, redraw) {
+                if (element && redraw) {
+                    console.log('redrawing!');
                     d3.select(element).select('svg').remove();
                     d3.select(element).selectAll('div').remove();
                     this.vis = d3.select(element).append("svg").attr("width", elementDimensions.width).attr("height", elementDimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
@@ -180,8 +187,8 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: params.x, title: params.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
-            $scope.params = { x: 20, xAxisLabel: 'Quantity' };
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
+            $scope.graphParams = { x: 20, xAxisLabel: 'Quantity' };
             function createGraphs() {
                 var graphs = [];
                 if ($scope.graphDefinitions) {
@@ -191,16 +198,23 @@ var KineticGraphs;
                 }
                 return graphs;
             }
-            function updateGraphs() {
+            function redrawGraphs() {
+                updateGraphs(true);
+            }
+            function redrawObjects() {
+                updateGraphs(false);
+            }
+            function updateGraphs(redraw) {
                 $scope.graphs = $scope.graphs || createGraphs();
                 $scope.graphs.forEach(function (graph, index) {
                     var updatedDefinition = $scope.$eval($scope.graphDefinitions[index]);
-                    graph.updateGraph(updatedDefinition);
+                    graph.updateGraph(updatedDefinition, redraw);
                 });
             }
-            $scope.$watchCollection('params', updateGraphs);
+            $scope.$watchCollection('params', redrawObjects);
+            $scope.$watchCollection('graphParams', redrawGraphs);
             // Resize all elements when window changes size
-            angular.element($window).on('resize', updateGraphs);
+            angular.element($window).on('resize', redrawGraphs);
         }
         return ModelController;
     })();
