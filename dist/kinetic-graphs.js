@@ -93,6 +93,19 @@ var KineticGraphs;
     KineticGraphs.YAxis = YAxis;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../graph.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Composite = (function () {
+        function Composite(type) {
+            this.type = type;
+            this.instance = function (definition, graph) {
+                return new KineticGraphs[this.type](definition, graph);
+            };
+        }
+        return Composite;
+    })();
+    KineticGraphs.Composite = Composite;
+})(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/8/15.
  */
@@ -100,15 +113,38 @@ var KineticGraphs;
 var KineticGraphs;
 (function (KineticGraphs) {
     var Point = (function () {
-        function Point() {
-            this.render = function (graph) {
-                var coordinates = this.scope.coordinates();
-                if (typeof coordinates.x == "number" && typeof coordinates.y == "number") {
-                    var cx = graph.x(coordinates.x), cy = graph.y(coordinates.y);
-                    graph.vis.append('circle').attr({ cx: cx, cy: cy, r: 3 });
+        function Point(definition, graph) {
+            this.graph = graph;
+            this.render = function (pointDefinition) {
+                console.log('rendering point');
+                if (!this.graph.vis) {
+                    return;
                 }
-                return graph;
+                if (!this.circle) {
+                    this.circle = this.graph.vis.append('circle');
+                }
+                var currentCoordinates = this.coordinates || { x: 0, y: 0 };
+                var pixelCoordinates;
+                function updateCoordinate(newCoordinates, dim) {
+                    var coord = currentCoordinates[dim];
+                    if (newCoordinates && newCoordinates.hasOwnProperty(dim) && typeof newCoordinates[dim] == "number" && newCoordinates[dim] != coord) {
+                        coord = newCoordinates[dim];
+                    }
+                    return coord;
+                }
+                currentCoordinates = {
+                    x: updateCoordinate(pointDefinition.coordinates, 'x'),
+                    y: updateCoordinate(pointDefinition.coordinates, 'y')
+                };
+                console.log('drawing point (', currentCoordinates.x, ',', currentCoordinates.y, ')');
+                pixelCoordinates = {
+                    x: this.graph.xAxis.scale(currentCoordinates.x),
+                    y: this.graph.yAxis.scale(currentCoordinates.y)
+                };
+                this.coordinates = currentCoordinates;
+                this.circle.attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3 });
             };
+            this.coordinates = definition.coordinates || { x: 0, y: 0 };
         }
         return Point;
     })();
@@ -144,7 +180,9 @@ var KineticGraphs;
                     }
                     return newDimensions;
                 }
+                //
                 if (graphDefinition) {
+                    var graph = this;
                     // Establish dimensions of the graph
                     var element = $('#' + graphDefinition.element_id)[0];
                     var dimensions = updateDimensions(element.clientWidth, graphDefinition.dimensions);
@@ -152,6 +190,13 @@ var KineticGraphs;
                     // Update axis objects
                     this.xAxis.update(graphDefinition.xAxis);
                     this.yAxis.update(graphDefinition.yAxis);
+                    // Update composite objects
+                    if (graphDefinition.hasOwnProperty('composites') && graphDefinition.composites.length > 0) {
+                        this.composites = graphDefinition.composites.map(function (compositeDefinition) {
+                            var composite = new KineticGraphs.Composite(compositeDefinition.type);
+                            return composite.instance(compositeDefinition.definition, graph);
+                        });
+                    }
                     // Render the graph
                     this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis, redraw);
                 }
@@ -171,10 +216,15 @@ var KineticGraphs;
                     // draw axes
                     xAxis.draw(this.vis, axisDimensions);
                     yAxis.draw(this.vis, axisDimensions);
+                    // draw composites
+                    this.composites.forEach(function (composite) {
+                        composite.render({}, this.vis);
+                    });
                 }
             };
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
+            this.composites = [];
             this.updateGraph(graphDefinition);
         }
         return Graph;
@@ -187,7 +237,7 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, composites:[{type: 'Point', definition: {coordinates: {x: params.x, y: 4}}}]}"];
             $scope.params = { x: 20 };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values

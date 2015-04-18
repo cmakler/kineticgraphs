@@ -16,7 +16,7 @@ module KineticGraphs
         constructor(public $scope:IModelScope, $window:ng.IWindowService)
         {
 
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}}"];
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, composites:[{type: 'Point', definition: {coordinates: {x: params.x, y: 4}}}]}"];
             $scope.params = {x: 20};
             $scope.graphParams = {xAxisLabel: 'Quantity'};
 

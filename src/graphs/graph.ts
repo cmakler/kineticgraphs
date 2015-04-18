@@ -49,6 +49,7 @@ module KineticGraphs
         constructor(public graphDefinition?:IGraphDefinition) {
             this.xAxis = new XAxis();
             this.yAxis = new YAxis();
+            this.composites = [];
             this.updateGraph(graphDefinition);
         }
 
@@ -76,8 +77,10 @@ module KineticGraphs
                 return newDimensions;
             }
 
-
+            //
             if(graphDefinition) {
+
+                var graph = this;
 
                 // Establish dimensions of the graph
                 var element = $('#' + graphDefinition.element_id)[0];
@@ -87,6 +90,14 @@ module KineticGraphs
                 // Update axis objects
                 this.xAxis.update(graphDefinition.xAxis);
                 this.yAxis.update(graphDefinition.yAxis);
+
+                // Update composite objects
+                if(graphDefinition.hasOwnProperty('composites') && graphDefinition.composites.length > 0) {
+                    this.composites = graphDefinition.composites.map(function(compositeDefinition:ICompositeDefinition) {
+                        var composite = new Composite(compositeDefinition.type);
+                        return composite.instance(compositeDefinition.definition, graph)
+                    })
+                }
 
                 // Render the graph
                 this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis, redraw);
@@ -122,6 +133,9 @@ module KineticGraphs
                 // draw axes
                 xAxis.draw(this.vis,axisDimensions);
                 yAxis.draw(this.vis,axisDimensions);
+
+                // draw composites
+                this.composites.forEach(function(composite) {composite.render({}, this.vis)})
             }
 
         };
