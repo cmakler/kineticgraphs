@@ -96,12 +96,13 @@ var KineticGraphs;
 var KineticGraphs;
 (function (KineticGraphs) {
     var Composite = (function () {
-        function Composite(type) {
-            this.type = type;
-            this.instance = function (definition, graph) {
-                return new KineticGraphs[this.type](definition, graph);
-            };
+        function Composite() {
         }
+        Composite.prototype.update = function (definition) {
+            return this; // overridden by child class
+        };
+        Composite.prototype.render = function (graph) {
+        };
         return Composite;
     })();
     KineticGraphs.Composite = Composite;
@@ -112,42 +113,38 @@ var KineticGraphs;
 /// <reference path="composite.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
-    var Point = (function () {
-        function Point(definition, graph) {
-            this.graph = graph;
-            this.render = function (pointDefinition) {
-                console.log('rendering point');
-                if (!this.graph.vis) {
-                    return;
-                }
-                if (!this.circle) {
-                    this.circle = this.graph.vis.append('circle');
-                }
-                var currentCoordinates = this.coordinates || { x: 0, y: 0 };
-                var pixelCoordinates;
-                function updateCoordinate(newCoordinates, dim) {
-                    var coord = currentCoordinates[dim];
-                    if (newCoordinates && newCoordinates.hasOwnProperty(dim) && typeof newCoordinates[dim] == "number" && newCoordinates[dim] != coord) {
-                        coord = newCoordinates[dim];
-                    }
-                    return coord;
-                }
-                currentCoordinates = {
-                    x: updateCoordinate(pointDefinition.coordinates, 'x'),
-                    y: updateCoordinate(pointDefinition.coordinates, 'y')
-                };
-                console.log('drawing point (', currentCoordinates.x, ',', currentCoordinates.y, ')');
-                pixelCoordinates = {
-                    x: this.graph.xAxis.scale(currentCoordinates.x),
-                    y: this.graph.yAxis.scale(currentCoordinates.y)
-                };
-                this.coordinates = currentCoordinates;
-                this.circle.attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3 });
-            };
-            this.coordinates = definition.coordinates || { x: 0, y: 0 };
+    var Point = (function (_super) {
+        __extends(Point, _super);
+        function Point() {
+            _super.call(this);
+            this.coordinates = { x: 0, y: 0 };
         }
+        Point.prototype.update = function (pointDefinition) {
+            var currentCoordinates = this.coordinates;
+            function updateCoordinate(newCoordinates, dim) {
+                var coord = currentCoordinates[dim];
+                if (newCoordinates && newCoordinates.hasOwnProperty(dim) && newCoordinates[dim] != coord) {
+                    coord = newCoordinates[dim];
+                }
+                return coord;
+            }
+            this.coordinates = {
+                x: updateCoordinate(pointDefinition.coordinates, 'x'),
+                y: updateCoordinate(pointDefinition.coordinates, 'y')
+            };
+            return this;
+        };
+        Point.prototype.render = function (graph) {
+            this.graph = graph;
+            graph.vis.selectAll('circle').remove();
+            var pixelCoordinates = {
+                x: graph.xAxis.scale(this.coordinates.x),
+                y: graph.yAxis.scale(this.coordinates.y)
+            };
+            this.circle = graph.vis.append('circle').attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3 });
+        };
         return Point;
-    })();
+    })(KineticGraphs.Composite);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
@@ -161,6 +158,11 @@ var KineticGraphs;
         function Graph(graphDefinition) {
             this.graphDefinition = graphDefinition;
             this.updateGraph = function (graphDefinition, redraw) {
+                if (!graphDefinition) {
+                    console.log('updateGraph called without graphDefinition!');
+                    return;
+                }
+                var graph = this;
                 // Set redraw to true by default
                 if (redraw == undefined) {
                     redraw = true;
@@ -180,52 +182,42 @@ var KineticGraphs;
                     }
                     return newDimensions;
                 }
-                //
-                if (graphDefinition) {
-                    var graph = this;
+                // Redraw the graph if necessary
+                if (redraw) {
+                    console.log('redrawing!');
                     // Establish dimensions of the graph
                     var element = $('#' + graphDefinition.element_id)[0];
                     var dimensions = updateDimensions(element.clientWidth, graphDefinition.dimensions);
                     var margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
                     // Update axis objects
-                    this.xAxis.update(graphDefinition.xAxis);
-                    this.yAxis.update(graphDefinition.yAxis);
-                    // Update composite objects
-                    if (graphDefinition.hasOwnProperty('composites') && graphDefinition.composites.length > 0) {
-                        this.composites = graphDefinition.composites.map(function (compositeDefinition) {
-                            var composite = new KineticGraphs.Composite(compositeDefinition.type);
-                            return composite.instance(compositeDefinition.definition, graph);
-                        });
-                    }
-                    // Render the graph
-                    this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis, redraw);
-                }
-                return this;
-            };
-            this.renderGraph = function (element, elementDimensions, margins, xAxis, yAxis, redraw) {
-                if (element && redraw) {
-                    console.log('redrawing!');
+                    graph.xAxis.update(graphDefinition.xAxis);
+                    graph.yAxis.update(graphDefinition.yAxis);
+                    // Remove existing graph
                     d3.select(element).select('svg').remove();
                     d3.select(element).selectAll('div').remove();
-                    this.vis = d3.select(element).append("svg").attr("width", elementDimensions.width).attr("height", elementDimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+                    // Create new SVG element for the graph visualization
+                    graph.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
                     // Establish dimensions of axes (element dimensions minus margins)
                     var axisDimensions = {
-                        width: elementDimensions.width - margins.left - margins.right,
-                        height: elementDimensions.height - margins.top - margins.bottom
+                        width: dimensions.width - margins.left - margins.right,
+                        height: dimensions.height - margins.top - margins.bottom
                     };
                     // draw axes
-                    xAxis.draw(this.vis, axisDimensions);
-                    yAxis.draw(this.vis, axisDimensions);
-                    // draw composites
-                    this.composites.forEach(function (composite) {
-                        composite.render({}, this.vis);
-                    });
+                    graph.xAxis.draw(graph.vis, axisDimensions);
+                    graph.yAxis.draw(graph.vis, axisDimensions);
                 }
+                // Update composite objects
+                graph.composites.forEach(function (composite, index) {
+                    composite.update(graphDefinition.composites[index].definition).render(graph);
+                });
+                return graph;
             };
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
-            this.composites = [];
-            this.updateGraph(graphDefinition);
+            this.composites = graphDefinition.composites.map(function (compositeDefinition) {
+                return new KineticGraphs[compositeDefinition.type]();
+            });
+            this.updateGraph(graphDefinition, true);
         }
         return Graph;
     })();

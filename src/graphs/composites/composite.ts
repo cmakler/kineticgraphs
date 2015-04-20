@@ -11,22 +11,25 @@ module KineticGraphs
 
     export interface IComposite
     {
-        render: (definition: any) => void;
+        update: (definition: any) => IComposite;
+        render: (graph:IGraph) => void;
     }
 
-    export interface ICompositeFactory
+    export class Composite implements IComposite
     {
-        type: string;
-        instance: (definition: any, graph:IGraph) => IComposite;
-    }
 
-    export class Composite implements ICompositeFactory
-    {
-        constructor(public type: string) {}
+        constructor() {}
 
-        instance = function(definition, graph) {
-            return new KineticGraphs[this.type](definition,graph);
+        update(definition:any) {
+            return this; // overridden by child class
         }
+
+        render(graph:IGraph) {
+
+        }
+
+
+
     }
 
 }

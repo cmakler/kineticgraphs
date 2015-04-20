@@ -32,7 +32,7 @@ module KineticGraphs
         composites: IComposite[];
 
         updateGraph:(graphDefinition: IGraphDefinition, redraw?: boolean) => IGraph;
-        renderGraph:(element: JQuery, elementDimensions: IDimensions, margins: IMargins, xAxis: IAxis, yAxis: IAxis, redraw: boolean) => void;
+
     }
 
     export class Graph implements IGraph
@@ -49,11 +49,20 @@ module KineticGraphs
         constructor(public graphDefinition?:IGraphDefinition) {
             this.xAxis = new XAxis();
             this.yAxis = new YAxis();
-            this.composites = [];
-            this.updateGraph(graphDefinition);
+            this.composites = graphDefinition.composites.map(function(compositeDefinition:ICompositeDefinition) {
+                return new KineticGraphs[compositeDefinition.type]();
+            });
+            this.updateGraph(graphDefinition, true);
         }
 
         updateGraph = function(graphDefinition, redraw?) {
+
+            if(!graphDefinition) {
+                console.log('updateGraph called without graphDefinition!')
+                return;
+            }
+
+            var graph = this;
 
             // Set redraw to true by default
             if(redraw == undefined) { redraw = true };
@@ -77,10 +86,10 @@ module KineticGraphs
                 return newDimensions;
             }
 
-            //
-            if(graphDefinition) {
+            // Redraw the graph if necessary
+            if(redraw) {
 
-                var graph = this;
+                console.log('redrawing!')
 
                 // Establish dimensions of the graph
                 var element = $('#' + graphDefinition.element_id)[0];
@@ -88,59 +97,41 @@ module KineticGraphs
                 var margins = graphDefinition.margins || {top: 20, left: 100, bottom: 100, right: 20};
 
                 // Update axis objects
-                this.xAxis.update(graphDefinition.xAxis);
-                this.yAxis.update(graphDefinition.yAxis);
+                graph.xAxis.update(graphDefinition.xAxis);
+                graph.yAxis.update(graphDefinition.yAxis);
 
-                // Update composite objects
-                if(graphDefinition.hasOwnProperty('composites') && graphDefinition.composites.length > 0) {
-                    this.composites = graphDefinition.composites.map(function(compositeDefinition:ICompositeDefinition) {
-                        var composite = new Composite(compositeDefinition.type);
-                        return composite.instance(compositeDefinition.definition, graph)
-                    })
-                }
-
-                // Render the graph
-                this.renderGraph(element, dimensions, margins, this.xAxis, this.yAxis, redraw);
-
-            }
-
-            return this;
-
-        };
-
-        renderGraph = function(element,elementDimensions, margins, xAxis, yAxis, redraw) {
-
-            if(element && redraw) {
-
-                console.log('redrawing!')
-
+                // Remove existing graph
                 d3.select(element).select('svg').remove();
                 d3.select(element).selectAll('div').remove();
 
-                this.vis = d3.select(element)
+                // Create new SVG element for the graph visualization
+                graph.vis = d3.select(element)
                     .append("svg")
-                    .attr("width", elementDimensions.width)
-                    .attr("height", elementDimensions.height)
+                    .attr("width", dimensions.width)
+                    .attr("height", dimensions.height)
                     .append("g")
                     .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
 
                 // Establish dimensions of axes (element dimensions minus margins)
                 var axisDimensions = {
-                    width: elementDimensions.width - margins.left - margins.right,
-                    height: elementDimensions.height - margins.top - margins.bottom
+                    width: dimensions.width - margins.left - margins.right,
+                    height: dimensions.height - margins.top - margins.bottom
                 };
 
                 // draw axes
-                xAxis.draw(this.vis,axisDimensions);
-                yAxis.draw(this.vis,axisDimensions);
+                graph.xAxis.draw(graph.vis,axisDimensions);
+                graph.yAxis.draw(graph.vis,axisDimensions);
 
-                // draw composites
-                this.composites.forEach(function(composite) {composite.render({}, this.vis)})
             }
 
+            // Update composite objects
+            graph.composites.forEach(function(composite,index) {
+                composite.update(graphDefinition.composites[index].definition).render(graph)
+            });
+
+            return graph;
+
         };
-
-
 
     }
 
