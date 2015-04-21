@@ -265,11 +265,8 @@ var KineticGraphs;
                     graph.xAxis.draw(graph.vis, axisDimensions);
                     graph.yAxis.draw(graph.vis, axisDimensions);
                 }
-                // Create primitives from composite objects and render them
-                graph.composites.update(graphDefinition.composites);
-                graph.primitives = graph.composites.getPrimitives();
-                // Render primitives and return graph
-                return graph.primitives.render(graph);
+                // Update composite graph objects based on change in scope
+                return graph.composites.update(graphDefinition.composites).getPrimitives().render(graph); // renders primitives (returns graph object)
             };
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();

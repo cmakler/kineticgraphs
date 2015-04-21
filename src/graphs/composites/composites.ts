@@ -35,7 +35,7 @@ module KineticGraphs
     {
         reset: () => void;
         update: (definitions: ICompositeDefinition[]) => void;
-        getPrimitives: (primitives: IPrimitives) => IPrimitives;
+        getPrimitives: () => IPrimitives;
     }
 
     export class Composites implements IComposites

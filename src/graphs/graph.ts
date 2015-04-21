@@ -124,12 +124,11 @@ module KineticGraphs
 
             }
 
-            // Create primitives from composite objects and render them
-            graph.composites.update(graphDefinition.composites);
-            graph.primitives = graph.composites.getPrimitives();
-
-            // Render primitives and return graph
-            return graph.primitives.render(graph);
+            // Update composite graph objects based on change in scope
+            return graph.composites
+                .update(graphDefinition.composites) // updates composites (returns Composites object)
+                .getPrimitives()                    // generates primitives (returns Primitives object)
+                .render(graph);                     // renders primitives (returns graph object)
 
         };
 
