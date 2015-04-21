@@ -1,8 +1,8 @@
 /// <reference path="../kg.ts"/>
 /// <reference path="helpers.ts"/>
 /// <reference path="axis.ts"/>
-/// <reference path="composites/composite.ts"/>
-/// <reference path="composites/point.ts"/>
+/// <reference path="composites/composites.ts"/>
+/// <reference path="primitives/primitives.ts"/>
 
 module KineticGraphs
 {
@@ -16,6 +16,7 @@ module KineticGraphs
         xAxis: IAxisDefinition;
         yAxis: IAxisDefinition;
         composites?: ICompositeDefinition[];
+        primitives: IPrimitives;
     }
 
     // Additions to the scope of a graph
@@ -29,7 +30,8 @@ module KineticGraphs
         xAxis: IAxis;
         yAxis: IAxis;
 
-        composites: IComposite[];
+        composites: IComposites;
+        primitives: IPrimitives;
 
         updateGraph:(graphDefinition: IGraphDefinition, redraw?: boolean) => IGraph;
 
@@ -44,14 +46,12 @@ module KineticGraphs
         public yAxis;
 
         public composites;
+        public primitives;
 
-
-        constructor(public graphDefinition?:IGraphDefinition) {
+        constructor(public graphDefinition:IGraphDefinition) {
             this.xAxis = new XAxis();
             this.yAxis = new YAxis();
-            this.composites = graphDefinition.composites.map(function(compositeDefinition:ICompositeDefinition) {
-                return new KineticGraphs[compositeDefinition.type]();
-            });
+            this.composites = new Composites(graphDefinition.composites);
             this.updateGraph(graphDefinition, true);
         }
 
@@ -124,12 +124,12 @@ module KineticGraphs
 
             }
 
-            // Update composite objects
-            graph.composites.forEach(function(composite,index) {
-                composite.update(graphDefinition.composites[index].definition).render(graph)
-            });
+            // Create primitives from composite objects and render them
+            graph.composites.update(graphDefinition.composites);
+            graph.primitives = graph.composites.getPrimitives();
 
-            return graph;
+            // Render primitives and return graph
+            return graph.primitives.render(graph);
 
         };
 

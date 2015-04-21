@@ -2,8 +2,6 @@
  * Created by cmakler on 4/8/15.
  */
 
-/// <reference path="composite.ts"/>
-
 module KineticGraphs
 {
 

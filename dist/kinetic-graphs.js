@@ -92,25 +92,9 @@ var KineticGraphs;
     })(Axis);
     KineticGraphs.YAxis = YAxis;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../graph.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Composite = (function () {
-        function Composite() {
-        }
-        Composite.prototype.update = function (definition) {
-            return this; // overridden by child class
-        };
-        Composite.prototype.render = function (graph) {
-        };
-        return Composite;
-    })();
-    KineticGraphs.Composite = Composite;
-})(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/8/15.
  */
-/// <reference path="composite.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var Point = (function (_super) {
@@ -147,11 +131,86 @@ var KineticGraphs;
     })(KineticGraphs.Composite);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../graph.ts"/>
+/// <reference path="point.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Composite = (function () {
+        function Composite() {
+        }
+        Composite.prototype.update = function (definition) {
+            return this; // overridden by child class
+        };
+        Composite.prototype.addPrimitives = function (primitives) {
+            return primitives; // overridden by child class
+        };
+        return Composite;
+    })();
+    KineticGraphs.Composite = Composite;
+    var Composites = (function () {
+        function Composites(definitions) {
+            this.reset();
+            this.update(definitions);
+        }
+        Composites.prototype.reset = function () {
+            this.data = [];
+        };
+        Composites.prototype.update = function (definitions) {
+            this.data.forEach(function (composite, index) {
+                composite.update(definitions[index].definition);
+            });
+        };
+        Composites.prototype.getPrimitives = function () {
+            var primitives = new KineticGraphs.Primitives();
+            this.data.forEach(function (composite) {
+                primitives = composite.addPrimitives(primitives);
+            });
+            return primitives;
+        };
+        return Composites;
+    })();
+    KineticGraphs.Composites = Composites;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../graph.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Primitive = (function () {
+        function Primitive() {
+        }
+        Primitive.prototype.render = function (graph) {
+            return graph; // overridden by child class
+        };
+        return Primitive;
+    })();
+    KineticGraphs.Primitive = Primitive;
+    var Primitives = (function () {
+        function Primitives() {
+            this.reset();
+        }
+        // clear the list of primitives
+        Primitives.prototype.reset = function () {
+            this.data = [];
+        };
+        // add a primitive to the list of primitives
+        Primitives.prototype.add = function (primitive) {
+            this.data.push(primitive);
+        };
+        // render each primitive to the graph
+        Primitives.prototype.render = function (graph) {
+            this.data.forEach(function (primitive) {
+                graph = primitive.render(graph);
+            });
+            return graph;
+        };
+        return Primitives;
+    })();
+    KineticGraphs.Primitives = Primitives;
+})(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="helpers.ts"/>
 /// <reference path="axis.ts"/>
-/// <reference path="composites/composite.ts"/>
-/// <reference path="composites/point.ts"/>
+/// <reference path="composites/composites.ts"/>
+/// <reference path="primitives/primitives.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var Graph = (function () {
@@ -206,17 +265,15 @@ var KineticGraphs;
                     graph.xAxis.draw(graph.vis, axisDimensions);
                     graph.yAxis.draw(graph.vis, axisDimensions);
                 }
-                // Update composite objects
-                graph.composites.forEach(function (composite, index) {
-                    composite.update(graphDefinition.composites[index].definition).render(graph);
-                });
-                return graph;
+                // Create primitives from composite objects and render them
+                graph.composites.update(graphDefinition.composites);
+                graph.primitives = graph.composites.getPrimitives();
+                // Render primitives and return graph
+                return graph.primitives.render(graph);
             };
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
-            this.composites = graphDefinition.composites.map(function (compositeDefinition) {
-                return new KineticGraphs[compositeDefinition.type]();
-            });
+            this.composites = new KineticGraphs.Composites(graphDefinition.composites);
             this.updateGraph(graphDefinition, true);
         }
         return Graph;
