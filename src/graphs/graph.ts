@@ -15,7 +15,7 @@ module KineticGraphs
         margins?: IMargins;
         xAxis: IAxisDefinition;
         yAxis: IAxisDefinition;
-        graphObjects?: IGraphObjectDefinition[];
+        graphObjects?: IGraphObjectFactoryDefinition[];
     }
 
     // Additions to the scope of a graph

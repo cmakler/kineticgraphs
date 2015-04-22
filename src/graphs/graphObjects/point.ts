@@ -5,29 +5,28 @@
 module KineticGraphs
 {
 
-    export interface IPointDefinition {
+    export interface IPointDefinition extends IGraphObjectDefinition {
         coordinates?: ICoordinates;
     }
 
     export interface IPoint extends IGraphObject {
         coordinates: ICoordinates;
-        //graph: IGraph;
-        circle: D3.Selection;
     }
 
     export class Point extends GraphObject implements IPoint
     {
 
         public coordinates;
-        //public graph;
-        public circle;
+        public show;
+        public name;
+        public className;
 
         constructor() {
             super();
             this.coordinates = {x: 0, y: 0};
         }
 
-        update(pointDefinition) {
+        update(pointDefinition:IPointDefinition) {
 
             var currentCoordinates = this.coordinates;
 
@@ -39,6 +38,8 @@ module KineticGraphs
                 return coord;
             }
 
+            this.updateGenerics(pointDefinition);
+
             this.coordinates = {
                 x: updateCoordinate(pointDefinition.coordinates, 'x'),
                 y: updateCoordinate(pointDefinition.coordinates, 'y')
@@ -49,16 +50,23 @@ module KineticGraphs
 
         render(graph) {
 
-            //this.graph = graph;
+            var className = this.className + (this.show ? ' visible' : ' invisible');
 
-            graph.vis.selectAll('circle').remove();
+            var group = graph.vis.select('#' + this.name);
+
+            if(group[0][0] == null) {
+                group = graph.vis.append('g').attr('id',this.name);
+                group.append('circle')
+            }
+
+            var circle = group.select('circle').attr('class',className);
 
             var pixelCoordinates:ICoordinates = {
                 x: graph.xAxis.scale(this.coordinates.x),
                 y: graph.yAxis.scale(this.coordinates.y)
             };
 
-            this.circle = graph.vis.append('circle').attr({cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10});
+            circle.attr({cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10});
 
             return graph;
 

@@ -6,20 +6,45 @@ module KineticGraphs
 
     export interface IGraphObjectDefinition
     {
+        show: boolean;
+        className?: string;
+        name: string;
+    }
+
+    export interface IGraphObjectFactoryDefinition
+    {
         type: string;
-        definition: any;
+        definition: IGraphObjectDefinition;
     }
 
     export interface IGraphObject
     {
-        update: (definition: any) => IGraphObject;
+        show: boolean;
+        className?: string;
+        name: string;
+        update: (definition:IGraphObjectDefinition) => IGraphObject;
+        updateGenerics: (definition:IGraphObjectDefinition) => void;
         render: (graph: IGraph) => IGraph;
     }
 
     export class GraphObject implements IGraphObject
     {
 
+        public show;
+        public className;
+        public name;
+
         constructor() {}
+
+        // Common functionality for all
+        updateGenerics(definition) {
+            if(!definition.name) {
+                console.log('error: a name is required of all objects!')
+            }
+            this.className = (definition.hasOwnProperty('className')) ? definition.className : '';
+            this.show = (definition.hasOwnProperty('show')) ? definition.show : true;
+            this.name = definition.name;
+        }
 
         update(definition) {
             return this; // overridden by child class
@@ -33,8 +58,8 @@ module KineticGraphs
 
     export interface IGraphObjects
     {
-        reset: (definition: IGraphObjectDefinition[]) => void;
-        update: (definitions: IGraphObjectDefinition[]) => void;
+        reset: (definition: IGraphObjectFactoryDefinition[]) => void;
+        update: (definitions: IGraphObjectFactoryDefinition[]) => void;
         render: (graph) => IGraph;
     }
 
@@ -42,11 +67,11 @@ module KineticGraphs
     {
         private data: IGraphObject[];
 
-        constructor(definitions:IGraphObjectDefinition[]) {
+        constructor(definitions:IGraphObjectFactoryDefinition[]) {
             this.reset(definitions);
         }
 
-        reset(definitions:IGraphObjectDefinition[]) {
+        reset(definitions:IGraphObjectFactoryDefinition[]) {
             this.data = definitions.map(function(definition) { return new KineticGraphs[definition.type]});
         }
 

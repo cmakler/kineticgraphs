@@ -69,3 +69,7 @@ a {
 .missing {
     text-decoration: underline;
 }
+
+.invisible {
+    display: none;
+}

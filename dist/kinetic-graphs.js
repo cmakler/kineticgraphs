@@ -98,6 +98,15 @@ var KineticGraphs;
     var GraphObject = (function () {
         function GraphObject() {
         }
+        // Common functionality for all
+        GraphObject.prototype.updateGenerics = function (definition) {
+            if (!definition.name) {
+                console.log('error: a name is required of all objects!');
+            }
+            this.className = (definition.hasOwnProperty('className')) ? definition.className : '';
+            this.show = (definition.hasOwnProperty('show')) ? definition.show : true;
+            this.name = definition.name;
+        };
         GraphObject.prototype.update = function (definition) {
             return this; // overridden by child class
         };
@@ -153,6 +162,7 @@ var KineticGraphs;
                 }
                 return coord;
             }
+            this.updateGenerics(pointDefinition);
             this.coordinates = {
                 x: updateCoordinate(pointDefinition.coordinates, 'x'),
                 y: updateCoordinate(pointDefinition.coordinates, 'y')
@@ -160,13 +170,18 @@ var KineticGraphs;
             return this;
         };
         Point.prototype.render = function (graph) {
-            //this.graph = graph;
-            graph.vis.selectAll('circle').remove();
+            var className = this.className + (this.show ? ' visible' : ' invisible');
+            var group = graph.vis.select('#' + this.name);
+            if (group[0][0] == null) {
+                group = graph.vis.append('g').attr('id', this.name);
+                group.append('circle');
+            }
+            var circle = group.select('circle').attr('class', className);
             var pixelCoordinates = {
                 x: graph.xAxis.scale(this.coordinates.x),
                 y: graph.yAxis.scale(this.coordinates.y)
             };
-            this.circle = graph.vis.append('circle').attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10 });
+            circle.attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10 });
             return graph;
         };
         return Point;
@@ -265,8 +280,8 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {coordinates: {x: params.x, y: params.y}}}]}"];
-            $scope.params = { x: 20, y: 4 };
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, className: 'equilibrium', name: 'eqm', coordinates: {x: params.x, y: params.y}}}]}"];
+            $scope.params = { x: 20, y: 4, show: true };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values
             function currentValue(s) {
