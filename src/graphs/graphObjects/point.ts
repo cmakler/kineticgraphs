@@ -9,17 +9,17 @@ module KineticGraphs
         coordinates?: ICoordinates;
     }
 
-    export interface IPoint extends IComposite {
+    export interface IPoint extends IGraphObject {
         coordinates: ICoordinates;
-        graph: IGraph;
+        //graph: IGraph;
         circle: D3.Selection;
     }
 
-    export class Point extends Composite implements IPoint
+    export class Point extends GraphObject implements IPoint
     {
 
         public coordinates;
-        public graph;
+        //public graph;
         public circle;
 
         constructor() {
@@ -49,7 +49,7 @@ module KineticGraphs
 
         render(graph) {
 
-            this.graph = graph;
+            //this.graph = graph;
 
             graph.vis.selectAll('circle').remove();
 
@@ -59,6 +59,8 @@ module KineticGraphs
             };
 
             this.circle = graph.vis.append('circle').attr({cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3});
+
+            return graph;
 
         }
     }

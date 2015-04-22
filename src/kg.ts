@@ -7,4 +7,4 @@
 
 
 angular.module('KineticGraphs', [])
-    .controller('KineticGraphCtrl', KineticGraphs.ModelController)
+    .controller('KineticGraphCtrl', KineticGraphs.ModelController);

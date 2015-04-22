@@ -92,6 +92,47 @@ var KineticGraphs;
     })(Axis);
     KineticGraphs.YAxis = YAxis;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../graph.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var GraphObject = (function () {
+        function GraphObject() {
+        }
+        GraphObject.prototype.update = function (definition) {
+            return this; // overridden by child class
+        };
+        GraphObject.prototype.render = function (graph) {
+            return graph; // overridden by child class
+        };
+        return GraphObject;
+    })();
+    KineticGraphs.GraphObject = GraphObject;
+    var GraphObjects = (function () {
+        function GraphObjects(definitions) {
+            this.reset(definitions);
+        }
+        GraphObjects.prototype.reset = function (definitions) {
+            this.data = definitions.map(function (definition) {
+                return new KineticGraphs[definition.type];
+            });
+        };
+        // Updates all graphObjects based on an array of definitions, and returns updated GraphObjects object
+        GraphObjects.prototype.update = function (definitions) {
+            this.data.forEach(function (graphObject, index) {
+                graphObject.update(definitions[index].definition);
+            });
+            return this;
+        };
+        GraphObjects.prototype.render = function (graph) {
+            this.data.forEach(function (graphObject) {
+                graph = graphObject.render(graph);
+            });
+            return graph;
+        };
+        return GraphObjects;
+    })();
+    KineticGraphs.GraphObjects = GraphObjects;
+})(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/8/15.
  */
@@ -119,98 +160,24 @@ var KineticGraphs;
             return this;
         };
         Point.prototype.render = function (graph) {
-            this.graph = graph;
+            //this.graph = graph;
             graph.vis.selectAll('circle').remove();
             var pixelCoordinates = {
                 x: graph.xAxis.scale(this.coordinates.x),
                 y: graph.yAxis.scale(this.coordinates.y)
             };
             this.circle = graph.vis.append('circle').attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3 });
-        };
-        return Point;
-    })(KineticGraphs.Composite);
-    KineticGraphs.Point = Point;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../graph.ts"/>
-/// <reference path="point.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Composite = (function () {
-        function Composite() {
-        }
-        Composite.prototype.update = function (definition) {
-            return this; // overridden by child class
-        };
-        Composite.prototype.addPrimitives = function (primitives) {
-            return primitives; // overridden by child class
-        };
-        return Composite;
-    })();
-    KineticGraphs.Composite = Composite;
-    var Composites = (function () {
-        function Composites(definitions) {
-            this.reset();
-            this.update(definitions);
-        }
-        Composites.prototype.reset = function () {
-            this.data = [];
-        };
-        Composites.prototype.update = function (definitions) {
-            this.data.forEach(function (composite, index) {
-                composite.update(definitions[index].definition);
-            });
-        };
-        Composites.prototype.getPrimitives = function () {
-            var primitives = new KineticGraphs.Primitives();
-            this.data.forEach(function (composite) {
-                primitives = composite.addPrimitives(primitives);
-            });
-            return primitives;
-        };
-        return Composites;
-    })();
-    KineticGraphs.Composites = Composites;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../graph.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Primitive = (function () {
-        function Primitive() {
-        }
-        Primitive.prototype.render = function (graph) {
-            return graph; // overridden by child class
-        };
-        return Primitive;
-    })();
-    KineticGraphs.Primitive = Primitive;
-    var Primitives = (function () {
-        function Primitives() {
-            this.reset();
-        }
-        // clear the list of primitives
-        Primitives.prototype.reset = function () {
-            this.data = [];
-        };
-        // add a primitive to the list of primitives
-        Primitives.prototype.add = function (primitive) {
-            this.data.push(primitive);
-        };
-        // render each primitive to the graph
-        Primitives.prototype.render = function (graph) {
-            this.data.forEach(function (primitive) {
-                graph = primitive.render(graph);
-            });
             return graph;
         };
-        return Primitives;
-    })();
-    KineticGraphs.Primitives = Primitives;
+        return Point;
+    })(KineticGraphs.GraphObject);
+    KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="helpers.ts"/>
 /// <reference path="axis.ts"/>
-/// <reference path="composites/composites.ts"/>
-/// <reference path="primitives/primitives.ts"/>
+/// <reference path="graphObjects/graphObjects.ts"/>
+/// <reference path="graphObjects/point.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var Graph = (function () {
@@ -226,7 +193,6 @@ var KineticGraphs;
                 if (redraw == undefined) {
                     redraw = true;
                 }
-                ;
                 // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
                 function updateDimensions(clientWidth, dimensions) {
                     // Set default to the width of the enclosing element, with a height of 500
@@ -265,13 +231,18 @@ var KineticGraphs;
                     graph.xAxis.draw(graph.vis, axisDimensions);
                     graph.yAxis.draw(graph.vis, axisDimensions);
                 }
-                // Update composite graph objects based on change in scope
-                return graph.composites.update(graphDefinition.composites).getPrimitives().render(graph); // renders primitives (returns graph object)
+                if (!graph.graphObjects || graph.graphObjects == undefined) {
+                    graph.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
+                }
+                // Update graphObject graph objects based on change in scope
+                return graph.graphObjects.update(graphDefinition.graphObjects).render(graph);
             };
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
-            this.composites = new KineticGraphs.Composites(graphDefinition.composites);
-            this.updateGraph(graphDefinition, true);
+            if (graphDefinition) {
+                this.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
+                this.updateGraph(graphDefinition, true);
+            }
         }
         return Graph;
     })();
@@ -283,7 +254,7 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, composites:[{type: 'Point', definition: {coordinates: {x: params.x, y: 4}}}]}"];
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {coordinates: {x: params.x, y: 4}}}]}"];
             $scope.params = { x: 20 };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values

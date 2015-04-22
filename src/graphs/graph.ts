@@ -1,8 +1,8 @@
 /// <reference path="../kg.ts"/>
 /// <reference path="helpers.ts"/>
 /// <reference path="axis.ts"/>
-/// <reference path="composites/composites.ts"/>
-/// <reference path="primitives/primitives.ts"/>
+/// <reference path="graphObjects/graphObjects.ts"/>
+/// <reference path="graphObjects/point.ts"/>
 
 module KineticGraphs
 {
@@ -15,8 +15,7 @@ module KineticGraphs
         margins?: IMargins;
         xAxis: IAxisDefinition;
         yAxis: IAxisDefinition;
-        composites?: ICompositeDefinition[];
-        primitives: IPrimitives;
+        graphObjects?: IGraphObjectDefinition[];
     }
 
     // Additions to the scope of a graph
@@ -30,8 +29,7 @@ module KineticGraphs
         xAxis: IAxis;
         yAxis: IAxis;
 
-        composites: IComposites;
-        primitives: IPrimitives;
+        graphObjects: IGraphObjects;
 
         updateGraph:(graphDefinition: IGraphDefinition, redraw?: boolean) => IGraph;
 
@@ -45,27 +43,28 @@ module KineticGraphs
         public xAxis;
         public yAxis;
 
-        public composites;
-        public primitives;
+        public graphObjects;
 
         constructor(public graphDefinition:IGraphDefinition) {
             this.xAxis = new XAxis();
             this.yAxis = new YAxis();
-            this.composites = new Composites(graphDefinition.composites);
-            this.updateGraph(graphDefinition, true);
+            if(graphDefinition){
+                this.graphObjects = new GraphObjects(graphDefinition.graphObjects);
+                this.updateGraph(graphDefinition, true);
+            }
         }
 
         updateGraph = function(graphDefinition, redraw?) {
 
             if(!graphDefinition) {
-                console.log('updateGraph called without graphDefinition!')
+                console.log('updateGraph called without graphDefinition!');
                 return;
             }
 
             var graph = this;
 
             // Set redraw to true by default
-            if(redraw == undefined) { redraw = true };
+            if(redraw == undefined) { redraw = true }
 
             // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
             function updateDimensions(clientWidth: number, dimensions?: IDimensions) {
@@ -89,7 +88,7 @@ module KineticGraphs
             // Redraw the graph if necessary
             if(redraw) {
 
-                console.log('redrawing!')
+                console.log('redrawing!');
 
                 // Establish dimensions of the graph
                 var element = $('#' + graphDefinition.element_id)[0];
@@ -124,11 +123,12 @@ module KineticGraphs
 
             }
 
-            // Update composite graph objects based on change in scope
-            return graph.composites
-                .update(graphDefinition.composites) // updates composites (returns Composites object)
-                .getPrimitives()                    // generates primitives (returns Primitives object)
-                .render(graph);                     // renders primitives (returns graph object)
+            if(!graph.graphObjects || graph.graphObjects == undefined) {
+                graph.graphObjects = new GraphObjects(graphDefinition.graphObjects);
+            }
+
+            // Update graphObject graph objects based on change in scope
+            return graph.graphObjects.update(graphDefinition.graphObjects).render(graph);
 
         };
 
