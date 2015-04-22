@@ -21,6 +21,7 @@ module KineticGraphs
     // Additions to the scope of a graph
     export interface IGraph
     {
+        scope: IModelScope;
         graphDefinition: IGraphDefinition;
 
         element: JQuery;
@@ -31,7 +32,8 @@ module KineticGraphs
 
         graphObjects: IGraphObjects;
 
-        updateGraph:(graphDefinition: IGraphDefinition, redraw?: boolean) => IGraph;
+        updateGraph:(graphDefinition: IGraphDefinition, scope:IModelScope, redraw?: boolean) => IGraph;
+        updateParams:(any) => void;
 
     }
 
@@ -45,22 +47,33 @@ module KineticGraphs
 
         public graphObjects;
 
-        constructor(public graphDefinition:IGraphDefinition) {
+        constructor(public scope:IModelScope, public graphDefinition:IGraphDefinition) {
             this.xAxis = new XAxis();
             this.yAxis = new YAxis();
             if(graphDefinition){
                 this.graphObjects = new GraphObjects(graphDefinition.graphObjects);
-                this.updateGraph(graphDefinition, true);
+                this.updateGraph(graphDefinition, scope, true);
             }
         }
 
-        updateGraph = function(graphDefinition, redraw?) {
+        // Used to update parameters of the model from within the graph
+        updateParams = function(params:any) {
+            for (var key in params) {
+                if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
+                    this.scope.params[key] = params[key];
+                }
+            }
+        };
+
+        // Update graph based on latest parameters
+        updateGraph = function(graphDefinition, scope, redraw?) {
 
             if(!graphDefinition) {
                 console.log('updateGraph called without graphDefinition!');
                 return;
             }
 
+            this.scope = scope;
             var graph = this;
 
             // Set redraw to true by default

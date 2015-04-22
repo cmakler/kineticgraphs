@@ -16,8 +16,8 @@ module KineticGraphs
         constructor(public $scope:IModelScope, $window:ng.IWindowService)
         {
 
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {coordinates: {x: params.x, y: 4}}}]}"];
-            $scope.params = {x: 20};
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {coordinates: {x: params.x, y: params.y}}}]}"];
+            $scope.params = {x: 20, y: 4};
             $scope.graphParams = {xAxisLabel: 'Quantity'};
 
             // Creates an object based on string using current scope parameter values
@@ -30,7 +30,7 @@ module KineticGraphs
                 var graphs = [];
                 if($scope.graphDefinitions) {
                     $scope.graphDefinitions.forEach(function(graphDefinition) {
-                        graphs.push(new Graph(currentValue(graphDefinition)))
+                        graphs.push(new Graph($scope, currentValue(graphDefinition)))
                     });
                 }
                 return graphs;
@@ -44,7 +44,7 @@ module KineticGraphs
 
                 // Update each graph (updating triggers the graph to redraw its objects and possibly itself)
                 $scope.graphs = $scope.graphs.map(function(graph:IGraph,index) {
-                    return graph.updateGraph(currentValue($scope.graphDefinitions[index]),redraw);
+                    return graph.updateGraph(currentValue($scope.graphDefinitions[index]), $scope, redraw);
                 })
             }
 

@@ -58,7 +58,7 @@ module KineticGraphs
                 y: graph.yAxis.scale(this.coordinates.y)
             };
 
-            this.circle = graph.vis.append('circle').attr({cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3});
+            this.circle = graph.vis.append('circle').attr({cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10});
 
             return graph;
 

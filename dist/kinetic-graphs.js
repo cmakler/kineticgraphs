@@ -166,7 +166,7 @@ var KineticGraphs;
                 x: graph.xAxis.scale(this.coordinates.x),
                 y: graph.yAxis.scale(this.coordinates.y)
             };
-            this.circle = graph.vis.append('circle').attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 3 });
+            this.circle = graph.vis.append('circle').attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10 });
             return graph;
         };
         return Point;
@@ -181,13 +181,24 @@ var KineticGraphs;
 var KineticGraphs;
 (function (KineticGraphs) {
     var Graph = (function () {
-        function Graph(graphDefinition) {
+        function Graph(scope, graphDefinition) {
+            this.scope = scope;
             this.graphDefinition = graphDefinition;
-            this.updateGraph = function (graphDefinition, redraw) {
+            // Used to update parameters of the model from within the graph
+            this.updateParams = function (params) {
+                for (var key in params) {
+                    if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
+                        this.scope.params[key] = params[key];
+                    }
+                }
+            };
+            // Update graph based on latest parameters
+            this.updateGraph = function (graphDefinition, scope, redraw) {
                 if (!graphDefinition) {
                     console.log('updateGraph called without graphDefinition!');
                     return;
                 }
+                this.scope = scope;
                 var graph = this;
                 // Set redraw to true by default
                 if (redraw == undefined) {
@@ -241,7 +252,7 @@ var KineticGraphs;
             this.yAxis = new KineticGraphs.YAxis();
             if (graphDefinition) {
                 this.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
-                this.updateGraph(graphDefinition, true);
+                this.updateGraph(graphDefinition, scope, true);
             }
         }
         return Graph;
@@ -254,8 +265,8 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {coordinates: {x: params.x, y: 4}}}]}"];
-            $scope.params = { x: 20 };
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {coordinates: {x: params.x, y: params.y}}}]}"];
+            $scope.params = { x: 20, y: 4 };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values
             function currentValue(s) {
@@ -266,7 +277,7 @@ var KineticGraphs;
                 var graphs = [];
                 if ($scope.graphDefinitions) {
                     $scope.graphDefinitions.forEach(function (graphDefinition) {
-                        graphs.push(new KineticGraphs.Graph(currentValue(graphDefinition)));
+                        graphs.push(new KineticGraphs.Graph($scope, currentValue(graphDefinition)));
                     });
                 }
                 return graphs;
@@ -277,7 +288,7 @@ var KineticGraphs;
                 $scope.graphs = $scope.graphs || createGraphs();
                 // Update each graph (updating triggers the graph to redraw its objects and possibly itself)
                 $scope.graphs = $scope.graphs.map(function (graph, index) {
-                    return graph.updateGraph(currentValue($scope.graphDefinitions[index]), redraw);
+                    return graph.updateGraph(currentValue($scope.graphDefinitions[index]), $scope, redraw);
                 });
             }
             // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
