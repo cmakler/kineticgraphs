@@ -4,7 +4,8 @@
 
 /// <reference path="graphs/graph.ts" />
 /// <reference path="model/model.ts" />
+/// <reference path="controls/control.ts" />
 
 
 angular.module('KineticGraphs', [])
-    .controller('KineticGraphCtrl', KineticGraphs.ModelController);
+    .controller('KineticGraphCtrl', KineticGraphs.ModelController)

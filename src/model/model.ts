@@ -7,6 +7,7 @@ module KineticGraphs
         params: {}; // parameters of the model that do not require redrawing the entire graph
         graphParams: {}; // parameters of the model that do require redrawing the entire graph
         graphDefinitions: string[]; // definitions of the graph
+        controlDefinitions: IControlDefinition[]; // definitions of controls
         graphs: IGraph[];
     }
 
@@ -17,6 +18,7 @@ module KineticGraphs
         {
 
             $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: 'horiz', y: 'y'}}}]}"];
+            $scope.controlDefinitions = [{type: 'slider', element_id: 'xSlider', param: 'horiz', min: 0, max: 30}];
             $scope.params = {horiz: 20, y: 4, show: true, symbol: 'circle'};
             $scope.graphParams = {xAxisLabel: 'Quantity'};
 
@@ -34,6 +36,17 @@ module KineticGraphs
                     });
                 }
                 return graphs;
+            }
+
+            // Creates control objects from control definitions
+            function createControls() {
+                var controls = [];
+                if($scope.controlDefinitions) {
+                    $scope.controlDefinitions.forEach(function(controlDefinition) {
+                        controls.push(new Control($scope, controlDefinition))
+                    })
+                }
+                return controls;
             }
 
             // Updates and redraws graphs when a parameter changes
