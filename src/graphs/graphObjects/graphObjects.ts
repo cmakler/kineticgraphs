@@ -23,8 +23,8 @@ module KineticGraphs
         className?: string;
         name: string;
         update: (definition:IGraphObjectDefinition) => IGraphObject;
-        updateGenerics: (definition:IGraphObjectDefinition) => void;
         render: (graph: IGraph) => IGraph;
+        classAndVisibility: () => string;
     }
 
     export class GraphObject implements IGraphObject
@@ -36,18 +36,34 @@ module KineticGraphs
 
         constructor() {}
 
-        // Common functionality for all
-        updateGenerics(definition) {
-            if(!definition.name) {
-                console.log('error: a name is required of all objects!')
-            }
-            this.className = (definition.hasOwnProperty('className')) ? definition.className : '';
-            this.show = (definition.hasOwnProperty('show')) ? definition.show : true;
-            this.name = definition.name;
+        classAndVisibility() {
+            var VISIBLE_CLASS = this.className + ' visible',
+                INVISIBLE_CLASS = this.className + ' invisible';
+
+            return this.show ? VISIBLE_CLASS : INVISIBLE_CLASS;
         }
 
         update(definition) {
-            return this; // overridden by child class
+
+            if(!definition.hasOwnProperty('name')) {
+                console.log('error: a name is required of all objects!')
+            }
+
+            var currentDefinition = this;
+
+            // ensure that the required attributes exist
+            currentDefinition.className = (currentDefinition.hasOwnProperty('className')) ? definition.className : '';
+            currentDefinition.show = (currentDefinition.hasOwnProperty('show')) ? definition.show : true;
+            currentDefinition.name = definition.name;
+
+            // update attributes from (updated) definition, if changed
+            for(var key in definition) {
+                if(currentDefinition.hasOwnProperty(key) && definition.hasOwnProperty(key) && currentDefinition[key] != definition[key]) {
+                    currentDefinition[key] = definition[key];
+                }
+            }
+
+            return currentDefinition;
         }
 
         render(graph) {

@@ -98,17 +98,25 @@ var KineticGraphs;
     var GraphObject = (function () {
         function GraphObject() {
         }
-        // Common functionality for all
-        GraphObject.prototype.updateGenerics = function (definition) {
-            if (!definition.name) {
-                console.log('error: a name is required of all objects!');
-            }
-            this.className = (definition.hasOwnProperty('className')) ? definition.className : '';
-            this.show = (definition.hasOwnProperty('show')) ? definition.show : true;
-            this.name = definition.name;
+        GraphObject.prototype.classAndVisibility = function () {
+            var VISIBLE_CLASS = this.className + ' visible', INVISIBLE_CLASS = this.className + ' invisible';
+            return this.show ? VISIBLE_CLASS : INVISIBLE_CLASS;
         };
         GraphObject.prototype.update = function (definition) {
-            return this; // overridden by child class
+            if (!definition.hasOwnProperty('name')) {
+                console.log('error: a name is required of all objects!');
+            }
+            var currentDefinition = this;
+            // ensure that the required attributes exist
+            currentDefinition.className = (currentDefinition.hasOwnProperty('className')) ? definition.className : '';
+            currentDefinition.show = (currentDefinition.hasOwnProperty('show')) ? definition.show : true;
+            currentDefinition.name = definition.name;
+            for (var key in definition) {
+                if (currentDefinition.hasOwnProperty(key) && definition.hasOwnProperty(key) && currentDefinition[key] != definition[key]) {
+                    currentDefinition[key] = definition[key];
+                }
+            }
+            return currentDefinition;
         };
         GraphObject.prototype.render = function (graph) {
             return graph; // overridden by child class
@@ -152,36 +160,32 @@ var KineticGraphs;
         function Point() {
             _super.call(this);
             this.coordinates = { x: 0, y: 0 };
+            this.size = 100;
+            this.symbol = 'circle';
         }
-        Point.prototype.update = function (pointDefinition) {
-            var currentCoordinates = this.coordinates;
-            function updateCoordinate(newCoordinates, dim) {
-                var coord = currentCoordinates[dim];
-                if (newCoordinates && newCoordinates.hasOwnProperty(dim) && newCoordinates[dim] != coord) {
-                    coord = newCoordinates[dim];
-                }
-                return coord;
-            }
-            this.updateGenerics(pointDefinition);
-            this.coordinates = {
-                x: updateCoordinate(pointDefinition.coordinates, 'x'),
-                y: updateCoordinate(pointDefinition.coordinates, 'y')
-            };
-            return this;
-        };
         Point.prototype.render = function (graph) {
-            var className = this.className + (this.show ? ' visible' : ' invisible');
-            var group = graph.vis.select('#' + this.name);
-            if (group[0][0] == null) {
-                group = graph.vis.append('g').attr('id', this.name);
-                group.append('circle');
+            // constants TODO should these be defined somewhere else?
+            var POINT_SYMBOL_CLASS = 'pointSymbol';
+            // generate render-specific variables
+            var x = graph.xAxis.scale(this.coordinates.x), y = graph.yAxis.scale(this.coordinates.y);
+            // initialization of D3 graph object group
+            function init(newGroup) {
+                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
+                return newGroup;
             }
-            var circle = group.select('circle').attr('class', className);
-            var pixelCoordinates = {
-                x: graph.xAxis.scale(this.coordinates.x),
-                y: graph.yAxis.scale(this.coordinates.y)
-            };
-            circle.attr({ cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10 });
+            var group = graph.objectGroup(this.name, init);
+            // draw the symbol at the point
+            var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
+            if (this.symbol === 'none') {
+                pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
+            }
+            else {
+                pointSymbol.attr({
+                    'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                    'd': d3.svg.symbol().type(this.symbol).size(this.size),
+                    'transform': "translate(" + x + "," + y + ")"
+                });
+            }
             return graph;
         };
         return Point;
@@ -199,14 +203,6 @@ var KineticGraphs;
         function Graph(scope, graphDefinition) {
             this.scope = scope;
             this.graphDefinition = graphDefinition;
-            // Used to update parameters of the model from within the graph
-            this.updateParams = function (params) {
-                for (var key in params) {
-                    if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
-                        this.scope.params[key] = params[key];
-                    }
-                }
-            };
             // Update graph based on latest parameters
             this.updateGraph = function (graphDefinition, scope, redraw) {
                 if (!graphDefinition) {
@@ -270,6 +266,23 @@ var KineticGraphs;
                 this.updateGraph(graphDefinition, scope, true);
             }
         }
+        // Used to update parameters of the model from within the graph
+        Graph.prototype.updateParams = function (params) {
+            for (var key in params) {
+                if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
+                    this.scope.params[key] = params[key];
+                }
+            }
+        };
+        Graph.prototype.objectGroup = function (name, init) {
+            var group = this.vis.select('#' + name);
+            // TODO need better way to check if it doesn't yet exist
+            if (group[0][0] == null) {
+                group = this.vis.append('g').attr('id', name);
+                group = init(group);
+            }
+            return group;
+        };
         return Graph;
     })();
     KineticGraphs.Graph = Graph;
@@ -280,8 +293,8 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, className: 'equilibrium', name: 'eqm', coordinates: {x: params.x, y: params.y}}}]}"];
-            $scope.params = { x: 20, y: 4, show: true };
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: params.x, y: params.y}}}]}"];
+            $scope.params = { x: 20, y: 4, show: true, symbol: 'circle' };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values
             function currentValue(s) {

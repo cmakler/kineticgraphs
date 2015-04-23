@@ -5,68 +5,60 @@
 module KineticGraphs
 {
 
-    export interface IPointDefinition extends IGraphObjectDefinition {
-        coordinates?: ICoordinates;
-    }
-
     export interface IPoint extends IGraphObject {
         coordinates: ICoordinates;
+        symbol?: string;
+        size?: number;
     }
 
     export class Point extends GraphObject implements IPoint
     {
 
-        public coordinates;
         public show;
         public name;
         public className;
 
+        public coordinates;
+        public symbol;
+        public size;
+
+
+
         constructor() {
             super();
             this.coordinates = {x: 0, y: 0};
-        }
-
-        update(pointDefinition:IPointDefinition) {
-
-            var currentCoordinates = this.coordinates;
-
-            function updateCoordinate(newCoordinates:ICoordinates, dim:string) {
-                var coord = currentCoordinates[dim];
-                if(newCoordinates && newCoordinates.hasOwnProperty(dim) && newCoordinates[dim] != coord) {
-                    coord = newCoordinates[dim];
-                }
-                return coord;
-            }
-
-            this.updateGenerics(pointDefinition);
-
-            this.coordinates = {
-                x: updateCoordinate(pointDefinition.coordinates, 'x'),
-                y: updateCoordinate(pointDefinition.coordinates, 'y')
-            };
-
-            return this;
+            this.size = 100;
+            this.symbol = 'circle';
         }
 
         render(graph) {
 
-            var className = this.className + (this.show ? ' visible' : ' invisible');
+            // constants TODO should these be defined somewhere else?
+            var POINT_SYMBOL_CLASS = 'pointSymbol';
 
-            var group = graph.vis.select('#' + this.name);
+            // generate render-specific variables
+            var x = graph.xAxis.scale(this.coordinates.x),
+                y = graph.yAxis.scale(this.coordinates.y);
 
-            if(group[0][0] == null) {
-                group = graph.vis.append('g').attr('id',this.name);
-                group.append('circle')
+            // initialization of D3 graph object group
+            function init(newGroup:D3.Selection) {
+                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
+                return newGroup;
             }
 
-            var circle = group.select('circle').attr('class',className);
+            var group:D3.Selection = graph.objectGroup(this.name, init);
 
-            var pixelCoordinates:ICoordinates = {
-                x: graph.xAxis.scale(this.coordinates.x),
-                y: graph.yAxis.scale(this.coordinates.y)
-            };
-
-            circle.attr({cx: pixelCoordinates.x, cy: pixelCoordinates.y, r: 10});
+            // draw the symbol at the point
+            var pointSymbol:D3.Selection = group.select('.'+ POINT_SYMBOL_CLASS);
+            if(this.symbol === 'none') {
+                pointSymbol.attr('class','invisible ' + POINT_SYMBOL_CLASS);
+            } else {
+                pointSymbol.attr({
+                    'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                    'd': d3.svg.symbol().type(this.symbol).size(this.size),
+                    'transform': "translate(" + x + "," + y + ")"
+                });
+            }
 
             return graph;
 

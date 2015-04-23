@@ -31,6 +31,7 @@ module KineticGraphs
         yAxis: IAxis;
 
         graphObjects: IGraphObjects;
+        objectGroup: (name, init:((newGroup:D3.Selection) => D3.Selection)) => D3.Selection;
 
         updateGraph:(graphDefinition: IGraphDefinition, scope:IModelScope, redraw?: boolean) => IGraph;
         updateParams:(any) => void;
@@ -57,13 +58,26 @@ module KineticGraphs
         }
 
         // Used to update parameters of the model from within the graph
-        updateParams = function(params:any) {
+        updateParams(params:any) {
             for (var key in params) {
                 if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
                     this.scope.params[key] = params[key];
                 }
             }
-        };
+        }
+
+        objectGroup(name, init:((newGroup:D3.Selection) => D3.Selection)) {
+
+            var group = this.vis.select('#' + name);
+
+            // TODO need better way to check if it doesn't yet exist
+            if(group[0][0] == null) {
+                group = this.vis.append('g').attr('id',name);
+                group = init(group)
+            }
+
+            return group;
+        }
 
         // Update graph based on latest parameters
         updateGraph = function(graphDefinition, scope, redraw?) {
