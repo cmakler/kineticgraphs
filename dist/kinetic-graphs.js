@@ -13,6 +13,11 @@ var KineticGraphs;
         Domain.prototype.toArray = function () {
             return [this.min, this.max];
         };
+        Domain.prototype.contains = function (x) {
+            var lowEnough = (this.max >= x);
+            var highEnough = (this.min <= x);
+            return lowEnough && highEnough;
+        };
         return Domain;
     })();
     KineticGraphs.Domain = Domain;
@@ -159,6 +164,7 @@ var KineticGraphs;
         __extends(Point, _super);
         function Point() {
             _super.call(this);
+            // establish defaults
             this.coordinates = { x: 0, y: 0 };
             this.size = 100;
             this.symbol = 'circle';
@@ -166,14 +172,41 @@ var KineticGraphs;
         Point.prototype.render = function (graph) {
             // constants TODO should these be defined somewhere else?
             var POINT_SYMBOL_CLASS = 'pointSymbol';
-            // generate render-specific variables
-            var x = graph.xAxis.scale(this.coordinates.x), y = graph.yAxis.scale(this.coordinates.y);
+            var xRaw = this.coordinates.x, yRaw = this.coordinates.y;
+            var x, y, xDrag, yDrag;
+            if (typeof xRaw == 'string' && graph.scope.params.hasOwnProperty(xRaw)) {
+                x = graph.xAxis.scale(graph.scope.params[xRaw]);
+                xDrag = true;
+            }
+            else {
+                x = graph.xAxis.scale(xRaw);
+                xDrag = false;
+            }
+            if (typeof yRaw == 'string' && graph.scope.params.hasOwnProperty(yRaw)) {
+                y = graph.yAxis.scale(graph.scope.params[yRaw]);
+                yDrag = true;
+            }
+            else {
+                y = graph.yAxis.scale(yRaw);
+                yDrag = false;
+            }
             // initialization of D3 graph object group
             function init(newGroup) {
                 newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
+            // establish drag behavior
+            var drag = d3.behavior.drag().on("drag", function () {
+                var dragUpdate = {};
+                if (xDrag) {
+                    dragUpdate[xRaw] = graph.xAxis.scale.invert(d3.event.x);
+                }
+                if (yDrag) {
+                    dragUpdate[yRaw] = graph.yAxis.scale.invert(d3.event.y);
+                }
+                graph.updateParams(dragUpdate);
+            });
             // draw the symbol at the point
             var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
             if (this.symbol === 'none') {
@@ -184,7 +217,7 @@ var KineticGraphs;
                     'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
                     'd': d3.svg.symbol().type(this.symbol).size(this.size),
                     'transform': "translate(" + x + "," + y + ")"
-                });
+                }).call(drag);
             }
             return graph;
         };
@@ -203,62 +236,6 @@ var KineticGraphs;
         function Graph(scope, graphDefinition) {
             this.scope = scope;
             this.graphDefinition = graphDefinition;
-            // Update graph based on latest parameters
-            this.updateGraph = function (graphDefinition, scope, redraw) {
-                if (!graphDefinition) {
-                    console.log('updateGraph called without graphDefinition!');
-                    return;
-                }
-                this.scope = scope;
-                var graph = this;
-                // Set redraw to true by default
-                if (redraw == undefined) {
-                    redraw = true;
-                }
-                // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
-                function updateDimensions(clientWidth, dimensions) {
-                    // Set default to the width of the enclosing element, with a height of 500
-                    var newDimensions = { width: clientWidth, height: 500 };
-                    // If the author has specified a height, override
-                    if (dimensions && dimensions.hasOwnProperty('height')) {
-                        newDimensions.height = dimensions.height;
-                    }
-                    // If the author has specified a width less than the graph element clientWidth, override
-                    if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
-                        newDimensions.width = dimensions.width;
-                    }
-                    return newDimensions;
-                }
-                // Redraw the graph if necessary
-                if (redraw) {
-                    console.log('redrawing!');
-                    // Establish dimensions of the graph
-                    var element = $('#' + graphDefinition.element_id)[0];
-                    var dimensions = updateDimensions(element.clientWidth, graphDefinition.dimensions);
-                    var margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
-                    // Update axis objects
-                    graph.xAxis.update(graphDefinition.xAxis);
-                    graph.yAxis.update(graphDefinition.yAxis);
-                    // Remove existing graph
-                    d3.select(element).select('svg').remove();
-                    d3.select(element).selectAll('div').remove();
-                    // Create new SVG element for the graph visualization
-                    graph.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
-                    // Establish dimensions of axes (element dimensions minus margins)
-                    var axisDimensions = {
-                        width: dimensions.width - margins.left - margins.right,
-                        height: dimensions.height - margins.top - margins.bottom
-                    };
-                    // draw axes
-                    graph.xAxis.draw(graph.vis, axisDimensions);
-                    graph.yAxis.draw(graph.vis, axisDimensions);
-                }
-                if (!graph.graphObjects || graph.graphObjects == undefined) {
-                    graph.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
-                }
-                // Update graphObject graph objects based on change in scope
-                return graph.graphObjects.update(graphDefinition.graphObjects).render(graph);
-            };
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
             if (graphDefinition) {
@@ -273,6 +250,7 @@ var KineticGraphs;
                     this.scope.params[key] = params[key];
                 }
             }
+            this.scope.$apply();
         };
         Graph.prototype.objectGroup = function (name, init) {
             var group = this.vis.select('#' + name);
@@ -282,6 +260,76 @@ var KineticGraphs;
                 group = init(group);
             }
             return group;
+        };
+        Graph.prototype.xOnGraph = function (x) {
+            return this.xAxis.domain.contains(x);
+        };
+        Graph.prototype.yOnGraph = function (y) {
+            return this.yAxis.domain.contains(y);
+        };
+        // Check to see if a point is on the graph
+        Graph.prototype.onGraph = function (coordinates) {
+            return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
+        };
+        // This should be called with one point on the graph and another off
+        Graph.prototype.nearestGraphPoint = function (onGraphPoint, offGraphPoint) {
+            return onGraphPoint;
+        };
+        // Update graph based on latest parameters
+        Graph.prototype.updateGraph = function (graphDefinition, scope, redraw) {
+            if (!graphDefinition) {
+                console.log('updateGraph called without graphDefinition!');
+                return;
+            }
+            this.scope = scope;
+            var graph = this;
+            // Set redraw to true by default
+            if (redraw == undefined) {
+                redraw = true;
+            }
+            // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
+            function updateDimensions(clientWidth, dimensions) {
+                // Set default to the width of the enclosing element, with a height of 500
+                var newDimensions = { width: clientWidth, height: 500 };
+                // If the author has specified a height, override
+                if (dimensions && dimensions.hasOwnProperty('height')) {
+                    newDimensions.height = dimensions.height;
+                }
+                // If the author has specified a width less than the graph element clientWidth, override
+                if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
+                    newDimensions.width = dimensions.width;
+                }
+                return newDimensions;
+            }
+            // Redraw the graph if necessary
+            if (redraw) {
+                console.log('redrawing!');
+                // Establish dimensions of the graph
+                var element = $('#' + graphDefinition.element_id)[0];
+                var dimensions = updateDimensions(element.clientWidth, graphDefinition.dimensions);
+                var margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
+                // Update axis objects
+                graph.xAxis.update(graphDefinition.xAxis);
+                graph.yAxis.update(graphDefinition.yAxis);
+                // Remove existing graph
+                d3.select(element).select('svg').remove();
+                d3.select(element).selectAll('div').remove();
+                // Create new SVG element for the graph visualization
+                graph.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+                // Establish dimensions of axes (element dimensions minus margins)
+                var axisDimensions = {
+                    width: dimensions.width - margins.left - margins.right,
+                    height: dimensions.height - margins.top - margins.bottom
+                };
+                // draw axes
+                graph.xAxis.draw(graph.vis, axisDimensions);
+                graph.yAxis.draw(graph.vis, axisDimensions);
+            }
+            if (!graph.graphObjects || graph.graphObjects == undefined) {
+                graph.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
+            }
+            // Update graphObject graph objects based on change in scope
+            return graph.graphObjects.update(graphDefinition.graphObjects).render(graph);
         };
         return Graph;
     })();
@@ -293,8 +341,8 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: params.x, y: params.y}}}]}"];
-            $scope.params = { x: 20, y: 4, show: true, symbol: 'circle' };
+            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: 'horiz', y: 'y'}}}]}"];
+            $scope.params = { horiz: 20, y: 4, show: true, symbol: 'circle' };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values
             function currentValue(s) {

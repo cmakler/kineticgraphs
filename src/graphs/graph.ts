@@ -36,6 +36,12 @@ module KineticGraphs
         updateGraph:(graphDefinition: IGraphDefinition, scope:IModelScope, redraw?: boolean) => IGraph;
         updateParams:(any) => void;
 
+        // methods for handling points outside the graph area
+        xOnGraph: (x:number) => boolean;
+        yOnGraph: (x:number) => boolean;
+        onGraph: (coordinates:ICoordinates) => boolean;
+        nearestGraphPoint: (onGraphPoint: ICoordinates, offGraphPoint: ICoordinates) => ICoordinates;
+
     }
 
     export class Graph implements IGraph
@@ -64,6 +70,7 @@ module KineticGraphs
                     this.scope.params[key] = params[key];
                 }
             }
+            this.scope.$apply();
         }
 
         objectGroup(name, init:((newGroup:D3.Selection) => D3.Selection)) {
@@ -79,8 +86,26 @@ module KineticGraphs
             return group;
         }
 
+        xOnGraph(x:number) {
+            return this.xAxis.domain.contains(x);
+        }
+
+        yOnGraph(y:number) {
+            return this.yAxis.domain.contains(y);
+        }
+
+        // Check to see if a point is on the graph
+        onGraph(coordinates:ICoordinates) {
+            return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
+        }
+
+        // This should be called with one point on the graph and another off
+        nearestGraphPoint(onGraphPoint: ICoordinates, offGraphPoint: ICoordinates) {
+            return onGraphPoint;
+        }
+
         // Update graph based on latest parameters
-        updateGraph = function(graphDefinition, scope, redraw?) {
+        updateGraph(graphDefinition, scope, redraw?) {
 
             if(!graphDefinition) {
                 console.log('updateGraph called without graphDefinition!');
@@ -157,7 +182,7 @@ module KineticGraphs
             // Update graphObject graph objects based on change in scope
             return graph.graphObjects.update(graphDefinition.graphObjects).render(graph);
 
-        };
+        }
 
     }
 

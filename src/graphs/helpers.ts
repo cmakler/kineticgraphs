@@ -9,6 +9,7 @@ module KineticGraphs
         min: number;
         max: number;
         toArray: () => number[];
+        contains: (x:number) => boolean;
     }
 
     export class Domain implements IDomain
@@ -21,6 +22,12 @@ module KineticGraphs
 
         toArray() {
             return [this.min, this.max]
+        }
+
+        contains(x) {
+            var lowEnough:boolean = (this.max >= x);
+            var highEnough:boolean = (this.min <= x);
+            return lowEnough && highEnough;
         }
 
     }
