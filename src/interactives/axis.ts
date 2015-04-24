@@ -1,4 +1,4 @@
-/// <reference path="graph.ts" />
+/// <reference path="../kg.ts" />
 
 module KineticGraphs
 {

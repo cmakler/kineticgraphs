@@ -1,3 +1,5 @@
+/// <reference path="kg.ts"/>
+
 module KineticGraphs
 {
     export interface IDomain

@@ -1,6 +1,5 @@
-/**
- * Created by cmakler on 4/8/15.
- */
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
 
 module KineticGraphs
 {

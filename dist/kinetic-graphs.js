@@ -1,3 +1,55 @@
+/// <reference path="kg.ts" />
+var KineticGraphs;
+(function (KineticGraphs) {
+    var ModelController = (function () {
+        function ModelController($scope, $window) {
+            this.$scope = $scope;
+            $scope.interactiveDefinitions = { graphs: ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: 'horiz', y: 'y'}}}]}"], sliders: ["{element_id: 'slider', param: 'horiz', axis: {min: 0, max: 30}}"] };
+            $scope.params = { horiz: 20, y: 4, show: true, symbol: 'circle' };
+            $scope.graphParams = { xAxisLabel: 'Quantity' };
+            // Creates graph objects from (string) graph definitions
+            function createInteractives() {
+                var interactives = [];
+                if ($scope.hasOwnProperty('interactiveDefinitions')) {
+                    if ($scope.interactiveDefinitions.hasOwnProperty('graphs')) {
+                        $scope.interactiveDefinitions.graphs.forEach(function (graphDefinition) {
+                            interactives.push(new KineticGraphs.Graph(graphDefinition));
+                        });
+                    }
+                    if ($scope.interactiveDefinitions.hasOwnProperty('sliders')) {
+                        $scope.interactiveDefinitions.sliders.forEach(function (sliderDefinition) {
+                            interactives.push(new KineticGraphs.Slider(sliderDefinition));
+                        });
+                    }
+                }
+                return interactives;
+            }
+            // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
+            function update(redraw) {
+                // Create interactive objects if they don't already exist
+                $scope.interactives = $scope.interactives || createInteractives();
+                // Update each interactive (updating triggers the graph to redraw its objects and possibly itself)
+                $scope.interactives = $scope.interactives.map(function (interactive) {
+                    return interactive.update($scope, redraw);
+                });
+            }
+            // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
+            function redrawGraphs() {
+                update(true);
+            }
+            $scope.$watchCollection('graphParams', redrawGraphs);
+            angular.element($window).on('resize', redrawGraphs);
+            // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
+            function redrawObjects() {
+                update(false);
+            }
+            $scope.$watchCollection('params', redrawObjects);
+        }
+        return ModelController;
+    })();
+    KineticGraphs.ModelController = ModelController;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="kg.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var Domain = (function () {
@@ -19,7 +71,55 @@ var KineticGraphs;
     })();
     KineticGraphs.Domain = Domain;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="graph.ts" />
+/* interactives/interactive.ts */
+/// <reference path="../kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Interactive = (function () {
+        function Interactive(definitionString) {
+            this.definitionString = definitionString;
+        }
+        Interactive.prototype.update = function (scope, redraw) {
+            var interactive = this;
+            // Set redraw to true by default
+            if (redraw == undefined) {
+                redraw = true;
+            }
+            // Establish the scope, and evaluate the definition under this new scope
+            interactive.scope = scope;
+            interactive.definition = scope.$eval(interactive.definitionString);
+            // Redraw if necessary
+            if (redraw) {
+                interactive = interactive.redraw();
+            }
+            // Draw graph objects and return
+            return interactive.drawObjects();
+        };
+        Interactive.prototype.redraw = function () {
+            return this; // overridden by child classes
+        };
+        Interactive.prototype.drawObjects = function () {
+            return this;
+        };
+        // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
+        Interactive.prototype.updateDimensions = function (clientWidth, dimensions) {
+            // Set default to the width of the enclosing element, with a height of 500
+            var newDimensions = { width: clientWidth, height: 500 };
+            // If the author has specified a height, override
+            if (dimensions && dimensions.hasOwnProperty('height')) {
+                newDimensions.height = dimensions.height;
+            }
+            // If the author has specified a width less than the graph element clientWidth, override
+            if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
+                newDimensions.width = dimensions.width;
+            }
+            return newDimensions;
+        };
+        return Interactive;
+    })();
+    KineticGraphs.Interactive = Interactive;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -94,7 +194,143 @@ var KineticGraphs;
     })(Axis);
     KineticGraphs.YAxis = YAxis;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../graph.ts"/>
+/// <reference path="../kg.ts"/>
+/// <reference path="interactive.ts" />
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Graph = (function (_super) {
+        __extends(Graph, _super);
+        function Graph(definitionString) {
+            _super.call(this, definitionString);
+            this.definitionString = definitionString;
+            this.xAxis = new KineticGraphs.XAxis();
+            this.yAxis = new KineticGraphs.YAxis();
+        }
+        // Used to update parameters of the model from within the graph
+        Graph.prototype.updateParams = function (params) {
+            for (var key in params) {
+                if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
+                    this.scope.params[key] = params[key];
+                }
+            }
+            this.scope.$apply();
+        };
+        Graph.prototype.objectGroup = function (name, init) {
+            var group = this.vis.select('#' + name);
+            // TODO need better way to check if it doesn't yet exist
+            if (group[0][0] == null) {
+                group = this.vis.append('g').attr('id', name);
+                group = init(group);
+            }
+            return group;
+        };
+        Graph.prototype.xOnGraph = function (x) {
+            return this.xAxis.domain.contains(x);
+        };
+        Graph.prototype.yOnGraph = function (y) {
+            return this.yAxis.domain.contains(y);
+        };
+        // Check to see if a point is on the graph
+        Graph.prototype.onGraph = function (coordinates) {
+            return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
+        };
+        // This should be called with one point on the graph and another off
+        Graph.prototype.nearestGraphPoint = function (onGraphPoint, offGraphPoint) {
+            return onGraphPoint;
+        };
+        // Update graph based on latest parameters
+        Graph.prototype.redraw = function () {
+            var graph = this, definition = this.definition, updateDimensions = this.updateDimensions;
+            // Redraw the graph if necessary
+            console.log('redrawing!');
+            // Establish dimensions of the graph
+            var element = $('#' + definition.element_id)[0];
+            var dimensions = updateDimensions(element.clientWidth, definition.dimensions);
+            var margins = definition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
+            // Update axis objects
+            graph.xAxis.update(definition.xAxis);
+            graph.yAxis.update(definition.yAxis);
+            // Remove existing graph
+            d3.select(element).select('svg').remove();
+            d3.select(element).selectAll('div').remove();
+            // Create new SVG element for the graph visualization
+            graph.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+            // Establish dimensions of axes (element dimensions minus margins)
+            var axisDimensions = {
+                width: dimensions.width - margins.left - margins.right,
+                height: dimensions.height - margins.top - margins.bottom
+            };
+            // draw axes
+            graph.xAxis.draw(graph.vis, axisDimensions);
+            graph.yAxis.draw(graph.vis, axisDimensions);
+            return graph;
+        };
+        Graph.prototype.drawObjects = function () {
+            var graph = this, definition = this.definition;
+            if (!graph.graphObjects || graph.graphObjects == undefined) {
+                graph.graphObjects = new KineticGraphs.GraphObjects(definition.graphObjects);
+            }
+            // Update graphObject graph objects based on change in scope
+            return graph.graphObjects.update(definition.graphObjects).render(graph);
+        };
+        return Graph;
+    })(KineticGraphs.Interactive);
+    KineticGraphs.Graph = Graph;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="interactive.ts" />
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Slider = (function (_super) {
+        __extends(Slider, _super);
+        function Slider(definitionString) {
+            _super.call(this, definitionString);
+            this.definitionString = definitionString;
+            this.axis = new KineticGraphs.XAxis();
+        }
+        Slider.prototype.redraw = function () {
+            var slider = this, scope = this.scope, definition = this.definition, updateDimensions = this.updateDimensions;
+            console.log('redrawing slider!');
+            // Set default height to 50
+            if (!definition.hasOwnProperty('dimensions')) {
+                definition.dimensions = { height: 50 };
+            }
+            // Establish dimensions of the graph
+            var element = $('#' + definition.element_id)[0];
+            var dimensions = updateDimensions(element.clientWidth, definition.dimensions);
+            var radius = dimensions.height / 2;
+            var margins = { top: radius, left: radius, bottom: radius, right: radius };
+            // Update axis object
+            slider.axis.update(definition.axis);
+            // Remove existing slider
+            d3.select(element).select('svg').remove();
+            // Create new SVG element for the graph visualization
+            slider.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + radius + "," + radius + ")");
+            // Establish dimensions of axes (element dimensions minus margins)
+            var axisDimensions = {
+                width: dimensions.width - margins.left - margins.right,
+                height: 0
+            };
+            // draw axes
+            slider.axis.draw(slider.vis, axisDimensions);
+            // establish drag behavior
+            var drag = d3.behavior.drag().on("drag", function () {
+                scope.params[definition.param] = slider.axis.scale.invert(d3.event.x);
+                scope.$apply();
+            });
+            slider.circle = slider.vis.append('circle').attr({ cy: 0, r: radius }).call(drag);
+            return slider;
+        };
+        Slider.prototype.drawObjects = function () {
+            var circle = this.circle, scale = this.axis.scale, newValue = this.scope.params[this.definition.param];
+            circle.attr('cx', scale(newValue));
+            return this;
+        };
+        return Slider;
+    })(KineticGraphs.Interactive);
+    KineticGraphs.Slider = Slider;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var GraphObject = (function () {
@@ -152,9 +388,8 @@ var KineticGraphs;
     })();
     KineticGraphs.GraphObjects = GraphObjects;
 })(KineticGraphs || (KineticGraphs = {}));
-/**
- * Created by cmakler on 4/8/15.
- */
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var Point = (function (_super) {
@@ -222,255 +457,16 @@ var KineticGraphs;
     })(KineticGraphs.GraphObject);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="kg.ts"/>
-/// <reference path="helpers.ts"/>
-/// <reference path="axis.ts"/>
-/// <reference path="graphObjects/graphObjects.ts"/>
-/// <reference path="graphObjects/point.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Graph = (function () {
-        function Graph(scope, graphDefinition) {
-            this.scope = scope;
-            this.graphDefinition = graphDefinition;
-            this.xAxis = new KineticGraphs.XAxis();
-            this.yAxis = new KineticGraphs.YAxis();
-            if (graphDefinition) {
-                this.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
-                this.updateGraph(graphDefinition, scope, true);
-            }
-        }
-        // Used to update parameters of the model from within the graph
-        Graph.prototype.updateParams = function (params) {
-            for (var key in params) {
-                if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
-                    this.scope.params[key] = params[key];
-                }
-            }
-            this.scope.$apply();
-        };
-        Graph.prototype.objectGroup = function (name, init) {
-            var group = this.vis.select('#' + name);
-            // TODO need better way to check if it doesn't yet exist
-            if (group[0][0] == null) {
-                group = this.vis.append('g').attr('id', name);
-                group = init(group);
-            }
-            return group;
-        };
-        Graph.prototype.xOnGraph = function (x) {
-            return this.xAxis.domain.contains(x);
-        };
-        Graph.prototype.yOnGraph = function (y) {
-            return this.yAxis.domain.contains(y);
-        };
-        // Check to see if a point is on the graph
-        Graph.prototype.onGraph = function (coordinates) {
-            return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
-        };
-        // This should be called with one point on the graph and another off
-        Graph.prototype.nearestGraphPoint = function (onGraphPoint, offGraphPoint) {
-            return onGraphPoint;
-        };
-        // Update graph based on latest parameters
-        Graph.prototype.updateGraph = function (graphDefinition, scope, redraw) {
-            if (!graphDefinition) {
-                console.log('updateGraph called without graphDefinition!');
-                return;
-            }
-            this.scope = scope;
-            var graph = this;
-            // Set redraw to true by default
-            if (redraw == undefined) {
-                redraw = true;
-            }
-            // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
-            function updateDimensions(clientWidth, dimensions) {
-                // Set default to the width of the enclosing element, with a height of 500
-                var newDimensions = { width: clientWidth, height: 500 };
-                // If the author has specified a height, override
-                if (dimensions && dimensions.hasOwnProperty('height')) {
-                    newDimensions.height = dimensions.height;
-                }
-                // If the author has specified a width less than the graph element clientWidth, override
-                if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
-                    newDimensions.width = dimensions.width;
-                }
-                return newDimensions;
-            }
-            // Redraw the graph if necessary
-            if (redraw) {
-                console.log('redrawing!');
-                // Establish dimensions of the graph
-                var element = $('#' + graphDefinition.element_id)[0];
-                var dimensions = updateDimensions(element.clientWidth, graphDefinition.dimensions);
-                var margins = graphDefinition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
-                // Update axis objects
-                graph.xAxis.update(graphDefinition.xAxis);
-                graph.yAxis.update(graphDefinition.yAxis);
-                // Remove existing graph
-                d3.select(element).select('svg').remove();
-                d3.select(element).selectAll('div').remove();
-                // Create new SVG element for the graph visualization
-                graph.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
-                // Establish dimensions of axes (element dimensions minus margins)
-                var axisDimensions = {
-                    width: dimensions.width - margins.left - margins.right,
-                    height: dimensions.height - margins.top - margins.bottom
-                };
-                // draw axes
-                graph.xAxis.draw(graph.vis, axisDimensions);
-                graph.yAxis.draw(graph.vis, axisDimensions);
-            }
-            if (!graph.graphObjects || graph.graphObjects == undefined) {
-                graph.graphObjects = new KineticGraphs.GraphObjects(graphDefinition.graphObjects);
-            }
-            // Update graphObject graph objects based on change in scope
-            return graph.graphObjects.update(graphDefinition.graphObjects).render(graph);
-        };
-        return Graph;
-    })();
-    KineticGraphs.Graph = Graph;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="kg.ts" />
-var KineticGraphs;
-(function (KineticGraphs) {
-    var ModelController = (function () {
-        function ModelController($scope, $window) {
-            this.$scope = $scope;
-            $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: 'horiz', y: 'y'}}}]}"];
-            $scope.sliderDefinitions = [{ element_id: 'slider', param: 'horiz', axis: { min: 0, max: 30 } }];
-            $scope.params = { horiz: 20, y: 4, show: true, symbol: 'circle' };
-            $scope.graphParams = { xAxisLabel: 'Quantity' };
-            // Creates an object based on string using current scope parameter values
-            function currentValue(s) {
-                return $scope.$eval(s);
-            }
-            // Creates graph objects from (string) graph definitions
-            function createGraphs() {
-                var graphs = [];
-                if ($scope.graphDefinitions) {
-                    $scope.graphDefinitions.forEach(function (graphDefinition) {
-                        graphs.push(new KineticGraphs.Graph($scope, currentValue(graphDefinition)));
-                    });
-                }
-                return graphs;
-            }
-            // Creates control objects from control definitions
-            function createSliders() {
-                var sliders = [];
-                if ($scope.sliderDefinitions) {
-                    $scope.sliderDefinitions.forEach(function (sliderDefinition) {
-                        sliders.push(new KineticGraphs.Slider($scope, sliderDefinition));
-                    });
-                }
-                return sliders;
-            }
-            // Updates and redraws graphs when a parameter changes
-            function update(redraw) {
-                // Create graph objects if they don't already exist
-                $scope.graphs = $scope.graphs || createGraphs();
-                $scope.sliders = $scope.sliders || createSliders();
-                // Update each graph (updating triggers the graph to redraw its objects and possibly itself)
-                $scope.graphs = $scope.graphs.map(function (graph, index) {
-                    return graph.updateGraph(currentValue($scope.graphDefinitions[index]), $scope, redraw);
-                });
-                // Update each slider (updating triggers the slider to redraw its objects and possibly itself)
-                $scope.sliders = $scope.sliders.map(function (slider, index) {
-                    return slider.updateSlider($scope.sliderDefinitions[index], $scope, redraw);
-                });
-            }
-            // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
-            function redrawGraphs() {
-                update(true);
-            }
-            $scope.$watchCollection('graphParams', redrawGraphs);
-            angular.element($window).on('resize', redrawGraphs);
-            // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
-            function redrawObjects() {
-                update(false);
-            }
-            $scope.$watchCollection('params', redrawObjects);
-        }
-        return ModelController;
-    })();
-    KineticGraphs.ModelController = ModelController;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="kg.ts"/>
-/// <reference path="helpers.ts"/>
-/// <reference path="axis.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Slider = (function () {
-        function Slider(scope, sliderDefinition) {
-            this.scope = scope;
-            this.sliderDefinition = sliderDefinition;
-            this.axis = new KineticGraphs.XAxis();
-            if (sliderDefinition) {
-                this.updateSlider(sliderDefinition, scope, true);
-            }
-        }
-        Slider.prototype.updateSlider = function (sliderDefinition, scope, redraw) {
-            this.scope = scope;
-            var slider = this;
-            // Set redraw to true by default
-            if (redraw == undefined) {
-                redraw = true;
-            }
-            // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
-            function updateDimensions(clientWidth, dimensions) {
-                // Set default to the width of the enclosing element, with a height of 40
-                var newDimensions = { width: clientWidth, height: 50 };
-                // If the author has specified a height, override
-                if (dimensions && dimensions.hasOwnProperty('height')) {
-                    newDimensions.height = dimensions.height;
-                }
-                // If the author has specified a width less than the graph element clientWidth, override
-                if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
-                    newDimensions.width = dimensions.width;
-                }
-                return newDimensions;
-            }
-            // Redraw the graph if necessary
-            if (redraw) {
-                console.log('redrawing slider!');
-                // Establish dimensions of the graph
-                var element = $('#' + sliderDefinition.element_id)[0];
-                var dimensions = updateDimensions(element.clientWidth, sliderDefinition.dimensions);
-                var radius = dimensions.height / 2;
-                var margins = { top: radius, left: radius, bottom: radius, right: radius };
-                // Update axis object
-                slider.axis.update(sliderDefinition.axis);
-                // Remove existing slider
-                d3.select(element).select('svg').remove();
-                // Create new SVG element for the graph visualization
-                slider.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + radius + "," + radius + ")");
-                // Establish dimensions of axes (element dimensions minus margins)
-                var axisDimensions = {
-                    width: dimensions.width - margins.left - margins.right,
-                    height: 0
-                };
-                // draw axes
-                slider.axis.draw(slider.vis, axisDimensions);
-                // establish drag behavior
-                var drag = d3.behavior.drag().on("drag", function () {
-                    scope.params[sliderDefinition.param] = slider.axis.scale.invert(d3.event.x);
-                    scope.$apply();
-                });
-                slider.circle = slider.vis.append('circle').attr({ cy: 0, r: radius }).call(drag);
-            }
-            slider.circle.attr('cx', slider.axis.scale(scope.params[sliderDefinition.param]));
-            return slider;
-        };
-        return Slider;
-    })();
-    KineticGraphs.Slider = Slider;
-})(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
-/// <reference path="graph.ts" />
 /// <reference path="model.ts" />
-/// <reference path="slider.ts" />
+/// <reference path="helpers.ts" />
+/// <reference path="interactives/interactive.ts" />
+/// <reference path="interactives/axis.ts" />
+/// <reference path="interactives/graph.ts" />
+/// <reference path="interactives/slider.ts" />
+/// <reference path="graphObjects/graphObjects.ts" />
+/// <reference path="graphObjects/point.ts" />
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
 //# sourceMappingURL=kinetic-graphs.js.map
