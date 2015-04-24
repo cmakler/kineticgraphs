@@ -92,7 +92,7 @@ module KineticGraphs
                 updateDimensions = this.updateDimensions;
 
             // Redraw the graph if necessary
-            console.log('redrawing!');
+            console.log('redrawing graph!');
 
             // Establish dimensions of the graph
             var element = $('#' + definition.element_id)[0];

@@ -29,6 +29,7 @@ module KineticGraphs
         public domain: IDomain;
         public title: string;
         public ticks: number;
+        public tickValues: number[];
 
         constructor(axisDefinition? : IAxisDefinition) {
             if(axisDefinition) {
@@ -47,6 +48,7 @@ module KineticGraphs
 
             this.title = axisDefinition.title || '';
             this.ticks = axisDefinition.ticks || 5;
+            this.tickValues = axisDefinition.tickValues;
 
             return this;
 
@@ -81,7 +83,7 @@ module KineticGraphs
                 .attr("y", "4em")
                 .style("text-anchor", "middle")
                 .text(this.title);
-            axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks))
+            axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks).tickValues(this.tickValues));
         }
     }
 
@@ -105,7 +107,7 @@ module KineticGraphs
                 .attr("y", "-4em")
                 .style("text-anchor", "middle")
                 .text(this.title);
-            axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks))
+            axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks).tickValues(this.tickValues));
         }
     }
 

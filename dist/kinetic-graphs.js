@@ -148,6 +148,7 @@ var KineticGraphs;
             }
             this.title = axisDefinition.title || '';
             this.ticks = axisDefinition.ticks || 5;
+            this.tickValues = axisDefinition.tickValues;
             return this;
         };
         Axis.prototype.draw = function (vis, graph_definition) {
@@ -171,7 +172,7 @@ var KineticGraphs;
             this.scale = this.scaleFunction(graph_dimensions.width, this.domain);
             var axis_vis = vis.append('g').attr('class', 'x axis').attr("transform", "translate(0," + graph_dimensions.height + ")");
             axis_vis.append("text").attr("x", graph_dimensions.width / 2).attr("y", "4em").style("text-anchor", "middle").text(this.title);
-            axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks));
+            axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks).tickValues(this.tickValues));
         };
         return XAxis;
     })(Axis);
@@ -188,7 +189,7 @@ var KineticGraphs;
             this.scale = this.scaleFunction(graph_dimensions.height, this.domain);
             var axis_vis = vis.append('g').attr('class', 'y axis');
             axis_vis.append("text").attr("transform", "rotate(-90)").attr("x", -graph_dimensions.height / 2).attr("y", "-4em").style("text-anchor", "middle").text(this.title);
-            axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks));
+            axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks).tickValues(this.tickValues));
         };
         return YAxis;
     })(Axis);
@@ -242,7 +243,7 @@ var KineticGraphs;
         Graph.prototype.redraw = function () {
             var graph = this, definition = this.definition, updateDimensions = this.updateDimensions;
             // Redraw the graph if necessary
-            console.log('redrawing!');
+            console.log('redrawing graph!');
             // Establish dimensions of the graph
             var element = $('#' + definition.element_id)[0];
             var dimensions = updateDimensions(element.clientWidth, definition.dimensions);
@@ -293,7 +294,11 @@ var KineticGraphs;
             console.log('redrawing slider!');
             // Set default height to 50
             if (!definition.hasOwnProperty('dimensions')) {
-                definition.dimensions = { height: 50 };
+                definition.dimensions = { height: 50, width: 200 };
+            }
+            // Set defualt precision to 1
+            if (!definition.hasOwnProperty('precision')) {
+                definition.precision = 1;
             }
             // Establish dimensions of the graph
             var element = $('#' + definition.element_id)[0];
@@ -302,6 +307,7 @@ var KineticGraphs;
             var margins = { top: radius, left: radius, bottom: radius, right: radius };
             // Update axis object
             slider.axis.update(definition.axis);
+            slider.axis.tickValues = slider.axis.domain.toArray();
             // Remove existing slider
             d3.select(element).select('svg').remove();
             // Create new SVG element for the graph visualization
@@ -315,10 +321,12 @@ var KineticGraphs;
             slider.axis.draw(slider.vis, axisDimensions);
             // establish drag behavior
             var drag = d3.behavior.drag().on("drag", function () {
-                scope.params[definition.param] = slider.axis.scale.invert(d3.event.x);
+                var rawValue = slider.axis.scale.invert(d3.event.x);
+                var boundedValue = Math.max(slider.axis.domain.min, Math.min(slider.axis.domain.max, rawValue));
+                scope.params[definition.param] = Math.round(boundedValue / definition.precision) * definition.precision;
                 scope.$apply();
             });
-            slider.circle = slider.vis.append('circle').attr({ cy: 0, r: radius }).call(drag);
+            slider.circle = slider.vis.append('circle').attr({ cy: 0, r: radius / 2 }).call(drag);
             return slider;
         };
         Slider.prototype.drawObjects = function () {

@@ -9,6 +9,7 @@ module KineticGraphs
     export interface ISliderDefinition extends IInteractiveDefinition
     {
         param: string;
+        precision: number;
         axis: IAxisDefinition;
     }
 
@@ -31,14 +32,19 @@ module KineticGraphs
 
             var slider = this,
                 scope = this.scope,
-                definition = this.definition,
+                definition:ISliderDefinition = this.definition,
                 updateDimensions = this.updateDimensions;
 
             console.log('redrawing slider!');
 
             // Set default height to 50
             if(!definition.hasOwnProperty('dimensions')) {
-                definition.dimensions = {height: 50};
+                definition.dimensions = {height: 50, width:200};
+            }
+
+            // Set defualt precision to 1
+            if(!definition.hasOwnProperty('precision')) {
+                definition.precision = 1;
             }
 
             // Establish dimensions of the graph
@@ -49,6 +55,7 @@ module KineticGraphs
 
             // Update axis object
             slider.axis.update(definition.axis);
+            slider.axis.tickValues = slider.axis.domain.toArray();
 
             // Remove existing slider
             d3.select(element).select('svg').remove();
@@ -73,11 +80,13 @@ module KineticGraphs
             // establish drag behavior
             var drag = d3.behavior.drag()
                 .on("drag", function () {
-                    scope.params[definition.param] = slider.axis.scale.invert(d3.event.x);
+                    var rawValue = slider.axis.scale.invert(d3.event.x);
+                    var boundedValue = Math.max(slider.axis.domain.min,Math.min(slider.axis.domain.max, rawValue));
+                    scope.params[definition.param] = Math.round(boundedValue/definition.precision)*definition.precision;
                     scope.$apply();
                 });
 
-            slider.circle = slider.vis.append('circle').attr({cy: 0, r: radius}).call(drag);
+            slider.circle = slider.vis.append('circle').attr({cy: 0, r: radius/2}).call(drag);
 
             return slider;
         }
