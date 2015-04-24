@@ -1,7 +1,3 @@
-/**
- * Created by cmakler on 4/7/15.
- */
-
 module KineticGraphs
 {
     export interface IDomain

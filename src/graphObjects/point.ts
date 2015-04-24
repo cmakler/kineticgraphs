@@ -46,8 +46,8 @@ module KineticGraphs
 
             var x,y,xDrag,yDrag;
 
-            if(typeof xRaw == 'string' && graph.scope.params.hasOwnProperty(xRaw)) {
-                x = graph.xAxis.scale(graph.scope.params[xRaw])
+            if(typeof xRaw == 'string') {
+                x = graph.xAxis.scale(graph.scope.$eval('params.' + xRaw));
                 xDrag = true;
             } else {
                 x = graph.xAxis.scale(xRaw);

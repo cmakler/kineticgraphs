@@ -1,6 +1,3 @@
-/**
- * Created by cmakler on 4/7/15.
- */
 var KineticGraphs;
 (function (KineticGraphs) {
     var Domain = (function () {
@@ -174,8 +171,8 @@ var KineticGraphs;
             var POINT_SYMBOL_CLASS = 'pointSymbol';
             var xRaw = this.coordinates.x, yRaw = this.coordinates.y;
             var x, y, xDrag, yDrag;
-            if (typeof xRaw == 'string' && graph.scope.params.hasOwnProperty(xRaw)) {
-                x = graph.xAxis.scale(graph.scope.params[xRaw]);
+            if (typeof xRaw == 'string') {
+                x = graph.xAxis.scale(graph.scope.$eval('params.' + xRaw));
                 xDrag = true;
             }
             else {
@@ -225,7 +222,7 @@ var KineticGraphs;
     })(KineticGraphs.GraphObject);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
+/// <reference path="kg.ts"/>
 /// <reference path="helpers.ts"/>
 /// <reference path="axis.ts"/>
 /// <reference path="graphObjects/graphObjects.ts"/>
@@ -335,14 +332,14 @@ var KineticGraphs;
     })();
     KineticGraphs.Graph = Graph;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts" />
+/// <reference path="kg.ts" />
 var KineticGraphs;
 (function (KineticGraphs) {
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
             $scope.graphDefinitions = ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: 'horiz', y: 'y'}}}]}"];
-            $scope.controlDefinitions = [{ type: 'slider', element_id: 'xSlider', param: 'horiz', min: 0, max: 30 }];
+            $scope.sliderDefinitions = [{ element_id: 'slider', param: 'horiz', axis: { min: 0, max: 30 } }];
             $scope.params = { horiz: 20, y: 4, show: true, symbol: 'circle' };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates an object based on string using current scope parameter values
@@ -360,33 +357,38 @@ var KineticGraphs;
                 return graphs;
             }
             // Creates control objects from control definitions
-            function createControls() {
-                var controls = [];
-                if ($scope.controlDefinitions) {
-                    $scope.controlDefinitions.forEach(function (controlDefinition) {
-                        controls.push(new KineticGraphs.Control($scope, controlDefinition));
+            function createSliders() {
+                var sliders = [];
+                if ($scope.sliderDefinitions) {
+                    $scope.sliderDefinitions.forEach(function (sliderDefinition) {
+                        sliders.push(new KineticGraphs.Slider($scope, sliderDefinition));
                     });
                 }
-                return controls;
+                return sliders;
             }
             // Updates and redraws graphs when a parameter changes
-            function updateGraphs(redraw) {
+            function update(redraw) {
                 // Create graph objects if they don't already exist
                 $scope.graphs = $scope.graphs || createGraphs();
+                $scope.sliders = $scope.sliders || createSliders();
                 // Update each graph (updating triggers the graph to redraw its objects and possibly itself)
                 $scope.graphs = $scope.graphs.map(function (graph, index) {
                     return graph.updateGraph(currentValue($scope.graphDefinitions[index]), $scope, redraw);
                 });
+                // Update each slider (updating triggers the slider to redraw its objects and possibly itself)
+                $scope.sliders = $scope.sliders.map(function (slider, index) {
+                    return slider.updateSlider($scope.sliderDefinitions[index], $scope, redraw);
+                });
             }
             // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
             function redrawGraphs() {
-                updateGraphs(true);
+                update(true);
             }
             $scope.$watchCollection('graphParams', redrawGraphs);
             angular.element($window).on('resize', redrawGraphs);
             // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
             function redrawObjects() {
-                updateGraphs(false);
+                update(false);
             }
             $scope.$watchCollection('params', redrawObjects);
         }
@@ -394,87 +396,81 @@ var KineticGraphs;
     })();
     KineticGraphs.ModelController = ModelController;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="kg.ts"/>
+/// <reference path="helpers.ts"/>
+/// <reference path="axis.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
-    function sliderDirective() {
-        function link(scope, el, attrs) {
-            var element = el[0], param = attrs['param'], raw_value = scope.params[param], precision = attrs['precision'] || 1, max = attrs['max'] || 10, min = attrs['min'] || 0, height = attrs['height'] || 40, radius = height / 2, margin = attrs['margin'] || 20;
-            var svg, circle, line;
-            var width = element.parentElement.clientWidth - 2 * margin;
-            var innerWidth = width - 2 * radius;
-            function positionDelta(dx) {
-                return dx * (max - min) / innerWidth;
-            }
-            svg = d3.select(element).append('svg').attr({ width: element.parentElement.clientWidth, height: 2 * radius });
-            var drag = d3.behavior.drag().on("dragstart", function () {
-                this.parentNode.appendChild(this);
-                d3.select(this).transition().ease("elastic").duration(500).attr("r", radius * 0.8);
-            }).on("drag", function () {
-                var dragPosition = parseFloat(raw_value) + positionDelta(d3.event.dx);
-                raw_value = Math.max(min, Math.min(max, dragPosition));
-                scope.$apply(function () {
-                    scope.params[param] = Math.round(raw_value / parseFloat(precision)) * precision;
-                });
-            }).on("dragend", function () {
-                d3.select(this).transition().ease("elastic").duration(500).attr("r", radius * 0.7);
-            });
-            // Draw slider line
-            line = svg.append('line').attr({
-                x1: radius,
-                x2: radius + innerWidth,
-                y1: radius,
-                y2: radius,
-                stroke: 'blue',
-                strokeWidth: 1
-            });
-            // Establish y-coordinate and radius for control circle
-            circle = svg.append('circle').attr({ cy: radius, r: radius * 0.7 }).call(drag);
-            // Set and update x-coordinate for control circle
-            scope.$watch('value', function (value) {
-                circle.attr({
-                    cx: function () {
-                        return radius + innerWidth * (value - min) / (max - min);
-                    }
-                });
-            });
-            scope.$on('resize', function () {
-                width = element.parentElement.clientWidth - 2 * margin;
-                innerWidth = width - 2 * radius;
-                svg.attr('width', element.parentElement.clientWidth);
-                line.attr('x2', radius + innerWidth);
-                circle.attr({
-                    cx: function () {
-                        return radius + innerWidth * (scope.params[param] - min) / (max - min);
-                    }
-                });
-            });
-        }
-        return {
-            restrict: 'E',
-            link: link,
-            scope: false
-        };
-    }
-    KineticGraphs.sliderDirective = sliderDirective;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="slider.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Control = (function () {
-        function Control(scope, controlDefinition) {
+    var Slider = (function () {
+        function Slider(scope, sliderDefinition) {
             this.scope = scope;
-            this.controlDefinition = controlDefinition;
+            this.sliderDefinition = sliderDefinition;
+            this.axis = new KineticGraphs.XAxis();
+            if (sliderDefinition) {
+                this.updateSlider(sliderDefinition, scope, true);
+            }
         }
-        return Control;
+        Slider.prototype.updateSlider = function (sliderDefinition, scope, redraw) {
+            this.scope = scope;
+            var slider = this;
+            // Set redraw to true by default
+            if (redraw == undefined) {
+                redraw = true;
+            }
+            // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
+            function updateDimensions(clientWidth, dimensions) {
+                // Set default to the width of the enclosing element, with a height of 40
+                var newDimensions = { width: clientWidth, height: 50 };
+                // If the author has specified a height, override
+                if (dimensions && dimensions.hasOwnProperty('height')) {
+                    newDimensions.height = dimensions.height;
+                }
+                // If the author has specified a width less than the graph element clientWidth, override
+                if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
+                    newDimensions.width = dimensions.width;
+                }
+                return newDimensions;
+            }
+            // Redraw the graph if necessary
+            if (redraw) {
+                console.log('redrawing slider!');
+                // Establish dimensions of the graph
+                var element = $('#' + sliderDefinition.element_id)[0];
+                var dimensions = updateDimensions(element.clientWidth, sliderDefinition.dimensions);
+                var radius = dimensions.height / 2;
+                var margins = { top: radius, left: radius, bottom: radius, right: radius };
+                // Update axis object
+                slider.axis.update(sliderDefinition.axis);
+                // Remove existing slider
+                d3.select(element).select('svg').remove();
+                // Create new SVG element for the graph visualization
+                slider.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + radius + "," + radius + ")");
+                // Establish dimensions of axes (element dimensions minus margins)
+                var axisDimensions = {
+                    width: dimensions.width - margins.left - margins.right,
+                    height: 0
+                };
+                // draw axes
+                slider.axis.draw(slider.vis, axisDimensions);
+                // establish drag behavior
+                var drag = d3.behavior.drag().on("drag", function () {
+                    scope.params[sliderDefinition.param] = slider.axis.scale.invert(d3.event.x);
+                    scope.$apply();
+                });
+                slider.circle = slider.vis.append('circle').attr({ cy: 0, r: radius }).call(drag);
+            }
+            slider.circle.attr('cx', slider.axis.scale(scope.params[sliderDefinition.param]));
+            return slider;
+        };
+        return Slider;
     })();
-    KineticGraphs.Control = Control;
+    KineticGraphs.Slider = Slider;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
-/// <reference path="graphs/graph.ts" />
-/// <reference path="model/model.ts" />
-/// <reference path="controls/control.ts" />
+/// <reference path="graph.ts" />
+/// <reference path="model.ts" />
+/// <reference path="slider.ts" />
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
 //# sourceMappingURL=kinetic-graphs.js.map

@@ -1,4 +1,4 @@
-/// <reference path="../kg.ts"/>
+/// <reference path="kg.ts"/>
 /// <reference path="helpers.ts"/>
 /// <reference path="axis.ts"/>
 /// <reference path="graphObjects/graphObjects.ts"/>
@@ -41,7 +41,6 @@ module KineticGraphs
         yOnGraph: (x:number) => boolean;
         onGraph: (coordinates:ICoordinates) => boolean;
         nearestGraphPoint: (onGraphPoint: ICoordinates, offGraphPoint: ICoordinates) => ICoordinates;
-
     }
 
     export class Graph implements IGraph
