@@ -10,6 +10,9 @@
 /// <reference path="interactives/slider.ts" />
 /// <reference path="graphObjects/graphObjects.ts" />
 /// <reference path="graphObjects/point.ts" />
+/// <reference path="graphObjects/linePlot.ts" />
+
+/// <reference path="finance/capm.ts"/>
 
 
 angular.module('KineticGraphs', [])

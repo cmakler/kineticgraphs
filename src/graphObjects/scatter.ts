@@ -4,15 +4,13 @@
 module KineticGraphs
 {
 
-    export interface IPoint extends IGraphObject {
+    export interface IScatter extends IGraphObject {
 
         // point-specific attributes
-        coordinates: ICoordinates;
-        symbol?: string;
-        size?: number;
+        data: any;
     }
 
-    export class Point extends GraphObject implements IPoint
+    export class Scatter extends GraphObject implements IPoint
     {
 
         // point-specific attributes

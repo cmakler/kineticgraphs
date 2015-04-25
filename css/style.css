@@ -73,3 +73,14 @@ a {
 .invisible {
     display: none;
 }
+
+.draw {
+    stroke: red;
+}
+
+.dataPath {
+    stroke: blue;
+    stroke-width: 2;
+    fill: none;
+}
+

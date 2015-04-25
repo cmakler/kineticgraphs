@@ -4,8 +4,18 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            $scope.interactiveDefinitions = { graphs: ["{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 20, title: graphParams.xAxisLabel},yAxis: {min: 0, max: 10, title: 'Y axis'}, graphObjects:[{type: 'Point', definition: {show: params.show, symbol: params.symbol, className: 'equilibrium', name: 'eqm', coordinates: {x: 'horiz', y: 'y'}}}]}"], sliders: ["{element_id: 'slider', param: 'horiz', axis: {min: 0, max: 30}}"] };
-            $scope.params = { horiz: 20, y: 4, show: true, symbol: 'circle' };
+            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 10, title: 'Variance'},yAxis: {min: 0, max: 20, title: 'Mean'}, graphObjects:[";
+            var point1 = "{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}},";
+            var point2 = "{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var linePlot = "{type:'LinePlot', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.porfolio.data()}},";
+            var graphDefEnd = "]}";
+            $scope.interactiveDefinitions = { graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'covariance', precision: '0.1', axis: {min: 0, max: 1}}"] };
+            $scope.params = { covariance: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5 };
+            $scope.functionDefinitions = { finance: [
+                { name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}" },
+                { name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}" },
+                { name: 'portfolio', model: 'CAPM', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2]}" }
+            ] };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates graph objects from (string) graph definitions
             function createInteractives() {
@@ -24,13 +34,34 @@ var KineticGraphs;
                 }
                 return interactives;
             }
+            // Creates functions
+            function createFunctions() {
+                var functions = {};
+                if ($scope.hasOwnProperty('functionDefinitions')) {
+                    if ($scope.functionDefinitions.hasOwnProperty('finance')) {
+                        $scope.functionDefinitions.finance.forEach(function (functionDefinition) {
+                            functions[functionDefinition.name] = new FinanceGraphs[functionDefinition.model][functionDefinition.type](functionDefinition.definition);
+                        });
+                    }
+                }
+                return functions;
+            }
             // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
             function update(redraw) {
                 // Create interactive objects if they don't already exist
+                $scope.functions = $scope.functions || createFunctions();
                 $scope.interactives = $scope.interactives || createInteractives();
+                for (var name in $scope.functions) {
+                    $scope.functions[name] = $scope.functions[name].update($scope);
+                }
                 // Update each interactive (updating triggers the graph to redraw its objects and possibly itself)
                 $scope.interactives = $scope.interactives.map(function (interactive) {
-                    return interactive.update($scope, redraw);
+                    interactive.update($scope);
+                    if (redraw) {
+                        interactive.redraw();
+                    }
+                    interactive.drawObjects();
+                    return interactive;
                 });
             }
             // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
@@ -71,30 +102,45 @@ var KineticGraphs;
     })();
     KineticGraphs.Domain = Domain;
 })(KineticGraphs || (KineticGraphs = {}));
-/* interactives/interactive.ts */
-/// <reference path="../kg.ts"/>
+/**
+ * Created by cmakler on 4/24/15.
+ */
 var KineticGraphs;
 (function (KineticGraphs) {
-    var Interactive = (function () {
-        function Interactive(definitionString) {
+    var Parameterizable = (function () {
+        // Define using a string
+        function Parameterizable(definitionString) {
             this.definitionString = definitionString;
         }
-        Interactive.prototype.update = function (scope, redraw) {
-            var interactive = this;
-            // Set redraw to true by default
-            if (redraw == undefined) {
-                redraw = true;
-            }
-            // Establish the scope, and evaluate the definition under this new scope
-            interactive.scope = scope;
-            interactive.definition = scope.$eval(interactive.definitionString);
-            // Redraw if necessary
-            if (redraw) {
-                interactive = interactive.redraw();
-            }
-            // Draw graph objects and return
-            return interactive.drawObjects();
+        // Establish the scope, and evaluate the definition under this new scope
+        Parameterizable.prototype.update = function (scope) {
+            this.scope = scope;
+            this.definition = scope.$eval(this.definitionString);
+            this._update();
+            return this;
         };
+        Parameterizable.prototype._update = function () {
+        }; //overridden by child class
+        return Parameterizable;
+    })();
+    KineticGraphs.Parameterizable = Parameterizable;
+})(KineticGraphs || (KineticGraphs = {}));
+/* interactives/interactive.ts */
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+/// <reference path="../kg.ts"/>
+/// <reference path="../model/parameterizable.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Interactive = (function (_super) {
+        __extends(Interactive, _super);
+        function Interactive(definitionString) {
+            _super.call(this, definitionString);
+        }
         Interactive.prototype.redraw = function () {
             return this; // overridden by child classes
         };
@@ -116,16 +162,10 @@ var KineticGraphs;
             return newDimensions;
         };
         return Interactive;
-    })();
+    })(KineticGraphs.Parameterizable);
     KineticGraphs.Interactive = Interactive;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts" />
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var KineticGraphs;
 (function (KineticGraphs) {
     var Axis = (function () {
@@ -294,7 +334,7 @@ var KineticGraphs;
             console.log('redrawing slider!');
             // Set default height to 50
             if (!definition.hasOwnProperty('dimensions')) {
-                definition.dimensions = { height: 50, width: 200 };
+                definition.dimensions = { height: 50, width: 300 };
             }
             // Set defualt precision to 1
             if (!definition.hasOwnProperty('precision')) {
@@ -465,6 +505,77 @@ var KineticGraphs;
     })(KineticGraphs.GraphObject);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var LinePlot = (function (_super) {
+        __extends(LinePlot, _super);
+        function LinePlot() {
+            _super.call(this);
+            this.data = [];
+        }
+        LinePlot.prototype.render = function (graph) {
+            // constants TODO should these be defined somewhere else?
+            var DATA_PATH_CLASS = 'dataPath';
+            function init(newGroup) {
+                newGroup.append('path').attr('class', DATA_PATH_CLASS);
+                return newGroup;
+            }
+            var group = graph.objectGroup(this.name, init);
+            var dataLine = d3.svg.line().interpolate('linear').x(function (d) {
+                return graph.xAxis.scale(d.x);
+            }).y(function (d) {
+                return graph.yAxis.scale(d.y);
+            });
+            var dataPath = group.select('.' + DATA_PATH_CLASS);
+            dataPath.attr({
+                'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
+                'd': dataLine(this.data)
+            });
+            return graph;
+        };
+        return LinePlot;
+    })(KineticGraphs.GraphObject);
+    KineticGraphs.LinePlot = LinePlot;
+})(KineticGraphs || (KineticGraphs = {}));
+/**
+ * Created by cmakler on 4/24/15.
+ */
+var FinanceGraphs;
+(function (FinanceGraphs) {
+    var CAPM;
+    (function (CAPM) {
+        var Asset = (function (_super) {
+            __extends(Asset, _super);
+            function Asset(definitionString) {
+                _super.call(this, definitionString);
+            }
+            Asset.prototype._update = function () {
+                this.mean = this.definition.mean;
+                this.variance = this.definition.variance;
+            };
+            Asset.prototype.coordinates = function () {
+                return { x: this.variance, y: this.mean };
+            };
+            return Asset;
+        })(KineticGraphs.Interactive);
+        CAPM.Asset = Asset;
+        var Portfolio = (function (_super) {
+            __extends(Portfolio, _super);
+            function Portfolio(definitionString) {
+                _super.call(this, definitionString);
+            }
+            Portfolio.prototype.data = function () {
+                var asset1 = this.definition.assets[0];
+                var asset2 = this.definition.assets[1];
+                return [asset1.coordinates(), asset2.coordinates()];
+            };
+            return Portfolio;
+        })(KineticGraphs.Interactive);
+        CAPM.Portfolio = Portfolio;
+    })(CAPM = FinanceGraphs.CAPM || (FinanceGraphs.CAPM = {}));
+})(FinanceGraphs || (FinanceGraphs = {}));
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
@@ -476,5 +587,7 @@ var KineticGraphs;
 /// <reference path="interactives/slider.ts" />
 /// <reference path="graphObjects/graphObjects.ts" />
 /// <reference path="graphObjects/point.ts" />
+/// <reference path="graphObjects/linePlot.ts" />
+/// <reference path="finance/capm.ts"/>
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
 //# sourceMappingURL=kinetic-graphs.js.map

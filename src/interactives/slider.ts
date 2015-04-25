@@ -32,14 +32,14 @@ module KineticGraphs
 
             var slider = this,
                 scope = this.scope,
-                definition:ISliderDefinition = this.definition,
+                definition = this.definition,
                 updateDimensions = this.updateDimensions;
 
             console.log('redrawing slider!');
 
             // Set default height to 50
             if(!definition.hasOwnProperty('dimensions')) {
-                definition.dimensions = {height: 50, width:200};
+                definition.dimensions = {height: 50, width:300};
             }
 
             // Set defualt precision to 1
