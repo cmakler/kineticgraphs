@@ -5,9 +5,9 @@ var KineticGraphs;
         function ModelController($scope, $window) {
             this.$scope = $scope;
             var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 10, title: 'Variance'},yAxis: {min: 0, max: 20, title: 'Mean'}, graphObjects:[";
-            var point1 = "{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}},";
-            var point2 = "{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
-            var linePlot = "{type:'LinePlot', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.porfolio.data()}},";
+            var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
+            var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = { graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'covariance', precision: '0.1', axis: {min: 0, max: 1}}"] };
             $scope.params = { covariance: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5 };
@@ -539,6 +539,37 @@ var KineticGraphs;
     })(KineticGraphs.GraphObject);
     KineticGraphs.LinePlot = LinePlot;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Scatter = (function (_super) {
+        __extends(Scatter, _super);
+        function Scatter() {
+            _super.call(this);
+            // establish defaults
+            this.data = [];
+            this.size = 50;
+            this.symbol = 'circle';
+        }
+        Scatter.prototype.render = function (graph) {
+            // constants TODO should these be defined somewhere else?
+            var DATA_PATH_CLASS = 'scatter';
+            function init(newGroup) {
+                return newGroup;
+            }
+            var group = graph.objectGroup(this.name, init);
+            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS);
+            dataPoints.attr({ 'd': d3.svg.symbol().type(this.symbol).size(this.size), 'transform': function (d) {
+                return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
+            } });
+            return graph;
+        };
+        return Scatter;
+    })(KineticGraphs.GraphObject);
+    KineticGraphs.Scatter = Scatter;
+})(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/24/15.
  */
@@ -569,7 +600,34 @@ var FinanceGraphs;
             Portfolio.prototype.data = function () {
                 var asset1 = this.definition.assets[0];
                 var asset2 = this.definition.assets[1];
-                return [asset1.coordinates(), asset2.coordinates()];
+                var scope = this.scope;
+                function dataPoints(a, b) {
+                    var dataset = [];
+                    var mean, variance;
+                    function propertyAsNumber(o, p, scope) {
+                        var v;
+                        if (o.hasOwnProperty(p)) {
+                            if (typeof o[p] == 'string') {
+                                v = scope.$eval('params.' + o[p]);
+                            }
+                            else {
+                                v = o[p];
+                            }
+                        }
+                        return v;
+                    }
+                    function convexCombination(a, b, percent) {
+                        return (percent * a + (100 - percent) * b) / 100;
+                    }
+                    var mean1 = propertyAsNumber(asset1, 'mean', scope), variance1 = propertyAsNumber(asset1, 'variance', scope), mean2 = propertyAsNumber(asset2, 'mean', scope), variance2 = propertyAsNumber(asset2, 'variance', scope);
+                    for (var i = 1; i < 10; i++) {
+                        mean = convexCombination(mean1, mean2, i * 10);
+                        variance = convexCombination(variance1, variance2, i * 10);
+                        dataset.push({ x: variance, y: mean });
+                    }
+                    return dataset;
+                }
+                return dataPoints(asset1, asset2);
             };
             return Portfolio;
         })(KineticGraphs.Interactive);
@@ -588,6 +646,7 @@ var FinanceGraphs;
 /// <reference path="graphObjects/graphObjects.ts" />
 /// <reference path="graphObjects/point.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
+/// <reference path="graphObjects/scatter.ts" />
 /// <reference path="finance/capm.ts"/>
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
 //# sourceMappingURL=kinetic-graphs.js.map

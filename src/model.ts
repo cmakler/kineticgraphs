@@ -19,9 +19,9 @@ module KineticGraphs
         {
 
             var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 10, title: 'Variance'},yAxis: {min: 0, max: 20, title: 'Mean'}, graphObjects:[";
-            var point1 = "{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}},";
-            var point2 = "{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
-            var linePlot = "{type:'LinePlot', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.porfolio.data()}},";
+            var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
+            var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = {graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'covariance', precision: '0.1', axis: {min: 0, max: 1}}"]};
             $scope.params = {covariance: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5};

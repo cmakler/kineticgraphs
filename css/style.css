@@ -84,3 +84,9 @@ a {
     fill: none;
 }
 
+.scatter {
+    stroke: black;
+    stroke-width: 2;
+    fill: red;
+}
+

@@ -8,13 +8,15 @@ module KineticGraphs
 
         // point-specific attributes
         data: any;
+        symbol: string;
+        size: number;
     }
 
-    export class Scatter extends GraphObject implements IPoint
+    export class Scatter extends GraphObject implements IScatter
     {
 
         // point-specific attributes
-        public coordinates;
+        public data;
         public symbol;
         public size;
 
@@ -23,71 +25,30 @@ module KineticGraphs
             super();
 
             // establish defaults
-            this.coordinates = {x: 0, y: 0};
-            this.size = 100;
+            this.data = [];
+            this.size = 50;
             this.symbol = 'circle';
         }
 
         render(graph) {
 
             // constants TODO should these be defined somewhere else?
-            var POINT_SYMBOL_CLASS = 'pointSymbol';
+            var DATA_PATH_CLASS = 'scatter';
 
-            var xRaw = this.coordinates.x,
-                yRaw = this.coordinates.y
-
-            var x,y,xDrag,yDrag;
-
-            if(typeof xRaw == 'string') {
-                x = graph.xAxis.scale(graph.scope.$eval('params.' + xRaw));
-                xDrag = true;
-            } else {
-                x = graph.xAxis.scale(xRaw);
-                xDrag = false;
-            }
-
-            if(typeof yRaw == 'string' && graph.scope.params.hasOwnProperty(yRaw)) {
-                y = graph.yAxis.scale(graph.scope.params[yRaw])
-                yDrag = true;
-            } else {
-                y = graph.yAxis.scale(yRaw);
-                yDrag = false;
-            }
-
-            // initialization of D3 graph object group
             function init(newGroup:D3.Selection) {
-                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
                 return newGroup;
             }
 
-            var group:D3.Selection = graph.objectGroup(this.name, init);
+            var group = graph.objectGroup(this.name, init);
 
-            // establish drag behavior
-            var drag = d3.behavior.drag()
-                .on("drag", function () {
-                    var dragUpdate = {};
-                    if(xDrag) {
-                        dragUpdate[xRaw] = graph.xAxis.scale.invert(d3.event.x)
-                    }
-                    if(yDrag) {
-                        dragUpdate[yRaw] = graph.yAxis.scale.invert(d3.event.y)
-                    }
-                    graph.updateParams(dragUpdate)
-                });
+            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
 
-            // draw the symbol at the point
-            var pointSymbol:D3.Selection = group.select('.'+ POINT_SYMBOL_CLASS);
-            if(this.symbol === 'none') {
-                pointSymbol.attr('class','invisible ' + POINT_SYMBOL_CLASS);
-            } else {
-                pointSymbol
-                    .attr({
-                        'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
-                        'd': d3.svg.symbol().type(this.symbol).size(this.size),
-                        'transform': "translate(" + x + "," + y + ")"
-                        })
-                    .call(drag);
-            }
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS);
+            dataPoints.attr({'d': d3.svg.symbol().type(this.symbol).size(this.size),
+                'transform': function (d) {
+                    return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
+                }
+            });
 
             return graph;
 
