@@ -23,8 +23,8 @@ module KineticGraphs
             var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
             var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
-            $scope.interactiveDefinitions = {graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'covariance', precision: '0.1', axis: {min: 0, max: 1}}"]};
-            $scope.params = {covariance: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5};
+            $scope.interactiveDefinitions = {graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1}}"]};
+            $scope.params = {correlation: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5};
             $scope.functionDefinitions = {finance: [
                 {name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}"},
                 {name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}"},

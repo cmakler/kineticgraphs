@@ -9,8 +9,8 @@ var KineticGraphs;
             var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
             var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
-            $scope.interactiveDefinitions = { graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'covariance', precision: '0.1', axis: {min: 0, max: 1}}"] };
-            $scope.params = { covariance: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5 };
+            $scope.interactiveDefinitions = { graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1}}"] };
+            $scope.params = { correlation: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5 };
             $scope.functionDefinitions = { finance: [
                 { name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}" },
                 { name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}" },
@@ -619,10 +619,14 @@ var FinanceGraphs;
                     function convexCombination(a, b, percent) {
                         return (percent * a + (100 - percent) * b) / 100;
                     }
+                    function varianceWithCorrelation(variance1, variance2, correlation, percent) {
+                        var fraction = percent / 100;
+                        return fraction * fraction * variance1 + fraction * (1 - fraction) * correlation + (1 - fraction) * (1 - fraction) * variance2;
+                    }
                     var mean1 = propertyAsNumber(asset1, 'mean', scope), variance1 = propertyAsNumber(asset1, 'variance', scope), mean2 = propertyAsNumber(asset2, 'mean', scope), variance2 = propertyAsNumber(asset2, 'variance', scope);
                     for (var i = 1; i < 10; i++) {
                         mean = convexCombination(mean1, mean2, i * 10);
-                        variance = convexCombination(variance1, variance2, i * 10);
+                        variance = varianceWithCorrelation(variance1, variance2, scope.params.correlation, i * 10);
                         dataset.push({ x: variance, y: mean });
                     }
                     return dataset;

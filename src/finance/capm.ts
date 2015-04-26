@@ -82,6 +82,11 @@ module FinanceGraphs.CAPM
                     return (percent*a + (100-percent)*b)/100;
                 }
 
+                function varianceWithCorrelation(variance1,variance2,correlation,percent) {
+                    var fraction = percent/100;
+                    return fraction*fraction*variance1 + fraction*(1-fraction)*correlation + (1-fraction)*(1-fraction)*variance2;
+                }
+
                 var mean1 = propertyAsNumber(asset1,'mean',scope),
                     variance1 = propertyAsNumber(asset1,'variance',scope),
                     mean2 = propertyAsNumber(asset2,'mean',scope),
@@ -89,7 +94,7 @@ module FinanceGraphs.CAPM
 
                 for(var i=1; i<10; i++) {
                     mean = convexCombination(mean1, mean2, i*10);
-                    variance = convexCombination(variance1, variance2, i*10);
+                    variance = varianceWithCorrelation(variance1, variance2,scope.params.correlation, i*10);
                     dataset.push({x: variance, y: mean});
                 }
                 return dataset;
