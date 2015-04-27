@@ -2,7 +2,8 @@
  * Created by cmakler on 4/24/15.
  */
 
-
+// numeric lacks a definitions file for now; need to add this to make Typescript happy
+declare var numeric: any;
 
 module FinanceGraphs.CAPM
 {
@@ -12,7 +13,7 @@ module FinanceGraphs.CAPM
         variance: number;
     }
 
-    export interface IAsset extends KineticGraphs.IInteractive
+    export interface IAsset extends KineticGraphs.IParameterizable
     {
         mean: number;
         variance: number;
@@ -43,63 +44,71 @@ module FinanceGraphs.CAPM
     export interface IPortfolioDefinition extends KineticGraphs.IParameterizableDefinition
     {
         assets: Asset[];
-        covariance: number;
+        correlation: number;
     }
 
     export interface IPortfolio extends KineticGraphs.IInteractive
     {
         data: () => KineticGraphs.ICoordinates[];
+        assets: Asset[];
+        mean: (weightArray:number[]) => number;
+        variance: (weightArray:number[]) => number;
     }
 
     export class Portfolio extends KineticGraphs.Interactive implements IPortfolio {
+
+        public assets;
+        public correlation:number;
 
         constructor(definitionString:string) {
             super(definitionString)
         }
 
-        data() {
-            var asset1 = this.definition.assets[0];
-            var asset2 = this.definition.assets[1];
+        _update() {
+            this.assets = this.definition.assets;
+            this.correlation = this.scope.params.correlation; //temporary placeholder for just 2 assets
+        }
+
+        mean(weightArray) {
             var scope = this.scope;
+            var meanArray = this.assets.map(function(asset) {return KineticGraphs.propertyAsNumber(asset,'mean',scope)});
+            return numeric.dot(meanArray,weightArray);
+        }
 
-            function dataPoints(a,b) {
-                var dataset = [];
-                var mean, variance;
+        variance(weightArray) {
 
-                function propertyAsNumber(o,p,scope) {
-                    var v;
-                    if(o.hasOwnProperty(p)){
-                        if(typeof o[p] == 'string') {
-                            v = scope.$eval('params.' + o[p]);
-                        } else {
-                            v = o[p];
-                        }
-                    }
-                    return v;
+            // Helper function mapping an array onto a diagonal matrix of array values;
+            // used to generate variance matrix from array of variances
+            function diagonalMatrix(a:number[]) {
+                var M:number[][] = [];
+                for(var i=0; i<a.length; i++) {
+                    M.push(a.map(function(n,j){
+                        return (i == j) ? n : 0
+                    }))
                 }
-
-                function convexCombination(a,b,percent) {
-                    return (percent*a + (100-percent)*b)/100;
-                }
-
-                function varianceWithCorrelation(variance1,variance2,correlation,percent) {
-                    var fraction = percent/100;
-                    return fraction*fraction*variance1 + 2*fraction*(1-fraction)*correlation*Math.sqrt(variance1*variance2) + (1-fraction)*(1-fraction)*variance2;
-                }
-
-                var mean1 = propertyAsNumber(asset1,'mean',scope),
-                    variance1 = propertyAsNumber(asset1,'variance',scope),
-                    mean2 = propertyAsNumber(asset2,'mean',scope),
-                    variance2 = propertyAsNumber(asset2,'variance',scope);
-
-                for(var i=1; i<10; i++) {
-                    mean = convexCombination(mean1, mean2, i*10);
-                    variance = varianceWithCorrelation(variance1, variance2,scope.params.correlation, i*10);
-                    dataset.push({x: variance, y: mean});
-                }
-                return dataset;
+                return M;
             }
-            return dataPoints(asset1,asset2);
+
+            var scope = this.scope;
+            var varianceArray = this.assets.map(function(asset) {return KineticGraphs.propertyAsNumber(asset,'variance',scope)});
+            var varianceMatrix = diagonalMatrix(varianceArray);
+
+            var correlationMatrix = [[1,this.correlation],[this.correlation,1]]; //temporary placeholder for just 2 assets
+
+            var covarianceMatrix = numeric.dot(correlationMatrix,varianceMatrix);
+            return numeric.dot(weightArray,numeric.dot(covarianceMatrix,weightArray));
+        }
+
+        // Generate dataset of portfolio means and variances for various weights
+        data() {
+            var portfolio = this, d = [];
+            for(var w=0.1; w<1; w+=0.1) //w is weight of asset 1; weight of asset 2 is 1-w
+            {
+                d.push({
+                    x: portfolio.variance([w,1-w]),
+                    y: portfolio.mean([w, 1-w])});
+            }
+            return d;
         }
     }
 }

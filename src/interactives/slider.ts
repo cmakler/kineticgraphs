@@ -55,7 +55,7 @@ module KineticGraphs
 
             // Update axis object
             slider.axis.update(definition.axis);
-            slider.axis.tickValues = slider.axis.domain.toArray();
+            //slider.axis.tickValues = slider.axis.domain.toArray();
 
             // Remove existing slider
             d3.select(element).select('svg').remove();

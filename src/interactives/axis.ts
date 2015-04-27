@@ -9,6 +9,7 @@ module KineticGraphs
         max?: number;
         title?: string;
         ticks?: number;
+        tickValues?: number[];
     }
 
     export interface IAxis
@@ -20,6 +21,7 @@ module KineticGraphs
         domain: IDomain;
         title: string;
         ticks: number;
+        tickValues: number[];
     }
 
     export class Axis implements IAxis{

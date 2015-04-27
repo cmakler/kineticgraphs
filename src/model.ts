@@ -18,13 +18,21 @@ module KineticGraphs
         constructor(public $scope:IModelScope, $window:ng.IWindowService)
         {
 
-            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 10, title: 'Variance'},yAxis: {min: 0, max: 20, title: 'Mean'}, graphObjects:[";
+            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Variance'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
             var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
             var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
             var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
-            $scope.interactiveDefinitions = {graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1}}"]};
-            $scope.params = {correlation: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5};
+            $scope.interactiveDefinitions = {
+                graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd],
+                sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"]
+            };
+            $scope.params = {
+                correlation: 0.8,
+                mean1: 0.4,
+                var1: 0.4,
+                mean2: 0.2,
+                var2: 0.1};
             $scope.functionDefinitions = {finance: [
                 {name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}"},
                 {name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}"},

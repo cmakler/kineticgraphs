@@ -4,13 +4,22 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 10, title: 'Variance'},yAxis: {min: 0, max: 20, title: 'Mean'}, graphObjects:[";
+            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Variance'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
             var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
             var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
             var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
-            $scope.interactiveDefinitions = { graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd], sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1}}"] };
-            $scope.params = { correlation: 0.8, mean1: 10, var1: 4, mean2: 13, var2: 5 };
+            $scope.interactiveDefinitions = {
+                graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd],
+                sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"]
+            };
+            $scope.params = {
+                correlation: 0.8,
+                mean1: 0.4,
+                var1: 0.4,
+                mean2: 0.2,
+                var2: 0.1
+            };
             $scope.functionDefinitions = { finance: [
                 { name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}" },
                 { name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}" },
@@ -101,6 +110,19 @@ var KineticGraphs;
         return Domain;
     })();
     KineticGraphs.Domain = Domain;
+    function propertyAsNumber(o, p, scope) {
+        var v;
+        if (o.hasOwnProperty(p)) {
+            if (typeof o[p] == 'string') {
+                v = scope.$eval('params.' + o[p]);
+            }
+            else {
+                v = o[p];
+            }
+        }
+        return v;
+    }
+    KineticGraphs.propertyAsNumber = propertyAsNumber;
 })(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/24/15.
@@ -347,7 +369,7 @@ var KineticGraphs;
             var margins = { top: radius, left: radius, bottom: radius, right: radius };
             // Update axis object
             slider.axis.update(definition.axis);
-            slider.axis.tickValues = slider.axis.domain.toArray();
+            //slider.axis.tickValues = slider.axis.domain.toArray();
             // Remove existing slider
             d3.select(element).select('svg').remove();
             // Create new SVG element for the graph visualization
@@ -597,41 +619,48 @@ var FinanceGraphs;
             function Portfolio(definitionString) {
                 _super.call(this, definitionString);
             }
-            Portfolio.prototype.data = function () {
-                var asset1 = this.definition.assets[0];
-                var asset2 = this.definition.assets[1];
+            Portfolio.prototype._update = function () {
+                this.assets = this.definition.assets;
+                this.correlation = this.scope.params.correlation; //temporary placeholder for just 2 assets
+            };
+            Portfolio.prototype.mean = function (weightArray) {
                 var scope = this.scope;
-                function dataPoints(a, b) {
-                    var dataset = [];
-                    var mean, variance;
-                    function propertyAsNumber(o, p, scope) {
-                        var v;
-                        if (o.hasOwnProperty(p)) {
-                            if (typeof o[p] == 'string') {
-                                v = scope.$eval('params.' + o[p]);
-                            }
-                            else {
-                                v = o[p];
-                            }
-                        }
-                        return v;
+                var meanArray = this.assets.map(function (asset) {
+                    return KineticGraphs.propertyAsNumber(asset, 'mean', scope);
+                });
+                return numeric.dot(meanArray, weightArray);
+            };
+            Portfolio.prototype.variance = function (weightArray) {
+                // Helper function mapping an array onto a diagonal matrix of array values;
+                // used to generate variance matrix from array of variances
+                function diagonalMatrix(a) {
+                    var M = [];
+                    for (var i = 0; i < a.length; i++) {
+                        M.push(a.map(function (n, j) {
+                            return (i == j) ? n : 0;
+                        }));
                     }
-                    function convexCombination(a, b, percent) {
-                        return (percent * a + (100 - percent) * b) / 100;
-                    }
-                    function varianceWithCorrelation(variance1, variance2, correlation, percent) {
-                        var fraction = percent / 100;
-                        return fraction * fraction * variance1 + 2 * fraction * (1 - fraction) * correlation * Math.sqrt(variance1 * variance2) + (1 - fraction) * (1 - fraction) * variance2;
-                    }
-                    var mean1 = propertyAsNumber(asset1, 'mean', scope), variance1 = propertyAsNumber(asset1, 'variance', scope), mean2 = propertyAsNumber(asset2, 'mean', scope), variance2 = propertyAsNumber(asset2, 'variance', scope);
-                    for (var i = 1; i < 10; i++) {
-                        mean = convexCombination(mean1, mean2, i * 10);
-                        variance = varianceWithCorrelation(variance1, variance2, scope.params.correlation, i * 10);
-                        dataset.push({ x: variance, y: mean });
-                    }
-                    return dataset;
+                    return M;
                 }
-                return dataPoints(asset1, asset2);
+                var scope = this.scope;
+                var varianceArray = this.assets.map(function (asset) {
+                    return KineticGraphs.propertyAsNumber(asset, 'variance', scope);
+                });
+                var varianceMatrix = diagonalMatrix(varianceArray);
+                var correlationMatrix = [[1, this.correlation], [this.correlation, 1]]; //temporary placeholder for just 2 assets
+                var covarianceMatrix = numeric.dot(correlationMatrix, varianceMatrix);
+                return numeric.dot(weightArray, numeric.dot(covarianceMatrix, weightArray));
+            };
+            // Generate dataset of portfolio means and variances for various weights
+            Portfolio.prototype.data = function () {
+                var portfolio = this, d = [];
+                for (var w = 0.1; w < 1; w += 0.1) {
+                    d.push({
+                        x: portfolio.variance([w, 1 - w]),
+                        y: portfolio.mean([w, 1 - w])
+                    });
+                }
+                return d;
             };
             return Portfolio;
         })(KineticGraphs.Interactive);
@@ -639,6 +668,7 @@ var FinanceGraphs;
     })(CAPM = FinanceGraphs.CAPM || (FinanceGraphs.CAPM = {}));
 })(FinanceGraphs || (FinanceGraphs = {}));
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
+/// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
 /// <reference path="model.ts" />
