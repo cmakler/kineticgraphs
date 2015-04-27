@@ -16,7 +16,8 @@
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
 
-/// <reference path="finance/capm.ts"/>
+/// <reference path="finance/asset.ts"/>
+/// <reference path="finance/portfolio.ts"/>
 
 
 angular.module('KineticGraphs', [])

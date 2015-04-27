@@ -17,12 +17,33 @@
 <body>
 <div ng-controller="KineticGraphCtrl">
     <div style="position:absolute;left:800px">
-        <p>Correlation coefficient: {{params.correlation | number:2}}</p>
-        <div id="slider"></div>
+        <table>
+            <tr>
+                <td>r12:</td><td id="slider12" style="width:200px"></td>
+            </tr>
+            <tr>
+                <td>r23:</td><td id="slider23" style="width:200px"></td>
+            </tr>
+            <tr>
+                <td>r13:</td><td id="slider13" style="width:200px"></td>
+            </tr>
+        </table>
+        <hr/>
+        <p>Correlation Matrix</p>
+        <table>
+            <tr ng-repeat="row in functions.portfolio.correlationMatrix">
+                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:1}}</td>
+            </tr>
+        </table>
+        <hr/>
+        <p>Covariance Matrix</p>
+        <table>
+            <tr ng-repeat="row in functions.portfolio.covarianceMatrix">
+                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:2}}</td>
+            </tr>
+        </table>
     </div>
     <div id="graph"></div>
-
-
 <script>
     color_1 = $.Color("#F5FF00");
     color_2 = $.Color("#00C2FF");

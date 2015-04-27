@@ -18,25 +18,35 @@ module KineticGraphs
         constructor(public $scope:IModelScope, $window:ng.IWindowService)
         {
 
-            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Variance'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
+            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
             var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
             var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var point3 = ",{type:'Point', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
             var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd],
-                sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"]
+                graphs: [graphDef + linePlot + point1 + point2 + point3 + graphDefEnd],
+                sliders: [
+                    "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
+                    "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
+                    "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"]
             };
             $scope.params = {
-                correlation: 0.8,
+                rho01: 0.8,
+                rho12: -0.4,
+                rho02: 1,
                 mean1: 0.4,
-                var1: 0.4,
+                stdev1: 0.4,
                 mean2: 0.2,
-                var2: 0.1};
+                stdev2: 0.1,
+                mean3: 0.3,
+                stdev3: 0.8
+            };
             $scope.functionDefinitions = {finance: [
-                {name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}"},
-                {name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}"},
-                {name: 'portfolio', model: 'CAPM', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2]}"}
+                {name: 'asset1', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean1', stdev: 'stdev1'}"},
+                {name: 'asset2', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean2', stdev: 'stdev2'}"},
+                {name: 'asset3', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean3', stdev: 'stdev3'}"},
+                {name: 'portfolio', model: 'PortfolioAnalysis', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2, functions.asset3], correlationCoefficients: {rho12: params.rho12, rho23: params.rho23, rho13: params.rho13}}"}
             ]};
             $scope.graphParams = {xAxisLabel: 'Quantity'};
 

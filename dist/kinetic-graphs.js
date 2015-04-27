@@ -4,26 +4,36 @@ var KineticGraphs;
     var ModelController = (function () {
         function ModelController($scope, $window) {
             this.$scope = $scope;
-            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Variance'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
+            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
             var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
             var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var point3 = ",{type:'Point', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
             var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot + point1 + point2 + graphDefEnd],
-                sliders: ["{element_id: 'slider', param: 'correlation', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"]
+                graphs: [graphDef + linePlot + point1 + point2 + point3 + graphDefEnd],
+                sliders: [
+                    "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
+                    "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
+                    "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"
+                ]
             };
             $scope.params = {
-                correlation: 0.8,
+                rho01: 0.8,
+                rho12: -0.4,
+                rho02: 1,
                 mean1: 0.4,
-                var1: 0.4,
+                stdev1: 0.4,
                 mean2: 0.2,
-                var2: 0.1
+                stdev2: 0.1,
+                mean3: 0.3,
+                stdev3: 0.8
             };
             $scope.functionDefinitions = { finance: [
-                { name: 'asset1', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean1', variance: 'var1'}" },
-                { name: 'asset2', model: 'CAPM', type: 'Asset', definition: "{mean: 'mean2', variance: 'var2'}" },
-                { name: 'portfolio', model: 'CAPM', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2]}" }
+                { name: 'asset1', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean1', stdev: 'stdev1'}" },
+                { name: 'asset2', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean2', stdev: 'stdev2'}" },
+                { name: 'asset3', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean3', stdev: 'stdev3'}" },
+                { name: 'portfolio', model: 'PortfolioAnalysis', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2, functions.asset3], correlationCoefficients: {rho12: params.rho12, rho23: params.rho23, rho13: params.rho13}}" }
             ] };
             $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates graph objects from (string) graph definitions
@@ -593,12 +603,12 @@ var KineticGraphs;
     KineticGraphs.Scatter = Scatter;
 })(KineticGraphs || (KineticGraphs = {}));
 /**
- * Created by cmakler on 4/24/15.
+ * Created by cmakler on 4/27/15.
  */
 var FinanceGraphs;
 (function (FinanceGraphs) {
-    var CAPM;
-    (function (CAPM) {
+    var PortfolioAnalysis;
+    (function (PortfolioAnalysis) {
         var Asset = (function (_super) {
             __extends(Asset, _super);
             function Asset(definitionString) {
@@ -606,66 +616,87 @@ var FinanceGraphs;
             }
             Asset.prototype._update = function () {
                 this.mean = this.definition.mean;
-                this.variance = this.definition.variance;
+                this.stdev = this.definition.stdev;
             };
             Asset.prototype.coordinates = function () {
-                return { x: this.variance, y: this.mean };
+                return { x: this.stdev, y: this.mean };
             };
             return Asset;
         })(KineticGraphs.Interactive);
-        CAPM.Asset = Asset;
+        PortfolioAnalysis.Asset = Asset;
+    })(PortfolioAnalysis = FinanceGraphs.PortfolioAnalysis || (FinanceGraphs.PortfolioAnalysis = {}));
+})(FinanceGraphs || (FinanceGraphs = {}));
+/**
+ * Created by cmakler on 4/27/15.
+ */
+var FinanceGraphs;
+(function (FinanceGraphs) {
+    var PortfolioAnalysis;
+    (function (PortfolioAnalysis) {
         var Portfolio = (function (_super) {
             __extends(Portfolio, _super);
             function Portfolio(definitionString) {
                 _super.call(this, definitionString);
             }
             Portfolio.prototype._update = function () {
-                this.assets = this.definition.assets;
-                this.correlation = this.scope.params.correlation; //temporary placeholder for just 2 assets
-            };
-            Portfolio.prototype.mean = function (weightArray) {
-                var scope = this.scope;
-                var meanArray = this.assets.map(function (asset) {
+                var p = this, scope = this.scope;
+                p.assets = p.definition.assets;
+                p.meanArray = p.assets.map(function (asset) {
                     return KineticGraphs.propertyAsNumber(asset, 'mean', scope);
                 });
-                return numeric.dot(meanArray, weightArray);
-            };
-            Portfolio.prototype.variance = function (weightArray) {
-                // Helper function mapping an array onto a diagonal matrix of array values;
-                // used to generate variance matrix from array of variances
-                function diagonalMatrix(a) {
-                    var M = [];
-                    for (var i = 0; i < a.length; i++) {
-                        M.push(a.map(function (n, j) {
-                            return (i == j) ? n : 0;
-                        }));
-                    }
-                    return M;
-                }
-                var scope = this.scope;
-                var varianceArray = this.assets.map(function (asset) {
-                    return KineticGraphs.propertyAsNumber(asset, 'variance', scope);
+                p.stdevArray = p.assets.map(function (asset) {
+                    return KineticGraphs.propertyAsNumber(asset, 'stdev', scope);
                 });
-                var varianceMatrix = diagonalMatrix(varianceArray);
-                var correlationMatrix = [[1, this.correlation], [this.correlation, 1]]; //temporary placeholder for just 2 assets
-                var covarianceMatrix = numeric.dot(correlationMatrix, varianceMatrix);
-                return numeric.dot(weightArray, numeric.dot(covarianceMatrix, weightArray));
+                p.correlationMatrix = [];
+                p.covarianceMatrix = [];
+                function correlationCoefficient(i, j) {
+                    if (i == j) {
+                        return 1;
+                    }
+                    if (scope.params.hasOwnProperty('rho' + i + j)) {
+                        return scope.params['rho' + i + j];
+                    }
+                    if (scope.params.hasOwnProperty('rho' + j + i)) {
+                        return scope.params['rho' + j + i];
+                    }
+                    console.log('no coefficient specified for ', i, j);
+                }
+                for (var i = 0; i < p.assets.length; i++) {
+                    var correlationMatrixRow = [];
+                    for (var j = 0; j < p.assets.length; j++) {
+                        correlationMatrixRow.push(correlationCoefficient(i, j));
+                    }
+                    p.correlationMatrix.push(correlationMatrixRow);
+                    p.covarianceMatrix.push(correlationMatrixRow.map(function (coeff, j) {
+                        return coeff * p.stdevArray[i] * p.stdevArray[j];
+                    }));
+                }
+            };
+            Portfolio.prototype.mean = function (weightArray) {
+                return numeric.dot(this.meanArray, weightArray);
+            };
+            Portfolio.prototype.stdev = function (weightArray) {
+                return Math.sqrt(numeric.dot(weightArray, numeric.dot(this.covarianceMatrix, weightArray)));
             };
             // Generate dataset of portfolio means and variances for various weights
             Portfolio.prototype.data = function () {
                 var portfolio = this, d = [];
-                for (var w = 0.1; w < 1; w += 0.1) {
-                    d.push({
-                        x: portfolio.variance([w, 1 - w]),
-                        y: portfolio.mean([w, 1 - w])
-                    });
+                for (var w1 = 0; w1 < 10; w1++) {
+                    for (var w2 = 0; w2 < 11 - w1; w2++) {
+                        var weightArray = [w1 * 0.1, w2 * 0.1, 1 - w1 * 0.1 - w2 * 0.1];
+                        d.push({
+                            x: portfolio.stdev(weightArray),
+                            y: portfolio.mean(weightArray)
+                        });
+                        console.log(weightArray);
+                    }
                 }
                 return d;
             };
             return Portfolio;
-        })(KineticGraphs.Interactive);
-        CAPM.Portfolio = Portfolio;
-    })(CAPM = FinanceGraphs.CAPM || (FinanceGraphs.CAPM = {}));
+        })(KineticGraphs.Parameterizable);
+        PortfolioAnalysis.Portfolio = Portfolio;
+    })(PortfolioAnalysis = FinanceGraphs.PortfolioAnalysis || (FinanceGraphs.PortfolioAnalysis = {}));
 })(FinanceGraphs || (FinanceGraphs = {}));
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
@@ -681,6 +712,7 @@ var FinanceGraphs;
 /// <reference path="graphObjects/point.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
-/// <reference path="finance/capm.ts"/>
+/// <reference path="finance/asset.ts"/>
+/// <reference path="finance/portfolio.ts"/>
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
 //# sourceMappingURL=kinetic-graphs.js.map
