@@ -621,7 +621,7 @@ var FinanceGraphs;
                     }
                     function varianceWithCorrelation(variance1, variance2, correlation, percent) {
                         var fraction = percent / 100;
-                        return fraction * fraction * variance1 + fraction * (1 - fraction) * correlation + (1 - fraction) * (1 - fraction) * variance2;
+                        return fraction * fraction * variance1 + 2 * fraction * (1 - fraction) * correlation * Math.sqrt(variance1 * variance2) + (1 - fraction) * (1 - fraction) * variance2;
                     }
                     var mean1 = propertyAsNumber(asset1, 'mean', scope), variance1 = propertyAsNumber(asset1, 'variance', scope), mean2 = propertyAsNumber(asset2, 'mean', scope), variance2 = propertyAsNumber(asset2, 'variance', scope);
                     for (var i = 1; i < 10; i++) {
