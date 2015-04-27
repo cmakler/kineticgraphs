@@ -50,4 +50,16 @@ module KineticGraphs
         y: number;
     }
 
+    export function propertyAsNumber(o,p,scope) {
+        var v;
+        if(o.hasOwnProperty(p)){
+            if(typeof o[p] == 'string') {
+                v = scope.$eval('params.' + o[p]);
+            } else {
+                v = o[p];
+            }
+        }
+        return v;
+    }
+
 }
