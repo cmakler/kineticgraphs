@@ -86,7 +86,6 @@ a {
 
 .scatter {
     stroke: black;
-    stroke-width: 2;
-    fill: red;
+    stroke-width: 1;
 }
 

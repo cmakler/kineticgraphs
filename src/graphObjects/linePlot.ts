@@ -6,16 +6,19 @@ module KineticGraphs {
     export interface ILinePlot extends IGraphObject {
 
         data: ICoordinates[];
+        interpolation: string;
     }
 
     export class LinePlot extends GraphObject implements ILinePlot {
 
         public data;
+        public interpolation;
 
         constructor() {
 
             super();
             this.data = [];
+            this.interpolation = 'linear';
 
         }
 
@@ -32,7 +35,7 @@ module KineticGraphs {
             var group:D3.Selection = graph.objectGroup(this.name, init);
 
             var dataLine = d3.svg.line()
-                .interpolate('linear')
+                .interpolate(this.interpolation)
                 .x(function (d) {
                     return graph.xAxis.scale(d.x)
                 })

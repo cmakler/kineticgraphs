@@ -546,6 +546,7 @@ var KineticGraphs;
         function LinePlot() {
             _super.call(this);
             this.data = [];
+            this.interpolation = 'linear';
         }
         LinePlot.prototype.render = function (graph) {
             // constants TODO should these be defined somewhere else?
@@ -555,7 +556,7 @@ var KineticGraphs;
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
-            var dataLine = d3.svg.line().interpolate('linear').x(function (d) {
+            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
                 return graph.xAxis.scale(d.x);
             }).y(function (d) {
                 return graph.yAxis.scale(d.y);
@@ -581,21 +582,35 @@ var KineticGraphs;
             _super.call(this);
             // establish defaults
             this.data = [];
-            this.size = 50;
+            this.size = 25;
             this.symbol = 'circle';
         }
         Scatter.prototype.render = function (graph) {
             // constants TODO should these be defined somewhere else?
-            var DATA_PATH_CLASS = 'scatter';
+            var DATA_PATH_CLASS = 'scatter', scope = graph.scope;
             function init(newGroup) {
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
             var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
-            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS);
-            dataPoints.attr({ 'd': d3.svg.symbol().type(this.symbol).size(this.size), 'transform': function (d) {
-                return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
-            } });
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS).on('mouseover', function (d) {
+                scope.$apply(function () {
+                    scope.selectedWeights = d.weights;
+                });
+            }).on('mouseout', function (d) {
+                scope.$apply(function () {
+                    scope.selectedWeights = [];
+                });
+            });
+            dataPoints.attr({
+                'd': d3.svg.symbol().type(this.symbol).size(this.size),
+                'fill': function (d) {
+                    return d.color;
+                },
+                'transform': function (d) {
+                    return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
+                }
+            });
             return graph;
         };
         return Scatter;
@@ -676,19 +691,27 @@ var FinanceGraphs;
                 return numeric.dot(this.meanArray, weightArray);
             };
             Portfolio.prototype.stdev = function (weightArray) {
-                return Math.sqrt(numeric.dot(weightArray, numeric.dot(this.covarianceMatrix, weightArray)));
+                var variance = numeric.dot(weightArray, numeric.dot(this.covarianceMatrix, weightArray));
+                if (variance >= 0) {
+                    return Math.sqrt(variance);
+                }
+                else {
+                    console.log('oops! getting a negative variance with weights ', weightArray[0], ',', weightArray[1], ',', weightArray[2], '!');
+                    return 0;
+                }
             };
             // Generate dataset of portfolio means and variances for various weights
             Portfolio.prototype.data = function () {
                 var portfolio = this, d = [];
-                for (var w1 = 0; w1 < 10; w1++) {
-                    for (var w2 = 0; w2 < 11 - w1; w2++) {
-                        var weightArray = [w1 * 0.1, w2 * 0.1, 1 - w1 * 0.1 - w2 * 0.1];
+                for (var w1 = 0; w1 < 20; w1++) {
+                    for (var w2 = 0; w2 < 21 - w1; w2++) {
+                        var weightArray = [w1 * 0.05, w2 * 0.05, 1 - w1 * 0.05 - w2 * 0.05];
                         d.push({
                             x: portfolio.stdev(weightArray),
-                            y: portfolio.mean(weightArray)
+                            y: portfolio.mean(weightArray),
+                            color: (w1 == 0 || w2 == 0 || w1 + w2 == 20) ? 'red' : 'blue',
+                            weights: weightArray
                         });
-                        console.log(weightArray);
                     }
                 }
                 return d;

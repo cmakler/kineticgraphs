@@ -39,9 +39,14 @@
         <p>Covariance Matrix</p>
         <table>
             <tr ng-repeat="row in functions.portfolio.covarianceMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:2}}</td>
+                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:4}}</td>
             </tr>
         </table>
+        <hr/>
+        <p>Porfolio:</p>
+        <p>{{ selectedWeights[0]*100 | number:0 }}% asset 1</p>
+        <p>{{ selectedWeights[1]*100 | number:0 }}% asset 2</p>
+        <p>{{ selectedWeights[2]*100 | number:0 }}% asset 3</p>
     </div>
     <div id="graph"></div>
 <script>

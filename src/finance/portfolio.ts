@@ -32,6 +32,7 @@ module FinanceGraphs.PortfolioAnalysis
     export class Portfolio extends KineticGraphs.Parameterizable implements IPortfolio {
 
         public assets;
+        public definition:IPortfolioDefinition;
         public correlation:number;
         public correlationMatrix: number[][];
         public covarianceMatrix: number[][];
@@ -86,20 +87,30 @@ module FinanceGraphs.PortfolioAnalysis
         }
 
         stdev(weightArray) {
-            return Math.sqrt(numeric.dot(weightArray,numeric.dot(this.covarianceMatrix,weightArray)));
+            var variance = numeric.dot(weightArray,numeric.dot(this.covarianceMatrix,weightArray));
+            if(variance >= 0) {
+                return Math.sqrt(variance);
+            } else {
+                console.log('oops! getting a negative variance with weights ',weightArray[0],',',weightArray[1],',',weightArray[2],'!');
+                return 0;
+            }
+
         }
 
         // Generate dataset of portfolio means and variances for various weights
         data() {
             var portfolio = this, d = [];
-            for(var w1=0; w1<10; w1++) //w1 is weight of asset 1;
+            for(var w1=0; w1<20; w1++) //w1 is weight of asset 1;
             {
-                for(var w2=0; w2<11-w1; w2++) {
-                    var weightArray = [w1*0.1, w2*0.1, 1-w1*0.1-w2*0.1];
+                for(var w2=0; w2<21-w1; w2++) {
+                    var weightArray = [w1*0.05, w2*0.05, 1-w1*0.05-w2*0.05];
+
                     d.push({
                         x: portfolio.stdev(weightArray),
-                        y: portfolio.mean(weightArray)});
-                    console.log(weightArray)
+                        y: portfolio.mean(weightArray),
+                        color: (w1 == 0 || w2 == 0 || w1 + w2 == 20) ? 'red' : 'blue',
+                        weights: weightArray
+                    })
                 }
             }
             return d;

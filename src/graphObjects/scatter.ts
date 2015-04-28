@@ -26,14 +26,15 @@ module KineticGraphs
 
             // establish defaults
             this.data = [];
-            this.size = 50;
+            this.size = 25;
             this.symbol = 'circle';
         }
 
         render(graph) {
 
             // constants TODO should these be defined somewhere else?
-            var DATA_PATH_CLASS = 'scatter';
+            var DATA_PATH_CLASS = 'scatter',
+                scope = graph.scope;
 
             function init(newGroup:D3.Selection) {
                 return newGroup;
@@ -43,8 +44,17 @@ module KineticGraphs
 
             var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
 
-            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS);
-            dataPoints.attr({'d': d3.svg.symbol().type(this.symbol).size(this.size),
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS)
+                .on('mouseover', function(d){
+                    scope.$apply(function(){scope.selectedWeights = d.weights;});
+                })
+                .on('mouseout', function(d){
+                    scope.$apply(function(){scope.selectedWeights = [];});
+                });
+
+            dataPoints.attr({
+                'd': d3.svg.symbol().type(this.symbol).size(this.size),
+                'fill': function(d) { return d.color },
                 'transform': function (d) {
                     return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
                 }
