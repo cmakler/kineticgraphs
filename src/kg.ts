@@ -13,6 +13,7 @@
 /// <reference path="interactives/slider.ts" />
 /// <reference path="graphObjects/graphObjects.ts" />
 /// <reference path="graphObjects/point.ts" />
+/// <reference path="graphObjects/controlPoint.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
 

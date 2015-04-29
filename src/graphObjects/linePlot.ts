@@ -41,14 +41,17 @@ module KineticGraphs {
                 })
                 .y(function (d) {
                     return graph.yAxis.scale(d.y)
-                });
+                })
+
 
             var dataPath:D3.Selection = group.select('.' + DATA_PATH_CLASS);
 
             dataPath
                 .attr({
                     'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
-                    'd': dataLine(this.data)
+                    'd': dataLine(this.data.filter(function(d){
+                        return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y))
+                    }))
                 });
 
             return graph;

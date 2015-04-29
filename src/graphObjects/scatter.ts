@@ -36,15 +36,19 @@ module KineticGraphs
             var DATA_PATH_CLASS = 'scatter',
                 scope = graph.scope;
 
+
+
             function init(newGroup:D3.Selection) {
                 return newGroup;
             }
 
             var group = graph.objectGroup(this.name, init);
 
-            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
+            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data.filter(function(d){
+                return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y))
+            }));
 
-            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS)
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS + ' asset')
                 .on('mouseover', function(d){
                     scope.$apply(function(){scope.selectedWeights = d.weights;});
                 })
@@ -59,6 +63,8 @@ module KineticGraphs
                     return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
                 }
             });
+
+            dataPoints.exit().remove();
 
             return graph;
 

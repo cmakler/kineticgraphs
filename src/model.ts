@@ -19,13 +19,16 @@ module KineticGraphs
         {
 
             var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
-            var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
-            var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
-            var point3 = ",{type:'Point', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
-            var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
+            var point1 = ",{type:'ControlPoint', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
+            var point2 = ",{type:'ControlPoint', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var point3 = ",{type:'ControlPoint', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
+            var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],{min:-5,max:6},1000)}}";
+            var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],{min:-5,max:6},1000)}}";
+            var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],{min:-5,max:6},1000)}}";
+            var scatterPlot = ",{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot + point1 + point2 + point3 + graphDefEnd],
+                graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + scatterPlot + point1 + point2 + point3 + graphDefEnd],
                 sliders: [
                     "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
                     "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",

@@ -5,13 +5,16 @@ var KineticGraphs;
         function ModelController($scope, $window) {
             this.$scope = $scope;
             var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
-            var point1 = ",{type:'Point', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
-            var point2 = ",{type:'Point', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
-            var point3 = ",{type:'Point', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
-            var linePlot = "{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
+            var point1 = ",{type:'ControlPoint', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
+            var point2 = ",{type:'ControlPoint', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
+            var point3 = ",{type:'ControlPoint', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
+            var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],{min:-5,max:6},1000)}}";
+            var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],{min:-5,max:6},1000)}}";
+            var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],{min:-5,max:6},1000)}}";
+            var scatterPlot = ",{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot + point1 + point2 + point3 + graphDefEnd],
+                graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + scatterPlot + point1 + point2 + point3 + graphDefEnd],
                 sliders: [
                     "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
                     "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
@@ -484,6 +487,48 @@ var KineticGraphs;
         Point.prototype.render = function (graph) {
             // constants TODO should these be defined somewhere else?
             var POINT_SYMBOL_CLASS = 'pointSymbol';
+            // initialization of D3 graph object group
+            function init(newGroup) {
+                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
+                return newGroup;
+            }
+            var group = graph.objectGroup(this.name, init);
+            var showPoint = function () {
+                if (this.symbol === 'none') {
+                    return false;
+                }
+                return (graph.xAxis.domain.contains(this.coordinates.x) && graph.yAxis.domain.contains(this.coordinates.y));
+            }();
+            // draw the symbol at the point
+            var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
+            if (showPoint) {
+                pointSymbol.attr({
+                    'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                    'd': d3.svg.symbol().type(this.symbol).size(this.size),
+                    'transform': "translate(" + graph.xAxis.scale(this.coordinates.x) + "," + graph.yAxis.scale(this.coordinates.y) + ")"
+                });
+            }
+            else {
+                pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
+            }
+            return graph;
+        };
+        return Point;
+    })(KineticGraphs.GraphObject);
+    KineticGraphs.Point = Point;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var ControlPoint = (function (_super) {
+        __extends(ControlPoint, _super);
+        function ControlPoint() {
+            _super.call(this);
+        }
+        ControlPoint.prototype.render = function (graph) {
+            // constants TODO should these be defined somewhere else?
+            var CONTROL_POINT_SYMBOL_CLASS = 'controlPointSymbol';
             var xRaw = this.coordinates.x, yRaw = this.coordinates.y;
             var x, y, xDrag, yDrag;
             if (typeof xRaw == 'string') {
@@ -504,38 +549,44 @@ var KineticGraphs;
             }
             // initialization of D3 graph object group
             function init(newGroup) {
-                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
+                newGroup.append('path').attr('class', CONTROL_POINT_SYMBOL_CLASS);
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
             // establish drag behavior
             var drag = d3.behavior.drag().on("drag", function () {
-                var dragUpdate = {};
+                var dragUpdate = {}, newX, newY;
                 if (xDrag) {
-                    dragUpdate[xRaw] = graph.xAxis.scale.invert(d3.event.x);
+                    newX = graph.xAxis.scale.invert(d3.event.x);
+                    if (graph.xAxis.domain.contains(newX)) {
+                        dragUpdate[xRaw] = graph.xAxis.scale.invert(d3.event.x);
+                    }
                 }
                 if (yDrag) {
-                    dragUpdate[yRaw] = graph.yAxis.scale.invert(d3.event.y);
+                    newY = graph.yAxis.scale.invert(d3.event.y);
+                    if (graph.yAxis.domain.contains(newY)) {
+                        dragUpdate[yRaw] = graph.yAxis.scale.invert(d3.event.y);
+                    }
                 }
                 graph.updateParams(dragUpdate);
             });
             // draw the symbol at the point
-            var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
+            var pointSymbol = group.select('.' + CONTROL_POINT_SYMBOL_CLASS);
             if (this.symbol === 'none') {
-                pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
+                pointSymbol.attr('class', 'invisible ' + CONTROL_POINT_SYMBOL_CLASS);
             }
             else {
                 pointSymbol.attr({
-                    'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                    'class': this.classAndVisibility() + ' ' + CONTROL_POINT_SYMBOL_CLASS,
                     'd': d3.svg.symbol().type(this.symbol).size(this.size),
                     'transform': "translate(" + x + "," + y + ")"
                 }).call(drag);
             }
             return graph;
         };
-        return Point;
-    })(KineticGraphs.GraphObject);
-    KineticGraphs.Point = Point;
+        return ControlPoint;
+    })(KineticGraphs.Point);
+    KineticGraphs.ControlPoint = ControlPoint;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="graphObjects.ts"/>
@@ -564,7 +615,9 @@ var KineticGraphs;
             var dataPath = group.select('.' + DATA_PATH_CLASS);
             dataPath.attr({
                 'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
-                'd': dataLine(this.data)
+                'd': dataLine(this.data.filter(function (d) {
+                    return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y));
+                }))
             });
             return graph;
         };
@@ -592,8 +645,10 @@ var KineticGraphs;
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
-            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
-            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS).on('mouseover', function (d) {
+            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data.filter(function (d) {
+                return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y));
+            }));
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS + ' asset').on('mouseover', function (d) {
                 scope.$apply(function () {
                     scope.selectedWeights = d.weights;
                 });
@@ -611,6 +666,7 @@ var KineticGraphs;
                     return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
                 }
             });
+            dataPoints.exit().remove();
             return graph;
         };
         return Scatter;
@@ -641,9 +697,8 @@ var FinanceGraphs;
         PortfolioAnalysis.Asset = Asset;
     })(PortfolioAnalysis = FinanceGraphs.PortfolioAnalysis || (FinanceGraphs.PortfolioAnalysis = {}));
 })(FinanceGraphs || (FinanceGraphs = {}));
-/**
- * Created by cmakler on 4/27/15.
- */
+/// <reference path="../kg.ts"/>
+/// <reference path="../helpers.ts"/>
 var FinanceGraphs;
 (function (FinanceGraphs) {
     var PortfolioAnalysis;
@@ -703,16 +758,37 @@ var FinanceGraphs;
             // Generate dataset of portfolio means and variances for various weights
             Portfolio.prototype.data = function () {
                 var portfolio = this, d = [];
-                for (var w1 = 0; w1 < 20; w1++) {
-                    for (var w2 = 0; w2 < 21 - w1; w2++) {
-                        var weightArray = [w1 * 0.05, w2 * 0.05, 1 - w1 * 0.05 - w2 * 0.05];
+                for (var w1 = -20; w1 < 30; w1++) {
+                    for (var w2 = -20; w2 < 30; w2++) {
+                        var w3 = 1 - w1 * 0.1 - w2 * 0.1;
+                        var weightArray = [w1 * 0.1, w2 * 0.1, w3];
+                        var leveraged = (w1 > 0 && w2 > 0 && w3 > 0);
                         d.push({
                             x: portfolio.stdev(weightArray),
                             y: portfolio.mean(weightArray),
-                            color: (w1 == 0 || w2 == 0 || w1 + w2 == 20) ? 'red' : 'blue',
+                            color: leveraged ? 'red' : 'lightgrey',
                             weights: weightArray
                         });
                     }
+                }
+                return d;
+            };
+            // Generate lines representing combinations of two assets
+            Portfolio.prototype.twoAssetPortfolio = function (asset1, asset2, weightArray, domain, dataPoints) {
+                var portfolio = this, d = [], otherAssets = 0;
+                weightArray.forEach(function (w) {
+                    otherAssets += w;
+                });
+                var colorScale = d3.scale.linear().domain([0, 1]).range(["red", "blue"]);
+                for (var i = 0; i < dataPoints + 1; i++) {
+                    weightArray[asset1] = domain.min + i * (domain.max - domain.min) / dataPoints;
+                    weightArray[asset2] = 1 - weightArray[asset1];
+                    d.push({
+                        x: portfolio.stdev(weightArray),
+                        y: portfolio.mean(weightArray),
+                        color: colorScale(weightArray[asset1]),
+                        weights: weightArray
+                    });
                 }
                 return d;
             };
@@ -733,6 +809,7 @@ var FinanceGraphs;
 /// <reference path="interactives/slider.ts" />
 /// <reference path="graphObjects/graphObjects.ts" />
 /// <reference path="graphObjects/point.ts" />
+/// <reference path="graphObjects/controlPoint.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
 /// <reference path="finance/asset.ts"/>
