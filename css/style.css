@@ -84,6 +84,12 @@ a {
     fill: none;
 }
 
+.dataPathFamily {
+    stroke: lightgrey;
+    stroke-width: 0.5;
+    fill: none;
+}
+
 .scatter {
     stroke: black;
     stroke-width: 1;

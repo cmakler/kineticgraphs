@@ -16,6 +16,7 @@
 /// <reference path="graphObjects/controlPoint.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
+/// <reference path="graphObjects/pathFamily.ts" />
 
 /// <reference path="finance/asset.ts"/>
 /// <reference path="finance/portfolio.ts"/>

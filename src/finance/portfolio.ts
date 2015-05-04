@@ -93,43 +93,51 @@ module FinanceGraphs.PortfolioAnalysis
 
         }
 
-        // Generate dataset of portfolio means and variances for various weights
-        data() {
-            var portfolio = this, d = [];
-            for(var w1=-20; w1<30; w1++) //w1 is weight of asset 1;
+        fourAssetPortfolio(maxLeverage) {
+            var portfolio = this, d=[], w;
+            var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 2*(10 + maxLeverage*0.2);
+            for(var i=0; i<dataPoints + 1; i++) //w1 is weight of asset 1;
             {
-                for(var w2=-20; w2<30; w2++) {
-                    var w3 = 1-w1*0.1-w2*0.1;
-                    var weightArray = [w1*0.1, w2*0.1, w3];
-                    var leveraged = (w1 > 0 && w2 > 0 && w3 > 0);
-                    d.push({
-                        x: portfolio.stdev(weightArray),
-                        y: portfolio.mean(weightArray),
-                        color: leveraged ? 'red' : 'lightgrey',
-                        weights: weightArray
-                    })
-                }
+                w = min + i*(max - min)/dataPoints;
+                d.push(portfolio.twoAssetPortfolio(1,2,[w,0,0],maxLeverage));
+                d.push(portfolio.twoAssetPortfolio(0,2,[0,w,0],maxLeverage));
+                d.push(portfolio.twoAssetPortfolio(0,1,[0,0,w],maxLeverage));
+            }
+            return d;
+        }
+
+        // Generate dataset of portfolio means and variances for various weights
+        data(maxLeverage) {
+            var portfolio = this, d = [], w;
+            var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 2*(10 + maxLeverage*0.2);
+            for(var i=0; i<dataPoints + 1; i++) //w1 is weight of asset 1;
+            {
+                w = min + i*(max - min)/dataPoints;
+                d.push(portfolio.twoAssetPortfolio(1,2,[w,0,0],maxLeverage));
+                d.push(portfolio.twoAssetPortfolio(0,2,[0,w,0],maxLeverage));
+                d.push(portfolio.twoAssetPortfolio(0,1,[0,0,w],maxLeverage));
             }
             return d;
         }
 
         // Generate lines representing combinations of two assets
-        twoAssetPortfolio(asset1,asset2,weightArray,domain,dataPoints) {
+        twoAssetPortfolio(asset1,asset2,weightArray,maxLeverage) {
             var portfolio = this, d=[], otherAssets = 0;
             weightArray.forEach(function(w) {otherAssets += w});
-
+            var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 2*(10 + maxLeverage*0.2);
             var colorScale = d3.scale.linear().domain([0,1]).range(["red","blue"])
             for(var i=0; i<dataPoints + 1; i++) //w1 is weight of asset 1;
             {
-                weightArray[asset1] = domain.min + i*(domain.max - domain.min)/dataPoints;
-                weightArray[asset2] = 1 - weightArray[asset1];
-
-                d.push({
-                    x: portfolio.stdev(weightArray),
-                    y: portfolio.mean(weightArray),
-                    color: colorScale(weightArray[asset1]),
-                    weights: weightArray
-                })
+                weightArray[asset1] = min + i*(max - min)/dataPoints;
+                weightArray[asset2] = 1 - weightArray[asset1] - otherAssets;
+                if(weightArray[asset2] >= min) {
+                    d.push({
+                        x: portfolio.stdev(weightArray),
+                        y: portfolio.mean(weightArray),
+                        color: colorScale(weightArray[asset1]),
+                        weights: weightArray
+                    })
+                }
             }
             return d;
         }

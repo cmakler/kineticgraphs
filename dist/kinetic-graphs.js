@@ -8,29 +8,31 @@ var KineticGraphs;
             var point1 = ",{type:'ControlPoint', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
             var point2 = ",{type:'ControlPoint', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
             var point3 = ",{type:'ControlPoint', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
-            var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],{min:-5,max:6},1000)}}";
-            var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],{min:-5,max:6},1000)}}";
-            var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],{min:-5,max:6},1000)}}";
-            var scatterPlot = ",{type:'Scatter', definition: {name: 'myLinePlot', show: true, className: 'draw', data:functions.portfolio.data()}}";
+            var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],params.maxLeverage)}}";
+            var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],params.maxLeverage)}}";
+            var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],params.maxLeverage)}}";
+            var portfolioPaths = ",{type:'PathFamily', definition: {name: 'myDataPaths', show: true, className: 'draw', data:functions.portfolio.data(params.maxLeverage)}}";
             var graphDefEnd = "]}";
             $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + scatterPlot + point1 + point2 + point3 + graphDefEnd],
+                graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + portfolioPaths + point1 + point2 + point3 + graphDefEnd],
                 sliders: [
                     "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
-                    "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
-                    "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}"
+                    "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
+                    "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
+                    "{element_id: 'leverageSlider', param: 'maxLeverage', precision: '1', axis: {min: 0, max: 400, tickValues: [0,200,400]}}"
                 ]
             };
             $scope.params = {
-                rho01: 0.8,
-                rho12: -0.4,
-                rho02: 1,
-                mean1: 0.4,
-                stdev1: 0.4,
-                mean2: 0.2,
-                stdev2: 0.1,
+                rho01: 0,
+                rho12: 0,
+                rho02: 0,
+                mean1: 0.2,
+                stdev1: 0.2,
+                mean2: 0.25,
+                stdev2: 0.3,
                 mean3: 0.3,
-                stdev3: 0.8
+                stdev3: 0.4,
+                maxLeverage: 0
             };
             $scope.functionDefinitions = { finance: [
                 { name: 'asset1', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean1', stdev: 'stdev1'}" },
@@ -673,6 +675,46 @@ var KineticGraphs;
     })(KineticGraphs.GraphObject);
     KineticGraphs.Scatter = Scatter;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var PathFamily = (function (_super) {
+        __extends(PathFamily, _super);
+        function PathFamily() {
+            _super.call(this);
+            this.data = [];
+            this.interpolation = 'basis';
+        }
+        PathFamily.prototype.render = function (graph) {
+            // constants TODO should these be defined somewhere else?
+            var DATA_PATH_FAMILY_CLASS = 'dataPathFamily';
+            function init(newGroup) {
+                newGroup.append('g').attr('class', DATA_PATH_FAMILY_CLASS);
+                return newGroup;
+            }
+            var group = graph.objectGroup(this.name, init);
+            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
+                return graph.xAxis.scale(d.x);
+            }).y(function (d) {
+                return graph.yAxis.scale(d.y);
+            });
+            var dataPaths = group.select('.' + DATA_PATH_FAMILY_CLASS).selectAll('path').data(this.data);
+            dataPaths.enter().append('path');
+            dataPaths.attr({
+                'd': function (d) {
+                    return dataLine(d.filter(function (dd) {
+                        return (graph.xAxis.domain.contains(dd.x) && graph.yAxis.domain.contains(dd.y));
+                    }));
+                }
+            });
+            dataPaths.exit().remove();
+            return graph;
+        };
+        return PathFamily;
+    })(KineticGraphs.GraphObject);
+    KineticGraphs.PathFamily = PathFamily;
+})(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/27/15.
  */
@@ -755,40 +797,48 @@ var FinanceGraphs;
                     return 0;
                 }
             };
+            Portfolio.prototype.fourAssetPortfolio = function (maxLeverage) {
+                var portfolio = this, d = [], w;
+                var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 2 * (10 + maxLeverage * 0.2);
+                for (var i = 0; i < dataPoints + 1; i++) {
+                    w = min + i * (max - min) / dataPoints;
+                    d.push(portfolio.twoAssetPortfolio(1, 2, [w, 0, 0], maxLeverage));
+                    d.push(portfolio.twoAssetPortfolio(0, 2, [0, w, 0], maxLeverage));
+                    d.push(portfolio.twoAssetPortfolio(0, 1, [0, 0, w], maxLeverage));
+                }
+                return d;
+            };
             // Generate dataset of portfolio means and variances for various weights
-            Portfolio.prototype.data = function () {
-                var portfolio = this, d = [];
-                for (var w1 = -20; w1 < 30; w1++) {
-                    for (var w2 = -20; w2 < 30; w2++) {
-                        var w3 = 1 - w1 * 0.1 - w2 * 0.1;
-                        var weightArray = [w1 * 0.1, w2 * 0.1, w3];
-                        var leveraged = (w1 > 0 && w2 > 0 && w3 > 0);
-                        d.push({
-                            x: portfolio.stdev(weightArray),
-                            y: portfolio.mean(weightArray),
-                            color: leveraged ? 'red' : 'lightgrey',
-                            weights: weightArray
-                        });
-                    }
+            Portfolio.prototype.data = function (maxLeverage) {
+                var portfolio = this, d = [], w;
+                var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 2 * (10 + maxLeverage * 0.2);
+                for (var i = 0; i < dataPoints + 1; i++) {
+                    w = min + i * (max - min) / dataPoints;
+                    d.push(portfolio.twoAssetPortfolio(1, 2, [w, 0, 0], maxLeverage));
+                    d.push(portfolio.twoAssetPortfolio(0, 2, [0, w, 0], maxLeverage));
+                    d.push(portfolio.twoAssetPortfolio(0, 1, [0, 0, w], maxLeverage));
                 }
                 return d;
             };
             // Generate lines representing combinations of two assets
-            Portfolio.prototype.twoAssetPortfolio = function (asset1, asset2, weightArray, domain, dataPoints) {
+            Portfolio.prototype.twoAssetPortfolio = function (asset1, asset2, weightArray, maxLeverage) {
                 var portfolio = this, d = [], otherAssets = 0;
                 weightArray.forEach(function (w) {
                     otherAssets += w;
                 });
+                var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 2 * (10 + maxLeverage * 0.2);
                 var colorScale = d3.scale.linear().domain([0, 1]).range(["red", "blue"]);
                 for (var i = 0; i < dataPoints + 1; i++) {
-                    weightArray[asset1] = domain.min + i * (domain.max - domain.min) / dataPoints;
-                    weightArray[asset2] = 1 - weightArray[asset1];
-                    d.push({
-                        x: portfolio.stdev(weightArray),
-                        y: portfolio.mean(weightArray),
-                        color: colorScale(weightArray[asset1]),
-                        weights: weightArray
-                    });
+                    weightArray[asset1] = min + i * (max - min) / dataPoints;
+                    weightArray[asset2] = 1 - weightArray[asset1] - otherAssets;
+                    if (weightArray[asset2] >= min) {
+                        d.push({
+                            x: portfolio.stdev(weightArray),
+                            y: portfolio.mean(weightArray),
+                            color: colorScale(weightArray[asset1]),
+                            weights: weightArray
+                        });
+                    }
                 }
                 return d;
             };
@@ -812,6 +862,7 @@ var FinanceGraphs;
 /// <reference path="graphObjects/controlPoint.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
+/// <reference path="graphObjects/pathFamily.ts" />
 /// <reference path="finance/asset.ts"/>
 /// <reference path="finance/portfolio.ts"/>
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
