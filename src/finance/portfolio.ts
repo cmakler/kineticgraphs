@@ -93,19 +93,6 @@ module FinanceGraphs.PortfolioAnalysis
 
         }
 
-        fourAssetPortfolio(maxLeverage) {
-            var portfolio = this, d=[], w;
-            var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 2*(10 + maxLeverage*0.2);
-            for(var i=0; i<dataPoints + 1; i++) //w1 is weight of asset 1;
-            {
-                w = min + i*(max - min)/dataPoints;
-                d.push(portfolio.twoAssetPortfolio(1,2,[w,0,0],maxLeverage));
-                d.push(portfolio.twoAssetPortfolio(0,2,[0,w,0],maxLeverage));
-                d.push(portfolio.twoAssetPortfolio(0,1,[0,0,w],maxLeverage));
-            }
-            return d;
-        }
-
         // Generate dataset of portfolio means and variances for various weights
         data(maxLeverage) {
             var portfolio = this, d = [], w;
