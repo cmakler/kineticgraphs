@@ -15,7 +15,7 @@ module FinanceGraphs.PortfolioAnalysis
     export interface IPortfolio extends KineticGraphs.IParameterizable
     {
         assets: Asset[];
-        data: () => KineticGraphs.ICoordinates[];
+        data: (maxLeverage: number) => KineticGraphs.ICoordinates[];
         twoAssetPortfolio: (asset1:number,asset2:number,weightArray:any,domain:KineticGraphs.IDomain,dataPoints:number) => any[];
         correlationMatrix: number[][];
         covarianceMatrix: number[][];

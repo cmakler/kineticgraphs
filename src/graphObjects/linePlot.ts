@@ -27,6 +27,8 @@ module KineticGraphs {
             // constants TODO should these be defined somewhere else?
             var DATA_PATH_CLASS = 'dataPath';
 
+            var dataCoordinates:ICoordinates[] = graph.dataCoordinates(this.data);
+
             function init(newGroup:D3.Selection) {
                 newGroup.append('path').attr('class', DATA_PATH_CLASS);
                 return newGroup;
@@ -36,22 +38,15 @@ module KineticGraphs {
 
             var dataLine = d3.svg.line()
                 .interpolate(this.interpolation)
-                .x(function (d) {
-                    return graph.xAxis.scale(d.x)
-                })
-                .y(function (d) {
-                    return graph.yAxis.scale(d.y)
-                })
-
+                .x(function (d) { return d.x })
+                .y(function (d) { return d.y });
 
             var dataPath:D3.Selection = group.select('.' + DATA_PATH_CLASS);
 
             dataPath
                 .attr({
                     'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
-                    'd': dataLine(this.data.filter(function(d){
-                        return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y))
-                    }))
+                    'd': dataLine(dataCoordinates)
                 });
 
             return graph;

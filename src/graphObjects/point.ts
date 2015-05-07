@@ -10,6 +10,9 @@ module KineticGraphs
         coordinates: ICoordinates;
         symbol?: string;
         size?: number;
+        label: string;
+        labelDiv?: IGraphDiv;
+        renderLabel: (graph:IGraph) => void;
     }
 
     export class Point extends GraphObject implements IPoint
@@ -19,6 +22,8 @@ module KineticGraphs
         public coordinates;
         public symbol;
         public size;
+        public label;
+        public labelDiv;
 
         constructor() {
 
@@ -28,9 +33,14 @@ module KineticGraphs
             this.coordinates = {x: 0, y: 0};
             this.size = 100;
             this.symbol = 'circle';
+            this.labelDiv = new GraphDiv();
+            this.label = '';
         }
 
         render(graph) {
+
+            var point = this,
+                label = this.label;
 
             // constants TODO should these be defined somewhere else?
             var POINT_SYMBOL_CLASS = 'pointSymbol';
@@ -41,13 +51,13 @@ module KineticGraphs
                 return newGroup;
             }
 
-            var group:D3.Selection = graph.objectGroup(this.name, init);
+            var group:D3.Selection = graph.objectGroup(point.name, init);
 
             var showPoint = function(){
-                if (this.symbol === 'none') {
+                if (point.symbol === 'none') {
                     return false;
                 }
-                return (graph.xAxis.domain.contains(this.coordinates.x) && graph.yAxis.domain.contains(this.coordinates.y));
+                return graph.onGraph(point.coordinates);
             }();
 
             // draw the symbol at the point
@@ -55,15 +65,21 @@ module KineticGraphs
             if(showPoint) {
                 pointSymbol
                     .attr({
-                        'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
-                        'd': d3.svg.symbol().type(this.symbol).size(this.size),
-                        'transform': "translate(" + graph.xAxis.scale(this.coordinates.x) + "," + graph.yAxis.scale(this.coordinates.y) + ")"
-                        })
+                        'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                        'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                        'transform': graph.translateByCoordinates(point.coordinates)
+                    });
+                point.labelDiv.update({name: point.name+'-label', coordinates: point.coordinates, text: point.label}).render(graph);
             } else {
                 pointSymbol.attr('class','invisible ' + POINT_SYMBOL_CLASS);
+                //TODO make label disappear
             }
 
             return graph;
+
+        }
+
+        renderLabel(graph) {
 
         }
     }

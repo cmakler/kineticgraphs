@@ -44,15 +44,15 @@ module KineticGraphs {
                 });
 
 
-            var dataPaths:D3.Selection = group.select('.' + DATA_PATH_FAMILY_CLASS).selectAll('path')
-                .data(this.data)
+            var dataPaths:D3.UpdateSelection = group
+                .select('.' + DATA_PATH_FAMILY_CLASS)
+                .selectAll('path')
+                .data(this.data);
 
             dataPaths.enter().append('path');
 
             dataPaths.attr({
-                'd': function(d) { return dataLine(d.filter(function(dd){
-                    return (graph.xAxis.domain.contains(dd.x) && graph.yAxis.domain.contains(dd.y))
-                })) }
+                'd': function(d) { return dataLine(d) }
             });
 
             dataPaths.exit().remove();

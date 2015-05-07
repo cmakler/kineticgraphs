@@ -44,9 +44,7 @@ module KineticGraphs
 
             var group = graph.objectGroup(this.name, init);
 
-            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data.filter(function(d){
-                return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y))
-            }));
+            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
 
             dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS + ' asset')
                 .on('mouseover', function(d){
