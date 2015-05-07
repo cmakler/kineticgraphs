@@ -94,3 +94,7 @@ a {
     stroke: black;
     stroke-width: 1;
 }
+
+.mask {
+    fill: white;
+}

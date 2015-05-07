@@ -62,4 +62,18 @@ module KineticGraphs
         return v;
     }
 
+    export function translateByPixelCoordinates(coordinates:ICoordinates) {
+        return 'translate(' + coordinates.x + ',' + coordinates.y + ')'
+    }
+
+    export function positionByPixelCoordinates(coordinates:ICoordinates, dimension?:IDimensions) {
+        var style = 'position:absolute; left: ' + coordinates.x + 'px; top: ' + coordinates.y + 'px;';
+        if(dimension) {
+            if(dimension.hasOwnProperty('width')) {
+                style += ' width: ' + dimension.width + 'px;'
+            }
+        }
+        return style;
+    }
+
 }

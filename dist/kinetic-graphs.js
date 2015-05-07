@@ -5,9 +5,9 @@ var KineticGraphs;
         function ModelController($scope, $window) {
             this.$scope = $scope;
             var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
-            var point1 = ",{type:'ControlPoint', definition: {name:'asset1', show:true, className: 'asset', coordinates: functions.asset1.coordinates()}}";
-            var point2 = ",{type:'ControlPoint', definition: {name:'asset2', show:true, className: 'asset', coordinates: functions.asset2.coordinates()}}";
-            var point3 = ",{type:'ControlPoint', definition: {name:'asset3', show:true, className: 'asset', coordinates: functions.asset3.coordinates()}}";
+            var point1 = ",{type:'ControlDiv', definition: {name:'asset1', show:true, className: 'asset', text:'a_1', coordinates: functions.asset1.coordinates()}}";
+            var point2 = ",{type:'ControlDiv', definition: {name:'asset2', show:true, className: 'asset', text:'a_2', coordinates: functions.asset2.coordinates()}}";
+            var point3 = ",{type:'ControlDiv', definition: {name:'asset3', show:true, className: 'asset', text:'a_3', coordinates: functions.asset3.coordinates()}}";
             var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],params.maxLeverage)}}";
             var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],params.maxLeverage)}}";
             var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],params.maxLeverage)}}";
@@ -40,7 +40,6 @@ var KineticGraphs;
                 { name: 'asset3', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean3', stdev: 'stdev3'}" },
                 { name: 'portfolio', model: 'PortfolioAnalysis', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2, functions.asset3], correlationCoefficients: {rho12: params.rho12, rho23: params.rho23, rho13: params.rho13}}" }
             ] };
-            $scope.graphParams = { xAxisLabel: 'Quantity' };
             // Creates graph objects from (string) graph definitions
             function createInteractives() {
                 var interactives = [];
@@ -138,6 +137,20 @@ var KineticGraphs;
         return v;
     }
     KineticGraphs.propertyAsNumber = propertyAsNumber;
+    function translateByPixelCoordinates(coordinates) {
+        return 'translate(' + coordinates.x + ',' + coordinates.y + ')';
+    }
+    KineticGraphs.translateByPixelCoordinates = translateByPixelCoordinates;
+    function positionByPixelCoordinates(coordinates, dimension) {
+        var style = 'position:absolute; left: ' + coordinates.x + 'px; top: ' + coordinates.y + 'px;';
+        if (dimension) {
+            if (dimension.hasOwnProperty('width')) {
+                style += ' width: ' + dimension.width + 'px;';
+            }
+        }
+        return style;
+    }
+    KineticGraphs.positionByPixelCoordinates = positionByPixelCoordinates;
 })(KineticGraphs || (KineticGraphs = {}));
 /**
  * Created by cmakler on 4/24/15.
@@ -283,6 +296,7 @@ var KineticGraphs;
             this.definitionString = definitionString;
             this.xAxis = new KineticGraphs.XAxis();
             this.yAxis = new KineticGraphs.YAxis();
+            this.graphDivs = [];
         }
         // Used to update parameters of the model from within the graph
         Graph.prototype.updateParams = function (params) {
@@ -295,12 +309,18 @@ var KineticGraphs;
         };
         Graph.prototype.objectGroup = function (name, init) {
             var group = this.vis.select('#' + name);
-            // TODO need better way to check if it doesn't yet exist
-            if (group[0][0] == null) {
+            if (group.empty()) {
                 group = this.vis.append('g').attr('id', name);
                 group = init(group);
             }
             return group;
+        };
+        Graph.prototype.getDiv = function (name) {
+            var selection = this.divs.select('#' + name);
+            if (selection.empty()) {
+                selection = this.divs.append('div').attr('id', name);
+            }
+            return selection;
         };
         Graph.prototype.xOnGraph = function (x) {
             return this.xAxis.domain.contains(x);
@@ -312,9 +332,23 @@ var KineticGraphs;
         Graph.prototype.onGraph = function (coordinates) {
             return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
         };
-        // This should be called with one point on the graph and another off
-        Graph.prototype.nearestGraphPoint = function (onGraphPoint, offGraphPoint) {
-            return onGraphPoint;
+        // Convert model coordinates to pixel coordinates for a single point
+        Graph.prototype.pixelCoordinates = function (coordinates) {
+            coordinates.x = this.xAxis.scale(coordinates.x);
+            coordinates.y = this.yAxis.scale(coordinates.y);
+            return coordinates;
+        };
+        // Transform pixel coordinates
+        Graph.prototype.translateByCoordinates = function (coordinates) {
+            return KineticGraphs.translateByPixelCoordinates(this.pixelCoordinates(coordinates));
+        };
+        Graph.prototype.positionByCoordinates = function (coordinates, dimension) {
+            return KineticGraphs.positionByPixelCoordinates(this.pixelCoordinates(coordinates), dimension);
+        };
+        // Convert model coordinates to pixel coordinates for an array of points
+        Graph.prototype.dataCoordinates = function (coordinateArray) {
+            var graph = this;
+            return coordinateArray.map(graph.pixelCoordinates, graph);
         };
         // Update graph based on latest parameters
         Graph.prototype.redraw = function () {
@@ -325,22 +359,36 @@ var KineticGraphs;
             var element = $('#' + definition.element_id)[0];
             var dimensions = updateDimensions(element.clientWidth, definition.dimensions);
             var margins = definition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
+            var visTranslation = KineticGraphs.translateByPixelCoordinates({ x: margins.left, y: margins.top });
             // Update axis objects
             graph.xAxis.update(definition.xAxis);
             graph.yAxis.update(definition.yAxis);
             // Remove existing graph
-            d3.select(element).select('svg').remove();
-            d3.select(element).selectAll('div').remove();
+            d3.select(element).select('div').remove();
+            // Create new div element to contain SVG
+            var frame = d3.select(element).append('div').attr({ style: KineticGraphs.positionByPixelCoordinates({ x: 0, y: 0 }) });
             // Create new SVG element for the graph visualization
-            graph.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+            var svg = frame.append("svg").attr("width", dimensions.width).attr("height", dimensions.height);
+            // Add a div above the SVG for labels and controls
+            graph.divs = frame.append('div').attr({ style: KineticGraphs.positionByPixelCoordinates({ x: margins.left, y: margins.top }) });
+            // Establish SVG groups for visualization area (vis), mask, axes
+            graph.vis = svg.append("g").attr("transform", visTranslation);
+            var mask = svg.append("g").attr("class", "mask");
+            var axes = svg.append("g").attr("class", "axes").attr("transform", visTranslation);
+            // Put mask around vis to clip objects that extend beyond the desired viewable area
+            mask.append("rect").attr({ x: 0, y: 0, width: dimensions.width, height: margins.top });
+            mask.append("rect").attr({ x: 0, y: dimensions.height - margins.bottom, width: dimensions.width, height: margins.bottom });
+            mask.append("rect").attr({ x: 0, y: 0, width: margins.left, height: dimensions.height });
+            mask.append("rect").attr({ x: dimensions.width - margins.right, y: 0, width: margins.right, height: dimensions.height });
+            // Establish SVG group for axes
             // Establish dimensions of axes (element dimensions minus margins)
             var axisDimensions = {
                 width: dimensions.width - margins.left - margins.right,
                 height: dimensions.height - margins.top - margins.bottom
             };
             // draw axes
-            graph.xAxis.draw(graph.vis, axisDimensions);
-            graph.yAxis.draw(graph.vis, axisDimensions);
+            graph.xAxis.draw(axes, axisDimensions);
+            graph.yAxis.draw(axes, axisDimensions);
             return graph;
         };
         Graph.prototype.drawObjects = function () {
@@ -349,7 +397,8 @@ var KineticGraphs;
                 graph.graphObjects = new KineticGraphs.GraphObjects(definition.graphObjects);
             }
             // Update graphObject graph objects based on change in scope
-            return graph.graphObjects.update(definition.graphObjects).render(graph);
+            graph = graph.graphObjects.update(definition.graphObjects).render(graph);
+            return graph;
         };
         return Graph;
     })(KineticGraphs.Interactive);
@@ -477,6 +526,60 @@ var KineticGraphs;
 /// <reference path="graphObjects.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
+    var GraphDiv = (function (_super) {
+        __extends(GraphDiv, _super);
+        function GraphDiv() {
+            _super.call(this);
+            // establish defaults
+            this.coordinates = { x: 0, y: 0 };
+            this.math = false;
+            this.dimensions = { width: 100, height: 20 };
+            this.align = 'center';
+            this.text = '';
+        }
+        GraphDiv.prototype.render = function (graph) {
+            var graphDiv = this, width = this.dimensions.width, height = this.dimensions.height;
+            var el = graph.getDiv(graphDiv.name);
+            var style = 'text-align:center; color:gray; position:absolute; width: ' + width + 'px; height: ' + height + 'px; line-height: ' + height + 'px;';
+            // Set left pixel margin
+            var halfWidth = width * 0.5;
+            // Default to centered on x coordinate
+            var leftPixels = graphDiv.coordinates.x - halfWidth;
+            if (graphDiv.align == 'left') {
+                // move right by half the width of the div if left aligned
+                leftPixels += halfWidth;
+            }
+            else if (graphDiv.align == 'right') {
+                // move left by half the width of the div if right aligned
+                leftPixels -= halfWidth;
+            }
+            style += 'left: ' + leftPixels + 'px;';
+            // Set top pixel margin
+            var halfHeight = height * 0.5;
+            // Default to centered on x coordinate
+            var topPixels = graphDiv.coordinates.y - halfHeight;
+            if (graphDiv.valign == 'top') {
+                // move down by half the height of the div if top aligned
+                topPixels += halfWidth;
+            }
+            else if (graphDiv.align == 'right') {
+                // move up by half the height of the div if right aligned
+                topPixels -= halfWidth;
+            }
+            style += 'top: ' + topPixels + 'px;';
+            //format the div
+            el.attr('style', style);
+            el.text(graphDiv.text);
+            return graph;
+        };
+        return GraphDiv;
+    })(KineticGraphs.GraphObject);
+    KineticGraphs.GraphDiv = GraphDiv;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="graphObjects.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
     var Point = (function (_super) {
         __extends(Point, _super);
         function Point() {
@@ -485,8 +588,11 @@ var KineticGraphs;
             this.coordinates = { x: 0, y: 0 };
             this.size = 100;
             this.symbol = 'circle';
+            this.labelDiv = new KineticGraphs.GraphDiv();
+            this.label = '';
         }
         Point.prototype.render = function (graph) {
+            var point = this, label = this.label;
             // constants TODO should these be defined somewhere else?
             var POINT_SYMBOL_CLASS = 'pointSymbol';
             // initialization of D3 graph object group
@@ -494,46 +600,47 @@ var KineticGraphs;
                 newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
                 return newGroup;
             }
-            var group = graph.objectGroup(this.name, init);
+            var group = graph.objectGroup(point.name, init);
             var showPoint = function () {
-                if (this.symbol === 'none') {
+                if (point.symbol === 'none') {
                     return false;
                 }
-                return (graph.xAxis.domain.contains(this.coordinates.x) && graph.yAxis.domain.contains(this.coordinates.y));
+                return graph.onGraph(point.coordinates);
             }();
             // draw the symbol at the point
             var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
             if (showPoint) {
                 pointSymbol.attr({
-                    'class': this.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
-                    'd': d3.svg.symbol().type(this.symbol).size(this.size),
-                    'transform': "translate(" + graph.xAxis.scale(this.coordinates.x) + "," + graph.yAxis.scale(this.coordinates.y) + ")"
+                    'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                    'transform': graph.translateByCoordinates(point.coordinates)
                 });
+                point.labelDiv.update({ name: point.name + '-label', coordinates: point.coordinates, text: point.label }).render(graph);
             }
             else {
                 pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
             }
             return graph;
         };
+        Point.prototype.renderLabel = function (graph) {
+        };
         return Point;
     })(KineticGraphs.GraphObject);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
+/// <reference path="graphDiv.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
-    var ControlPoint = (function (_super) {
-        __extends(ControlPoint, _super);
-        function ControlPoint() {
+    var ControlDiv = (function (_super) {
+        __extends(ControlDiv, _super);
+        function ControlDiv() {
             _super.call(this);
         }
-        ControlPoint.prototype.render = function (graph) {
-            // constants TODO should these be defined somewhere else?
-            var CONTROL_POINT_SYMBOL_CLASS = 'controlPointSymbol';
-            var xRaw = this.coordinates.x, yRaw = this.coordinates.y;
+        ControlDiv.prototype.render = function (graph) {
+            var xRaw = this.coordinates.x, yRaw = this.coordinates.y, width = this.dimensions.width, height = this.dimensions.height, text = this.text;
             var x, y, xDrag, yDrag;
-            if (typeof xRaw == 'string') {
+            if (typeof xRaw == 'string' && graph.scope.params.hasOwnProperty(xRaw)) {
                 x = graph.xAxis.scale(graph.scope.$eval('params.' + xRaw));
                 xDrag = true;
             }
@@ -549,14 +656,37 @@ var KineticGraphs;
                 y = graph.yAxis.scale(yRaw);
                 yDrag = false;
             }
-            // initialization of D3 graph object group
-            function init(newGroup) {
-                newGroup.append('path').attr('class', CONTROL_POINT_SYMBOL_CLASS);
-                return newGroup;
+            var div = graph.getDiv(this.name);
+            div.style('cursor', 'move').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
+            // Set left pixel margin
+            var halfWidth = width * 0.5;
+            // Default to centered on x coordinate
+            var leftPixels = x - halfWidth;
+            if (this.align == 'left') {
+                // move right by half the width of the div if left aligned
+                leftPixels += halfWidth;
             }
-            var group = graph.objectGroup(this.name, init);
+            else if (this.align == 'right') {
+                // move left by half the width of the div if right aligned
+                leftPixels -= halfWidth;
+            }
+            div.style('left', leftPixels + 'px');
+            // Set top pixel margin
+            var halfHeight = height * 0.5;
+            // Default to centered on x coordinate
+            var topPixels = y - halfHeight;
+            if (this.valign == 'top') {
+                // move down by half the height of the div if top aligned
+                topPixels += halfWidth;
+            }
+            else if (this.align == 'right') {
+                // move up by half the height of the div if right aligned
+                topPixels -= halfWidth;
+            }
+            div.style('top', topPixels + 'px');
             // establish drag behavior
             var drag = d3.behavior.drag().on("drag", function () {
+                console.log('dragging');
                 var dragUpdate = {}, newX, newY;
                 if (xDrag) {
                     newX = graph.xAxis.scale.invert(d3.event.x);
@@ -572,23 +702,13 @@ var KineticGraphs;
                 }
                 graph.updateParams(dragUpdate);
             });
-            // draw the symbol at the point
-            var pointSymbol = group.select('.' + CONTROL_POINT_SYMBOL_CLASS);
-            if (this.symbol === 'none') {
-                pointSymbol.attr('class', 'invisible ' + CONTROL_POINT_SYMBOL_CLASS);
-            }
-            else {
-                pointSymbol.attr({
-                    'class': this.classAndVisibility() + ' ' + CONTROL_POINT_SYMBOL_CLASS,
-                    'd': d3.svg.symbol().type(this.symbol).size(this.size),
-                    'transform': "translate(" + x + "," + y + ")"
-                }).call(drag);
-            }
+            katex.render(text, div[0][0]);
+            div.call(drag);
             return graph;
         };
-        return ControlPoint;
-    })(KineticGraphs.Point);
-    KineticGraphs.ControlPoint = ControlPoint;
+        return ControlDiv;
+    })(KineticGraphs.GraphDiv);
+    KineticGraphs.ControlDiv = ControlDiv;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="graphObjects.ts"/>
@@ -604,22 +724,21 @@ var KineticGraphs;
         LinePlot.prototype.render = function (graph) {
             // constants TODO should these be defined somewhere else?
             var DATA_PATH_CLASS = 'dataPath';
+            var dataCoordinates = graph.dataCoordinates(this.data);
             function init(newGroup) {
                 newGroup.append('path').attr('class', DATA_PATH_CLASS);
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
             var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
-                return graph.xAxis.scale(d.x);
+                return d.x;
             }).y(function (d) {
-                return graph.yAxis.scale(d.y);
+                return d.y;
             });
             var dataPath = group.select('.' + DATA_PATH_CLASS);
             dataPath.attr({
                 'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
-                'd': dataLine(this.data.filter(function (d) {
-                    return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y));
-                }))
+                'd': dataLine(dataCoordinates)
             });
             return graph;
         };
@@ -647,9 +766,7 @@ var KineticGraphs;
                 return newGroup;
             }
             var group = graph.objectGroup(this.name, init);
-            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data.filter(function (d) {
-                return (graph.xAxis.domain.contains(d.x) && graph.yAxis.domain.contains(d.y));
-            }));
+            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
             dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS + ' asset').on('mouseover', function (d) {
                 scope.$apply(function () {
                     scope.selectedWeights = d.weights;
@@ -703,9 +820,7 @@ var KineticGraphs;
             dataPaths.enter().append('path');
             dataPaths.attr({
                 'd': function (d) {
-                    return dataLine(d.filter(function (dd) {
-                        return (graph.xAxis.domain.contains(dd.x) && graph.yAxis.domain.contains(dd.y));
-                    }));
+                    return dataLine(d);
                 }
             });
             dataPaths.exit().remove();
@@ -847,8 +962,9 @@ var FinanceGraphs;
 /// <reference path="interactives/graph.ts" />
 /// <reference path="interactives/slider.ts" />
 /// <reference path="graphObjects/graphObjects.ts" />
+/// <reference path="graphObjects/graphDiv.ts" />
 /// <reference path="graphObjects/point.ts" />
-/// <reference path="graphObjects/controlPoint.ts" />
+/// <reference path="graphObjects/controlDiv.ts" />
 /// <reference path="graphObjects/linePlot.ts" />
 /// <reference path="graphObjects/scatter.ts" />
 /// <reference path="graphObjects/pathFamily.ts" />
