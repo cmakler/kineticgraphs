@@ -50,30 +50,42 @@ module KineticGraphs
         y: number;
     }
 
-    export function propertyAsNumber(o,p,scope) {
-        var v;
-        if(o.hasOwnProperty(p)){
-            if(typeof o[p] == 'string') {
-                v = scope.$eval('params.' + o[p]);
-            } else {
-                v = o[p];
-            }
-        }
-        return v;
-    }
-
     export function translateByPixelCoordinates(coordinates:ICoordinates) {
         return 'translate(' + coordinates.x + ',' + coordinates.y + ')'
     }
 
     export function positionByPixelCoordinates(coordinates:ICoordinates, dimension?:IDimensions) {
-        var style = 'position:absolute; left: ' + coordinates.x + 'px; top: ' + coordinates.y + 'px;';
+        var style = 'position:relative; left: ' + coordinates.x + 'px; top: ' + coordinates.y + 'px;';
         if(dimension) {
             if(dimension.hasOwnProperty('width')) {
                 style += ' width: ' + dimension.width + 'px;'
             }
         }
         return style;
+    }
+
+    export function createInstance(definition) {
+
+        // from http://stackoverflow.com/questions/1366127/
+        function typeSpecificConstructor(typeName) {
+            var arr = typeName.split(".");
+
+            var fn = (window || this);
+            for (var i = 0, len = arr.length; i < len; i++) {
+                fn = fn[arr[i]];
+            }
+
+            if (typeof fn !== "function") {
+                throw new Error("object type " + typeName + " not found");
+            }
+
+            return fn;
+        }
+
+        // each object is a new instance of the class named in the 'type' parameter
+        var newObjectConstructor = typeSpecificConstructor(definition.type);
+        return new newObjectConstructor(definition.definition);
+
     }
 
 }

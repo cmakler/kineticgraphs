@@ -15,46 +15,14 @@
     <script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
     <script type="text/javascript" src="bower_components/numericjs/src/numeric.js"></script>
     <script type="text/javascript" src="bower_components/katex/build/katex/katex.min.js"></script>
+    <script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <div style="position:absolute;left:800px">
-        <table>
-            <tr>
-                <td>r12:</td><td id="slider12" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>r23:</td><td id="slider23" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>r13:</td><td id="slider13" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>max leverage (%):</td><td id="leverageSlider" style="width:200px"></td>
-            </tr>
-        </table>
-        <hr/>
-        <p>Correlation Matrix</p>
-        <table>
-            <tr ng-repeat="row in functions.portfolio.correlationMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:1}}</td>
-            </tr>
-        </table>
-        <hr/>
-        <p>Covariance Matrix</p>
-        <table>
-            <tr ng-repeat="row in functions.portfolio.covarianceMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:4}}</td>
-            </tr>
-        </table>
-        <hr/>
-        <p>Porfolio:</p>
-        <p>{{ selectedWeights[0]*100 | number:0 }}% asset 1</p>
-        <p>{{ selectedWeights[1]*100 | number:0 }}% asset 2</p>
-        <p>{{ selectedWeights[2]*100 | number:0 }}% asset 3</p>
-    </div>
+    <p>parameter = {{ params.x }}</p>
+    <p>model = {{ model.point1.x }}</p>
+    <input type="range" min="0" max="10" ng-model="params.x">
     <div id="graph"></div>
-
 <script src="dist/kinetic-graphs.js"></script>
 </body>
 </html>

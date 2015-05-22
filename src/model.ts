@@ -1,126 +1,80 @@
-/// <reference path="kg.ts" />
-
 module KineticGraphs
 {
-    export interface IModelScope extends ng.IScope
+    export interface ModelDefinition
     {
-        params: {}; // parameters of the model that do not require redrawing the entire graph
-        graphParams: {}; // parameters of the model that do require redrawing the entire graph
-        interactiveDefinitions: any; // definitions of the graph
-        functionDefinitions: any; // definitions of functions
-        interactives: IInteractive[];
-        functions: any;
+
     }
 
-    export class ModelController
+    export interface IModel
+    {
+        update: (scope:IScope, callback?: (any)=>any) => void;
+    }
+
+    export class Model
     {
 
-        constructor(public $scope:IModelScope, $window:ng.IWindowService)
-        {
+        constructor(public definition:ModelDefinition) {
 
-            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
-            var point1 = ",{type:'ControlDiv', definition: {name:'asset1', show:true, className: 'asset', text:'a_1', coordinates: functions.asset1.coordinates()}}";
-            var point2 = ",{type:'ControlDiv', definition: {name:'asset2', show:true, className: 'asset', text:'a_2', coordinates: functions.asset2.coordinates()}}";
-            var point3 = ",{type:'ControlDiv', definition: {name:'asset3', show:true, className: 'asset', text:'a_3', coordinates: functions.asset3.coordinates()}}";
-            var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],params.maxLeverage)}}";
-            var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],params.maxLeverage)}}";
-            var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],params.maxLeverage)}}";
-            var portfolioPaths = ",{type:'PathFamily', definition: {name: 'myDataPaths', show: true, className: 'draw', data:functions.portfolio.data(params.maxLeverage)}}";
-            var graphDefEnd = "]}";
-            $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + portfolioPaths + point1 + point2 + point3 + graphDefEnd],
-                sliders: [
-                    "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
-                    "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
-                    "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
-                    "{element_id: 'leverageSlider', param: 'maxLeverage', precision: '1', axis: {min: 0, max: 400, tickValues: [0,200,400]}}"
-                ]
-            };
-            $scope.params = {
-                rho01: 0,
-                rho12: 0,
-                rho02: 0,
-                mean1: 0.2,
-                stdev1: 0.2,
-                mean2: 0.25,
-                stdev2: 0.3,
-                mean3: 0.3,
-                stdev3: 0.4,
-                maxLeverage: 0,
-            };
-            $scope.functionDefinitions = {finance: [
-                {name: 'asset1', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean1', stdev: 'stdev1'}"},
-                {name: 'asset2', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean2', stdev: 'stdev2'}"},
-                {name: 'asset3', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean3', stdev: 'stdev3'}"},
-                {name: 'portfolio', model: 'PortfolioAnalysis', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2, functions.asset3], correlationCoefficients: {rho12: params.rho12, rho23: params.rho23, rho13: params.rho13}}"}
-            ]};
+            var model = this;
 
-            // Creates graph objects from (string) graph definitions
-            function createInteractives() {
-                var interactives:IInteractive[] = [];
-                if($scope.hasOwnProperty('interactiveDefinitions')){
-                    if($scope.interactiveDefinitions.hasOwnProperty('graphs')) {
-                        $scope.interactiveDefinitions.graphs.forEach(function(graphDefinition) {
-                            interactives.push(new Graph(graphDefinition))
-                        })
-                    }
-                    if($scope.interactiveDefinitions.hasOwnProperty('sliders')) {
-                        $scope.interactiveDefinitions.sliders.forEach(function(sliderDefinition) {
-                            interactives.push(new Slider(sliderDefinition))
-                        })
+            for (var key in definition) {
+                if(definition.hasOwnProperty(key)) {
+                    var value = definition[key];
+                    if(value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
+                        model[key] = createInstance(value)
                     }
                 }
-                return interactives;
             }
-
-            // Creates functions
-            function createFunctions() {
-                var functions = {};
-                if($scope.hasOwnProperty('functionDefinitions')){
-                    if($scope.functionDefinitions.hasOwnProperty('finance')) {
-                        $scope.functionDefinitions.finance.forEach(function(functionDefinition) {
-                            functions[functionDefinition.name] = new FinanceGraphs[functionDefinition.model][functionDefinition.type](functionDefinition.definition);
-                        })
-                    }
-                }
-                return functions;
-            }
-
-            // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
-            function update(redraw) {
-
-                // Create interactive objects if they don't already exist
-                $scope.functions = $scope.functions || createFunctions();
-                $scope.interactives = $scope.interactives || createInteractives();
-
-                // Update each function
-                for(var name in $scope.functions){
-                    $scope.functions[name] = $scope.functions[name].update($scope);
-                }
-
-                // Update each interactive (updating triggers the graph to redraw its objects and possibly itself)
-                $scope.interactives = $scope.interactives.map(function(interactive:IInteractive) {
-                    interactive.update($scope);
-                    if(redraw) {
-                        interactive.redraw();
-                    }
-                    interactive.drawObjects();
-                    return interactive;
-                });
-            }
-
-            // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
-            function redrawGraphs() { update(true) }
-            $scope.$watchCollection('graphParams',redrawGraphs);
-            angular.element($window).on('resize', redrawGraphs);
-
-            // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
-            function redrawObjects() { update(false) }
-            $scope.$watchCollection('params',redrawObjects);
-
         }
 
+        // Update the model
+        update(scope, callback) {
+
+            var model = this;
+
+            // Iterates over an object's definition, getting the current value of each property
+            function parseObject(def, obj?) {
+                obj = obj || {};
+                for(var key in def) {
+                    if(def.hasOwnProperty(key)) {
+                        if(obj[key] instanceof KineticGraphs.Model) {
+                            // if the property is itself a model, update the model
+                            obj[key].update(scope);
+                        } else {
+                            // otherwise parse the current value of the property
+                            obj[key] = deepParse(def[key]);
+                        }
+                    }
+                }
+                return obj;
+            }
+
+            // Returns the value of an object's property, evaluated against the current scope.
+            function deepParse(value) {
+                if(Object.prototype.toString.call(value) == '[object Array]') {
+                    // If the object's property is an array, return the array mapped to its parsed values
+                    // see http://stackoverflow.com/questions/4775722/check-if-object-is-array
+                    return value.map(deepParse)
+                } else if(typeof value == 'object') {
+                    // If the object's property is an object, parses the object.
+                    return parseObject(value)
+                } else {
+                    var e = scope.$eval(value.toString());
+                    return (e == undefined) ? value : e;
+                }
+            }
+
+            // Parse the model object
+            model = parseObject(model.definition, model);
+
+            if(callback){
+                callback();
+            }
+
+            return model;
+
+
+
+        }
     }
-
 }
-

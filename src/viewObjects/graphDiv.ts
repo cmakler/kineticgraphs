@@ -4,15 +4,10 @@
 module KineticGraphs
 {
 
-    export interface IGraphDivDefinition extends IGraphObjectDefinition
-    {
-
-    }
-
-    export interface IGraphDiv extends IGraphObject {
+    export interface IGraphDiv extends IViewObject {
 
         // GraphDiv-specific attributes
-        coordinates: ICoordinates; // pixel coordinates, not "real" coordinates
+        coordinates: ICoordinates; // pixel coordinates, not model coordinates
         dimensions: IDimensions;
         text: string;
         math: boolean;
@@ -20,7 +15,7 @@ module KineticGraphs
         valign: string;
     }
 
-    export class GraphDiv extends GraphObject implements IGraphDiv
+    export class GraphDiv extends ViewObject implements IGraphDiv
     {
 
         // GraphDiv-specific attributes

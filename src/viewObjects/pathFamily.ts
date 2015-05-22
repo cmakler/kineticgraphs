@@ -3,13 +3,13 @@
 
 module KineticGraphs {
 
-    export interface IPathFamily extends IGraphObject {
+    export interface IPathFamily extends IViewObject {
 
         data: ICoordinates[][];
         interpolation: string;
     }
 
-    export class PathFamily extends GraphObject implements ILinePlot {
+    export class PathFamily extends ViewObject implements ILinePlot {
 
         public data;
         public interpolation;

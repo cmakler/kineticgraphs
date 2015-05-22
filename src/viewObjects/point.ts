@@ -1,21 +1,28 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
 
 module KineticGraphs
 {
 
-    export interface IPoint extends IGraphObject {
-
-        // point-specific attributes
+    export interface PointDefinition extends ViewObjectDefinition {
         coordinates: ICoordinates;
         symbol?: string;
         size?: number;
-        label: string;
-        labelDiv?: IGraphDiv;
-        renderLabel: (graph:IGraph) => void;
+        label?: string;
     }
 
-    export class Point extends GraphObject implements IPoint
+    export interface IPoint extends IViewObject {
+
+        // point-specific attributes
+        coordinates: ICoordinates;
+        symbol: string;
+        size: number;
+        label: string;
+
+        //labelDiv: IGraphDiv;
+        //renderLabel: (graph:IGraph) => void;
+    }
+
+    export class Point extends ViewObject implements IPoint
     {
 
         // point-specific attributes
@@ -25,19 +32,15 @@ module KineticGraphs
         public label;
         public labelDiv;
 
-        constructor() {
+        constructor(definition:PointDefinition) {
 
-            super();
+            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle', label: ''})
+            super(definition);
 
-            // establish defaults
-            this.coordinates = {x: 0, y: 0};
-            this.size = 100;
-            this.symbol = 'circle';
-            this.labelDiv = new GraphDiv();
-            this.label = '';
+            //this.labelDiv = new GraphDiv({coordinates: definition.coordinates, label: definition.label});
         }
 
-        render(graph) {
+        render(view) {
 
             var point = this,
                 label = this.label;
@@ -51,13 +54,13 @@ module KineticGraphs
                 return newGroup;
             }
 
-            var group:D3.Selection = graph.objectGroup(point.name, init);
+            var group:D3.Selection = view.objectGroup(point.name, init);
 
             var showPoint = function(){
                 if (point.symbol === 'none') {
                     return false;
                 }
-                return graph.onGraph(point.coordinates);
+                return view.onGraph(point.coordinates);
             }();
 
             // draw the symbol at the point
@@ -67,19 +70,15 @@ module KineticGraphs
                     .attr({
                         'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
                         'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                        'transform': graph.translateByCoordinates(point.coordinates)
+                        'transform': view.translateByCoordinates(point.coordinates)
                     });
-                point.labelDiv.update({name: point.name+'-label', coordinates: point.coordinates, text: point.label}).render(graph);
+                //point.labelDiv.update({name: point.name+'-label', coordinates: point.coordinates, text: point.label}).render(graph);
             } else {
                 pointSymbol.attr('class','invisible ' + POINT_SYMBOL_CLASS);
                 //TODO make label disappear
             }
 
-            return graph;
-
-        }
-
-        renderLabel(graph) {
+            return view;
 
         }
     }

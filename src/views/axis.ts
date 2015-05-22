@@ -3,20 +3,19 @@
 module KineticGraphs
 {
 
-    export interface IAxisDefinition
+    export interface AxisDefinition extends ModelDefinition
     {
-        min?: number;
-        max?: number;
-        title?: string;
-        ticks?: number;
-        tickValues?: number[];
+        min: number;
+        max: number;
+        title: string;
+        ticks: number;
+        tickValues: number[];
     }
 
-    export interface IAxis
+    export interface IAxis extends IModel
     {
         scaleFunction: (pixelLength: number, domain: IDomain) => D3.Scale.LinearScale;
         scale: D3.Scale.LinearScale;
-        update: (axisDefinition: IAxisDefinition) => void;
         draw: (vis: D3.Selection, graph_dimensions: IDimensions) => void;
         domain: IDomain;
         title: string;
@@ -24,7 +23,8 @@ module KineticGraphs
         tickValues: number[];
     }
 
-    export class Axis implements IAxis{
+    export class Axis extends Model implements IAxis
+    {
 
         public scale;
 
@@ -33,27 +33,17 @@ module KineticGraphs
         public ticks: number;
         public tickValues: number[];
 
-        constructor(axisDefinition? : IAxisDefinition) {
-            if(axisDefinition) {
-                this.update(axisDefinition)
-            }
-        }
+        constructor(definition : AxisDefinition) {
 
-        update(axisDefinition) {
+            definition = _.defaults(definition, {
+                min: 0,
+                max: 10,
+                title: '',
+                ticks: 5
+            });
 
-            if(this.domain) {
-                if(axisDefinition.min) { this.domain.min = axisDefinition.min }
-                if(axisDefinition.max) { this.domain.max = axisDefinition.max }
-            } else {
-                this.domain = new Domain(axisDefinition.min, axisDefinition.max);
-            }
-
-            this.title = axisDefinition.title || '';
-            this.ticks = axisDefinition.ticks || 5;
-            this.tickValues = axisDefinition.tickValues;
-
-            return this;
-
+            super(definition);
+            this.domain = new KineticGraphs.Domain(definition.min, definition.max);
         }
 
         draw(vis,graph_definition) {

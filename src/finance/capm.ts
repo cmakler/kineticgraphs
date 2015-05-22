@@ -7,47 +7,13 @@ declare var numeric: any;
 
 module FinanceGraphs.CAPM
 {
-    export interface IAssetDefinition extends KineticGraphs.IParameterizableDefinition
-    {
-        mean: number;
-        variance: number;
-    }
-
-    export interface IAsset extends KineticGraphs.IParameterizable
-    {
-        mean: number;
-        variance: number;
-        coordinates: () => KineticGraphs.ICoordinates;
-    }
-
-    export class Asset extends KineticGraphs.Interactive implements IAsset {
-
-        public mean;
-        public variance;
-
-        constructor(definitionString:string) {
-            super(definitionString)
-        }
-
-        _update() {
-            this.mean = this.definition.mean;
-            this.variance = this.definition.variance;
-        }
-
-        coordinates() {
-            return {x: this.variance, y: this.mean}
-        }
-    }
-
-    //
-
-    export interface IPortfolioDefinition extends KineticGraphs.IParameterizableDefinition
+    export interface PortfolioDefinition
     {
         assets: Asset[];
         correlation: number;
     }
 
-    export interface IPortfolio extends KineticGraphs.IInteractive
+    export interface IPortfolio extends KineticGraphs.IView
     {
         data: () => KineticGraphs.ICoordinates[];
         assets: Asset[];
@@ -55,7 +21,7 @@ module FinanceGraphs.CAPM
         variance: (weightArray:number[]) => number;
     }
 
-    export class Portfolio extends KineticGraphs.Interactive implements IPortfolio {
+    export class Portfolio extends KineticGraphs.View implements IPortfolio {
 
         public assets;
         public correlation:number;

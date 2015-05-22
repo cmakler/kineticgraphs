@@ -6,13 +6,13 @@ declare var numeric: any;
 
 module FinanceGraphs.PortfolioAnalysis
 {
-    export interface IPortfolioDefinition extends KineticGraphs.IParameterizableDefinition
+    export interface PortfolioDefinition
     {
         assets: Asset[];
         correlations: number[][];
     }
 
-    export interface IPortfolio extends KineticGraphs.IParameterizable
+    export interface IPortfolio
     {
         assets: Asset[];
         data: (maxLeverage: number) => KineticGraphs.ICoordinates[];
@@ -25,7 +25,7 @@ module FinanceGraphs.PortfolioAnalysis
         stdev: (weightArray:number[]) => number;
     }
 
-    export class Portfolio extends KineticGraphs.Parameterizable implements IPortfolio {
+    export class Portfolio implements IPortfolio {
 
         public assets;
         public definition:IPortfolioDefinition;
@@ -35,7 +35,7 @@ module FinanceGraphs.PortfolioAnalysis
         public meanArray: number[];
         public stdevArray: number[];
 
-        constructor(definitionString:string) {
+        constructor(definition:PortfolioDefinition) {
             super(definitionString)
 
         }

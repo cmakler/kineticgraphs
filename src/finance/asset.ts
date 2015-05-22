@@ -11,31 +11,26 @@ declare var numeric: any;
 
 module FinanceGraphs.PortfolioAnalysis
 {
-    export interface IAssetDefinition extends KineticGraphs.IParameterizableDefinition
+    export interface AssetDefinition
     {
         mean: number;
         stdev: number;
     }
 
-    export interface IAsset extends KineticGraphs.IParameterizable
+    export interface IAsset
     {
         mean: number;
         stdev: number;
         coordinates: () => KineticGraphs.ICoordinates;
     }
 
-    export class Asset extends KineticGraphs.Interactive implements IAsset {
+    export class Asset extends KineticGraphs.View implements IAsset {
 
         public mean;
         public stdev;
 
-        constructor(definitionString:string) {
-            super(definitionString)
-        }
-
-        _update() {
-            this.mean = this.definition.mean;
-            this.stdev = this.definition.stdev;
+        constructor(definition:AssetDefinition) {
+            super(definition)
         }
 
         coordinates() {

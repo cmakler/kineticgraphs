@@ -1,108 +1,3 @@
-/// <reference path="kg.ts" />
-var KineticGraphs;
-(function (KineticGraphs) {
-    var ModelController = (function () {
-        function ModelController($scope, $window) {
-            this.$scope = $scope;
-            var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
-            var point1 = ",{type:'ControlDiv', definition: {name:'asset1', show:true, className: 'asset', text:'a_1', coordinates: functions.asset1.coordinates()}}";
-            var point2 = ",{type:'ControlDiv', definition: {name:'asset2', show:true, className: 'asset', text:'a_2', coordinates: functions.asset2.coordinates()}}";
-            var point3 = ",{type:'ControlDiv', definition: {name:'asset3', show:true, className: 'asset', text:'a_3', coordinates: functions.asset3.coordinates()}}";
-            var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],params.maxLeverage)}}";
-            var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],params.maxLeverage)}}";
-            var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],params.maxLeverage)}}";
-            var portfolioPaths = ",{type:'PathFamily', definition: {name: 'myDataPaths', show: true, className: 'draw', data:functions.portfolio.data(params.maxLeverage)}}";
-            var graphDefEnd = "]}";
-            $scope.interactiveDefinitions = {
-                graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + portfolioPaths + point1 + point2 + point3 + graphDefEnd],
-                sliders: [
-                    "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
-                    "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
-                    "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
-                    "{element_id: 'leverageSlider', param: 'maxLeverage', precision: '1', axis: {min: 0, max: 400, tickValues: [0,200,400]}}"
-                ]
-            };
-            $scope.params = {
-                rho01: 0,
-                rho12: 0,
-                rho02: 0,
-                mean1: 0.2,
-                stdev1: 0.2,
-                mean2: 0.25,
-                stdev2: 0.3,
-                mean3: 0.3,
-                stdev3: 0.4,
-                maxLeverage: 0
-            };
-            $scope.functionDefinitions = { finance: [
-                { name: 'asset1', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean1', stdev: 'stdev1'}" },
-                { name: 'asset2', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean2', stdev: 'stdev2'}" },
-                { name: 'asset3', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean3', stdev: 'stdev3'}" },
-                { name: 'portfolio', model: 'PortfolioAnalysis', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2, functions.asset3], correlationCoefficients: {rho12: params.rho12, rho23: params.rho23, rho13: params.rho13}}" }
-            ] };
-            // Creates graph objects from (string) graph definitions
-            function createInteractives() {
-                var interactives = [];
-                if ($scope.hasOwnProperty('interactiveDefinitions')) {
-                    if ($scope.interactiveDefinitions.hasOwnProperty('graphs')) {
-                        $scope.interactiveDefinitions.graphs.forEach(function (graphDefinition) {
-                            interactives.push(new KineticGraphs.Graph(graphDefinition));
-                        });
-                    }
-                    if ($scope.interactiveDefinitions.hasOwnProperty('sliders')) {
-                        $scope.interactiveDefinitions.sliders.forEach(function (sliderDefinition) {
-                            interactives.push(new KineticGraphs.Slider(sliderDefinition));
-                        });
-                    }
-                }
-                return interactives;
-            }
-            // Creates functions
-            function createFunctions() {
-                var functions = {};
-                if ($scope.hasOwnProperty('functionDefinitions')) {
-                    if ($scope.functionDefinitions.hasOwnProperty('finance')) {
-                        $scope.functionDefinitions.finance.forEach(function (functionDefinition) {
-                            functions[functionDefinition.name] = new FinanceGraphs[functionDefinition.model][functionDefinition.type](functionDefinition.definition);
-                        });
-                    }
-                }
-                return functions;
-            }
-            // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
-            function update(redraw) {
-                // Create interactive objects if they don't already exist
-                $scope.functions = $scope.functions || createFunctions();
-                $scope.interactives = $scope.interactives || createInteractives();
-                for (var name in $scope.functions) {
-                    $scope.functions[name] = $scope.functions[name].update($scope);
-                }
-                // Update each interactive (updating triggers the graph to redraw its objects and possibly itself)
-                $scope.interactives = $scope.interactives.map(function (interactive) {
-                    interactive.update($scope);
-                    if (redraw) {
-                        interactive.redraw();
-                    }
-                    interactive.drawObjects();
-                    return interactive;
-                });
-            }
-            // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
-            function redrawGraphs() {
-                update(true);
-            }
-            $scope.$watchCollection('graphParams', redrawGraphs);
-            angular.element($window).on('resize', redrawGraphs);
-            // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
-            function redrawObjects() {
-                update(false);
-            }
-            $scope.$watchCollection('params', redrawObjects);
-        }
-        return ModelController;
-    })();
-    KineticGraphs.ModelController = ModelController;
-})(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="kg.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
@@ -124,25 +19,12 @@ var KineticGraphs;
         return Domain;
     })();
     KineticGraphs.Domain = Domain;
-    function propertyAsNumber(o, p, scope) {
-        var v;
-        if (o.hasOwnProperty(p)) {
-            if (typeof o[p] == 'string') {
-                v = scope.$eval('params.' + o[p]);
-            }
-            else {
-                v = o[p];
-            }
-        }
-        return v;
-    }
-    KineticGraphs.propertyAsNumber = propertyAsNumber;
     function translateByPixelCoordinates(coordinates) {
         return 'translate(' + coordinates.x + ',' + coordinates.y + ')';
     }
     KineticGraphs.translateByPixelCoordinates = translateByPixelCoordinates;
     function positionByPixelCoordinates(coordinates, dimension) {
-        var style = 'position:absolute; left: ' + coordinates.x + 'px; top: ' + coordinates.y + 'px;';
+        var style = 'position:relative; left: ' + coordinates.x + 'px; top: ' + coordinates.y + 'px;';
         if (dimension) {
             if (dimension.hasOwnProperty('width')) {
                 style += ' width: ' + dimension.width + 'px;';
@@ -151,96 +33,250 @@ var KineticGraphs;
         return style;
     }
     KineticGraphs.positionByPixelCoordinates = positionByPixelCoordinates;
+    function createInstance(definition) {
+        // from http://stackoverflow.com/questions/1366127/
+        function typeSpecificConstructor(typeName) {
+            var arr = typeName.split(".");
+            var fn = (window || this);
+            for (var i = 0, len = arr.length; i < len; i++) {
+                fn = fn[arr[i]];
+            }
+            if (typeof fn !== "function") {
+                throw new Error("object type " + typeName + " not found");
+            }
+            return fn;
+        }
+        // each object is a new instance of the class named in the 'type' parameter
+        var newObjectConstructor = typeSpecificConstructor(definition.type);
+        return new newObjectConstructor(definition.definition);
+    }
+    KineticGraphs.createInstance = createInstance;
 })(KineticGraphs || (KineticGraphs = {}));
-/**
- * Created by cmakler on 4/24/15.
- */
 var KineticGraphs;
 (function (KineticGraphs) {
-    var Parameterizable = (function () {
-        // Define using a string
-        function Parameterizable(definitionString) {
-            this.definitionString = definitionString;
+    var Model = (function () {
+        function Model(definition) {
+            this.definition = definition;
+            var model = this;
+            for (var key in definition) {
+                if (definition.hasOwnProperty(key)) {
+                    var value = definition[key];
+                    if (value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
+                        model[key] = KineticGraphs.createInstance(value);
+                    }
+                }
+            }
         }
-        // Establish the scope, and evaluate the definition under this new scope
-        Parameterizable.prototype.update = function (scope) {
-            this.scope = scope;
-            this.definition = scope.$eval(this.definitionString);
-            this._update();
-            return this;
+        // Update the model
+        Model.prototype.update = function (scope, callback) {
+            var model = this;
+            // Iterates over an object's definition, getting the current value of each property
+            function parseObject(def, obj) {
+                obj = obj || {};
+                for (var key in def) {
+                    if (def.hasOwnProperty(key)) {
+                        if (obj[key] instanceof KineticGraphs.Model) {
+                            // if the property is itself a model, update the model
+                            obj[key].update(scope);
+                        }
+                        else {
+                            // otherwise parse the current value of the property
+                            obj[key] = deepParse(def[key]);
+                        }
+                    }
+                }
+                return obj;
+            }
+            // Returns the value of an object's property, evaluated against the current scope.
+            function deepParse(value) {
+                if (Object.prototype.toString.call(value) == '[object Array]') {
+                    // If the object's property is an array, return the array mapped to its parsed values
+                    // see http://stackoverflow.com/questions/4775722/check-if-object-is-array
+                    return value.map(deepParse);
+                }
+                else if (typeof value == 'object') {
+                    // If the object's property is an object, parses the object.
+                    return parseObject(value);
+                }
+                else {
+                    var e = scope.$eval(value.toString());
+                    return (e == undefined) ? value : e;
+                }
+            }
+            // Parse the model object
+            model = parseObject(model.definition, model);
+            if (callback) {
+                callback();
+            }
+            return model;
         };
-        Parameterizable.prototype._update = function () {
-        }; //overridden by child class
-        return Parameterizable;
+        return Model;
     })();
-    KineticGraphs.Parameterizable = Parameterizable;
+    KineticGraphs.Model = Model;
 })(KineticGraphs || (KineticGraphs = {}));
-/* interactives/interactive.ts */
+/// <reference path="../kg.ts"/>
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-/// <reference path="../kg.ts"/>
-/// <reference path="../model/parameterizable.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
-    var Interactive = (function (_super) {
-        __extends(Interactive, _super);
-        function Interactive(definitionString) {
-            _super.call(this, definitionString);
+    var ViewObject = (function (_super) {
+        __extends(ViewObject, _super);
+        function ViewObject(definition) {
+            definition = _.defaults(definition, { className: '', show: true });
+            _super.call(this, definition);
         }
-        Interactive.prototype.redraw = function () {
-            return this; // overridden by child classes
+        ViewObject.prototype.classAndVisibility = function () {
+            var VISIBLE_CLASS = this.className + ' visible', INVISIBLE_CLASS = this.className + ' invisible';
+            return this.show ? VISIBLE_CLASS : INVISIBLE_CLASS;
         };
-        Interactive.prototype.drawObjects = function () {
-            return this;
+        ViewObject.prototype.render = function (graph) {
+            return graph; // overridden by child class
         };
-        // Rules for updating the dimensions fo the graph object, based on current graph element clientWidth
-        Interactive.prototype.updateDimensions = function (clientWidth, dimensions) {
-            // Set default to the width of the enclosing element, with a height of 500
-            var newDimensions = { width: clientWidth, height: 500 };
-            // If the author has specified a height, override
-            if (dimensions && dimensions.hasOwnProperty('height')) {
-                newDimensions.height = dimensions.height;
+        return ViewObject;
+    })(KineticGraphs.Model);
+    KineticGraphs.ViewObject = ViewObject;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Point = (function (_super) {
+        __extends(Point, _super);
+        function Point(definition) {
+            definition = _.defaults(definition, { coordinates: { x: 0, y: 0 }, size: 100, symbol: 'circle', label: '' });
+            _super.call(this, definition);
+            //this.labelDiv = new GraphDiv({coordinates: definition.coordinates, label: definition.label});
+        }
+        Point.prototype.render = function (view) {
+            var point = this, label = this.label;
+            // constants TODO should these be defined somewhere else?
+            var POINT_SYMBOL_CLASS = 'pointSymbol';
+            // initialization of D3 graph object group
+            function init(newGroup) {
+                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
+                return newGroup;
             }
-            // If the author has specified a width less than the graph element clientWidth, override
-            if (dimensions && dimensions.hasOwnProperty('width') && dimensions.width < clientWidth) {
-                newDimensions.width = dimensions.width;
+            var group = view.objectGroup(point.name, init);
+            var showPoint = function () {
+                if (point.symbol === 'none') {
+                    return false;
+                }
+                return view.onGraph(point.coordinates);
+            }();
+            // draw the symbol at the point
+            var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
+            if (showPoint) {
+                pointSymbol.attr({
+                    'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
+                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                    'transform': view.translateByCoordinates(point.coordinates)
+                });
             }
-            return newDimensions;
+            else {
+                pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
+            }
+            return view;
         };
-        return Interactive;
-    })(KineticGraphs.Parameterizable);
-    KineticGraphs.Interactive = Interactive;
+        return Point;
+    })(KineticGraphs.ViewObject);
+    KineticGraphs.Point = Point;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var View = (function (_super) {
+        __extends(View, _super);
+        function View(definition) {
+            _super.call(this, definition);
+            if (definition.hasOwnProperty('xAxis')) {
+                this.xAxis = new KineticGraphs.XAxis(definition.xAxis);
+            }
+            if (definition.hasOwnProperty('yAxis')) {
+                this.yAxis = new KineticGraphs.YAxis(definition.yAxis);
+            }
+        }
+        View.prototype.render = function (scope, redraw) {
+            var view = this;
+            view.update(scope, function () {
+                if (redraw) {
+                    view.redraw(scope);
+                }
+                else {
+                    view.drawObjects(scope);
+                }
+            });
+        };
+        View.prototype.redraw = function (scope) {
+            var view = this;
+            // Redraw the view if necessary
+            console.log('redrawing view!');
+            // Establish dimensions of the view
+            var element = $('#' + view.element_id)[0];
+            view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
+            var frameTranslation = KineticGraphs.positionByPixelCoordinates({ x: 0, y: 0 });
+            var visTranslation = KineticGraphs.translateByPixelCoordinates({ x: view.margins.left, y: view.margins.top });
+            d3.select(element).select('div').remove();
+            // Create new div element to contain SVG
+            var frame = d3.select(element).append('div').attr({ style: frameTranslation });
+            // Create new SVG element for the view visualization
+            var svg = frame.append("svg").attr("width", view.dimensions.width).attr("height", view.dimensions.height);
+            // Add a div above the SVG for labels and controls
+            view.divs = frame.append('div').attr({ style: visTranslation });
+            // Establish SVG groups for visualization area (vis), mask, axes
+            view.vis = svg.append("g").attr("transform", visTranslation);
+            var mask = svg.append("g").attr("class", "mask");
+            // Put mask around vis to clip objects that extend beyond the desired viewable area
+            mask.append("rect").attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top });
+            mask.append("rect").attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom });
+            mask.append("rect").attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height });
+            mask.append("rect").attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height });
+            if (view.xAxis || view.yAxis) {
+                // Establish SVG group for axes
+                var axes = svg.append("g").attr("class", "axes").attr("transform", visTranslation);
+                // Establish dimensions of axes (element dimensions minus margins)
+                var axisDimensions = {
+                    width: view.dimensions.width - view.margins.left - view.margins.right,
+                    height: view.dimensions.height - view.margins.top - view.margins.bottom
+                };
+                // draw axes
+                if (view.xAxis) {
+                    view.xAxis.draw(axes, axisDimensions);
+                }
+                if (view.yAxis) {
+                    view.yAxis.draw(axes, axisDimensions);
+                }
+            }
+            return view.drawObjects(scope);
+        };
+        View.prototype.drawObjects = function (scope) {
+            var view = this;
+            view.objects.forEach(function (object) {
+                object.update(scope).render(view);
+            });
+            return view;
+        };
+        return View;
+    })(KineticGraphs.Model);
+    KineticGraphs.View = View;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts" />
 var KineticGraphs;
 (function (KineticGraphs) {
-    var Axis = (function () {
-        function Axis(axisDefinition) {
-            if (axisDefinition) {
-                this.update(axisDefinition);
-            }
+    var Axis = (function (_super) {
+        __extends(Axis, _super);
+        function Axis(definition) {
+            definition = _.defaults(definition, {
+                min: 0,
+                max: 10,
+                title: '',
+                ticks: 5
+            });
+            _super.call(this, definition);
+            this.domain = new KineticGraphs.Domain(definition.min, definition.max);
         }
-        Axis.prototype.update = function (axisDefinition) {
-            if (this.domain) {
-                if (axisDefinition.min) {
-                    this.domain.min = axisDefinition.min;
-                }
-                if (axisDefinition.max) {
-                    this.domain.max = axisDefinition.max;
-                }
-            }
-            else {
-                this.domain = new KineticGraphs.Domain(axisDefinition.min, axisDefinition.max);
-            }
-            this.title = axisDefinition.title || '';
-            this.ticks = axisDefinition.ticks || 5;
-            this.tickValues = axisDefinition.tickValues;
-            return this;
-        };
         Axis.prototype.draw = function (vis, graph_definition) {
             // overridden by child class
         };
@@ -248,7 +284,7 @@ var KineticGraphs;
             return d3.scale.linear(); // overridden by child class
         };
         return Axis;
-    })();
+    })(KineticGraphs.Model);
     KineticGraphs.Axis = Axis;
     var XAxis = (function (_super) {
         __extends(XAxis, _super);
@@ -286,27 +322,28 @@ var KineticGraphs;
     KineticGraphs.YAxis = YAxis;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
-/// <reference path="interactive.ts" />
 var KineticGraphs;
 (function (KineticGraphs) {
     var Graph = (function (_super) {
         __extends(Graph, _super);
-        function Graph(definitionString) {
-            _super.call(this, definitionString);
-            this.definitionString = definitionString;
-            this.xAxis = new KineticGraphs.XAxis();
-            this.yAxis = new KineticGraphs.YAxis();
+        function Graph(definition) {
+            // ensure dimensions and margins are set; set any missing elements to defaults
+            definition.dimensions = _.defaults(definition.dimensions || {}, { width: 500, height: 500 });
+            definition.margins = _.defaults(definition.margins || {}, { top: 20, left: 100, bottom: 100, right: 20 });
+            _super.call(this, definition);
+            this.xAxis = new KineticGraphs.XAxis(definition.xAxis);
+            this.yAxis = new KineticGraphs.YAxis(definition.yAxis);
             this.graphDivs = [];
         }
-        // Used to update parameters of the model from within the graph
-        Graph.prototype.updateParams = function (params) {
+        /*// Used to update parameters of the model from within the graph
+        updateParams(params:any) {
             for (var key in params) {
                 if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
                     this.scope.params[key] = params[key];
                 }
             }
             this.scope.$apply();
-        };
+        }*/
         Graph.prototype.objectGroup = function (name, init) {
             var group = this.vis.select('#' + name);
             if (group.empty()) {
@@ -350,625 +387,189 @@ var KineticGraphs;
             var graph = this;
             return coordinateArray.map(graph.pixelCoordinates, graph);
         };
-        // Update graph based on latest parameters
-        Graph.prototype.redraw = function () {
-            var graph = this, definition = this.definition, updateDimensions = this.updateDimensions;
-            // Redraw the graph if necessary
-            console.log('redrawing graph!');
-            // Establish dimensions of the graph
-            var element = $('#' + definition.element_id)[0];
-            var dimensions = updateDimensions(element.clientWidth, definition.dimensions);
-            var margins = definition.margins || { top: 20, left: 100, bottom: 100, right: 20 };
-            var visTranslation = KineticGraphs.translateByPixelCoordinates({ x: margins.left, y: margins.top });
-            // Update axis objects
-            graph.xAxis.update(definition.xAxis);
-            graph.yAxis.update(definition.yAxis);
-            // Remove existing graph
-            d3.select(element).select('div').remove();
-            // Create new div element to contain SVG
-            var frame = d3.select(element).append('div').attr({ style: KineticGraphs.positionByPixelCoordinates({ x: 0, y: 0 }) });
-            // Create new SVG element for the graph visualization
-            var svg = frame.append("svg").attr("width", dimensions.width).attr("height", dimensions.height);
-            // Add a div above the SVG for labels and controls
-            graph.divs = frame.append('div').attr({ style: KineticGraphs.positionByPixelCoordinates({ x: margins.left, y: margins.top }) });
-            // Establish SVG groups for visualization area (vis), mask, axes
-            graph.vis = svg.append("g").attr("transform", visTranslation);
-            var mask = svg.append("g").attr("class", "mask");
-            var axes = svg.append("g").attr("class", "axes").attr("transform", visTranslation);
-            // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append("rect").attr({ x: 0, y: 0, width: dimensions.width, height: margins.top });
-            mask.append("rect").attr({ x: 0, y: dimensions.height - margins.bottom, width: dimensions.width, height: margins.bottom });
-            mask.append("rect").attr({ x: 0, y: 0, width: margins.left, height: dimensions.height });
-            mask.append("rect").attr({ x: dimensions.width - margins.right, y: 0, width: margins.right, height: dimensions.height });
-            // Establish SVG group for axes
-            // Establish dimensions of axes (element dimensions minus margins)
-            var axisDimensions = {
-                width: dimensions.width - margins.left - margins.right,
-                height: dimensions.height - margins.top - margins.bottom
-            };
-            // draw axes
-            graph.xAxis.draw(axes, axisDimensions);
-            graph.yAxis.draw(axes, axisDimensions);
-            return graph;
-        };
-        Graph.prototype.drawObjects = function () {
-            var graph = this, definition = this.definition;
-            if (!graph.graphObjects || graph.graphObjects == undefined) {
-                graph.graphObjects = new KineticGraphs.GraphObjects(definition.graphObjects);
-            }
-            // Update graphObject graph objects based on change in scope
-            graph = graph.graphObjects.update(definition.graphObjects).render(graph);
-            return graph;
-        };
         return Graph;
-    })(KineticGraphs.Interactive);
+    })(KineticGraphs.View);
     KineticGraphs.Graph = Graph;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="interactive.ts" />
+/// <reference path="kg.ts" />
 var KineticGraphs;
 (function (KineticGraphs) {
-    var Slider = (function (_super) {
-        __extends(Slider, _super);
-        function Slider(definitionString) {
-            _super.call(this, definitionString);
-            this.definitionString = definitionString;
-            this.axis = new KineticGraphs.XAxis();
-        }
-        Slider.prototype.redraw = function () {
-            var slider = this, scope = this.scope, definition = this.definition, updateDimensions = this.updateDimensions;
-            console.log('redrawing slider!');
-            // Set default height to 50
-            if (!definition.hasOwnProperty('dimensions')) {
-                definition.dimensions = { height: 50, width: 300 };
-            }
-            // Set defualt precision to 1
-            if (!definition.hasOwnProperty('precision')) {
-                definition.precision = 1;
-            }
-            // Establish dimensions of the graph
-            var element = $('#' + definition.element_id)[0];
-            var dimensions = updateDimensions(element.clientWidth, definition.dimensions);
-            var radius = dimensions.height / 2;
-            var margins = { top: radius, left: radius, bottom: radius, right: radius };
-            // Update axis object
-            slider.axis.update(definition.axis);
-            //slider.axis.tickValues = slider.axis.domain.toArray();
-            // Remove existing slider
-            d3.select(element).select('svg').remove();
-            // Create new SVG element for the graph visualization
-            slider.vis = d3.select(element).append("svg").attr("width", dimensions.width).attr("height", dimensions.height).append("g").attr("transform", "translate(" + radius + "," + radius + ")");
-            // Establish dimensions of axes (element dimensions minus margins)
-            var axisDimensions = {
-                width: dimensions.width - margins.left - margins.right,
-                height: 0
+    var Controller = (function () {
+        function Controller($scope, $window) {
+            this.$scope = $scope;
+            $scope.init = function (definition) {
+                $scope.params = definition.params;
+                $scope.model = KineticGraphs.createInstance(definition.model);
+                $scope.model.update($scope, function () {
+                    $scope.views = definition.views.map(function (view) {
+                        return KineticGraphs.createInstance(view);
+                    });
+                });
             };
-            // draw axes
-            slider.axis.draw(slider.vis, axisDimensions);
-            // establish drag behavior
-            var drag = d3.behavior.drag().on("drag", function () {
-                var rawValue = slider.axis.scale.invert(d3.event.x);
-                var boundedValue = Math.max(slider.axis.domain.min, Math.min(slider.axis.domain.max, rawValue));
-                scope.params[definition.param] = Math.round(boundedValue / definition.precision) * definition.precision;
-                scope.$apply();
-            });
-            slider.circle = slider.vis.append('circle').attr({ cy: 0, r: radius / 2 }).call(drag);
-            return slider;
-        };
-        Slider.prototype.drawObjects = function () {
-            var circle = this.circle, scale = this.axis.scale, newValue = this.scope.params[this.definition.param];
-            circle.attr('cx', scale(newValue));
-            return this;
-        };
-        return Slider;
-    })(KineticGraphs.Interactive);
-    KineticGraphs.Slider = Slider;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var GraphObject = (function () {
-        function GraphObject() {
-        }
-        GraphObject.prototype.classAndVisibility = function () {
-            var VISIBLE_CLASS = this.className + ' visible', INVISIBLE_CLASS = this.className + ' invisible';
-            return this.show ? VISIBLE_CLASS : INVISIBLE_CLASS;
-        };
-        GraphObject.prototype.update = function (definition) {
-            if (!definition.hasOwnProperty('name')) {
-                console.log('error: a name is required of all objects!');
-            }
-            var currentDefinition = this;
-            // ensure that the required attributes exist
-            currentDefinition.className = (currentDefinition.hasOwnProperty('className')) ? definition.className : '';
-            currentDefinition.show = (currentDefinition.hasOwnProperty('show')) ? definition.show : true;
-            currentDefinition.name = definition.name;
-            for (var key in definition) {
-                if (currentDefinition.hasOwnProperty(key) && definition.hasOwnProperty(key) && currentDefinition[key] != definition[key]) {
-                    currentDefinition[key] = definition[key];
-                }
-            }
-            return currentDefinition;
-        };
-        GraphObject.prototype.render = function (graph) {
-            return graph; // overridden by child class
-        };
-        return GraphObject;
-    })();
-    KineticGraphs.GraphObject = GraphObject;
-    var GraphObjects = (function () {
-        function GraphObjects(definitions) {
-            this.reset(definitions);
-        }
-        GraphObjects.prototype.reset = function (definitions) {
-            this.data = definitions.map(function (definition) {
-                return new KineticGraphs[definition.type];
-            });
-        };
-        // Updates all graphObjects based on an array of definitions, and returns updated GraphObjects object
-        GraphObjects.prototype.update = function (definitions) {
-            this.data.forEach(function (graphObject, index) {
-                graphObject.update(definitions[index].definition);
-            });
-            return this;
-        };
-        GraphObjects.prototype.render = function (graph) {
-            this.data.forEach(function (graphObject) {
-                graph = graphObject.render(graph);
-            });
-            return graph;
-        };
-        return GraphObjects;
-    })();
-    KineticGraphs.GraphObjects = GraphObjects;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var GraphDiv = (function (_super) {
-        __extends(GraphDiv, _super);
-        function GraphDiv() {
-            _super.call(this);
-            // establish defaults
-            this.coordinates = { x: 0, y: 0 };
-            this.math = false;
-            this.dimensions = { width: 100, height: 20 };
-            this.align = 'center';
-            this.text = '';
-        }
-        GraphDiv.prototype.render = function (graph) {
-            var graphDiv = this, width = this.dimensions.width, height = this.dimensions.height;
-            var el = graph.getDiv(graphDiv.name);
-            var style = 'text-align:center; color:gray; position:absolute; width: ' + width + 'px; height: ' + height + 'px; line-height: ' + height + 'px;';
-            // Set left pixel margin
-            var halfWidth = width * 0.5;
-            // Default to centered on x coordinate
-            var leftPixels = graphDiv.coordinates.x - halfWidth;
-            if (graphDiv.align == 'left') {
-                // move right by half the width of the div if left aligned
-                leftPixels += halfWidth;
-            }
-            else if (graphDiv.align == 'right') {
-                // move left by half the width of the div if right aligned
-                leftPixels -= halfWidth;
-            }
-            style += 'left: ' + leftPixels + 'px;';
-            // Set top pixel margin
-            var halfHeight = height * 0.5;
-            // Default to centered on x coordinate
-            var topPixels = graphDiv.coordinates.y - halfHeight;
-            if (graphDiv.valign == 'top') {
-                // move down by half the height of the div if top aligned
-                topPixels += halfWidth;
-            }
-            else if (graphDiv.align == 'right') {
-                // move up by half the height of the div if right aligned
-                topPixels -= halfWidth;
-            }
-            style += 'top: ' + topPixels + 'px;';
-            //format the div
-            el.attr('style', style);
-            el.text(graphDiv.text);
-            return graph;
-        };
-        return GraphDiv;
-    })(KineticGraphs.GraphObject);
-    KineticGraphs.GraphDiv = GraphDiv;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Point = (function (_super) {
-        __extends(Point, _super);
-        function Point() {
-            _super.call(this);
-            // establish defaults
-            this.coordinates = { x: 0, y: 0 };
-            this.size = 100;
-            this.symbol = 'circle';
-            this.labelDiv = new KineticGraphs.GraphDiv();
-            this.label = '';
-        }
-        Point.prototype.render = function (graph) {
-            var point = this, label = this.label;
-            // constants TODO should these be defined somewhere else?
-            var POINT_SYMBOL_CLASS = 'pointSymbol';
-            // initialization of D3 graph object group
-            function init(newGroup) {
-                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
-                return newGroup;
-            }
-            var group = graph.objectGroup(point.name, init);
-            var showPoint = function () {
-                if (point.symbol === 'none') {
-                    return false;
-                }
-                return graph.onGraph(point.coordinates);
-            }();
-            // draw the symbol at the point
-            var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
-            if (showPoint) {
-                pointSymbol.attr({
-                    'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
-                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                    'transform': graph.translateByCoordinates(point.coordinates)
+            // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
+            function render(redraw) {
+                $scope.model.update($scope, function () {
+                    $scope.views.forEach(function (view) {
+                        view.render($scope, redraw);
+                    });
                 });
-                point.labelDiv.update({ name: point.name + '-label', coordinates: point.coordinates, text: point.label }).render(graph);
             }
-            else {
-                pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
+            // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
+            function redrawGraphs() {
+                render(true);
             }
-            return graph;
-        };
-        Point.prototype.renderLabel = function (graph) {
-        };
-        return Point;
-    })(KineticGraphs.GraphObject);
-    KineticGraphs.Point = Point;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="graphDiv.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var ControlDiv = (function (_super) {
-        __extends(ControlDiv, _super);
-        function ControlDiv() {
-            _super.call(this);
-        }
-        ControlDiv.prototype.render = function (graph) {
-            var xRaw = this.coordinates.x, yRaw = this.coordinates.y, width = this.dimensions.width, height = this.dimensions.height, text = this.text;
-            var x, y, xDrag, yDrag;
-            if (typeof xRaw == 'string' && graph.scope.params.hasOwnProperty(xRaw)) {
-                x = graph.xAxis.scale(graph.scope.$eval('params.' + xRaw));
-                xDrag = true;
+            $scope.$watchCollection('graphParams', redrawGraphs);
+            angular.element($window).on('resize', redrawGraphs);
+            // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
+            function redrawObjects() {
+                render(false);
             }
-            else {
-                x = graph.xAxis.scale(xRaw);
-                xDrag = false;
-            }
-            if (typeof yRaw == 'string' && graph.scope.params.hasOwnProperty(yRaw)) {
-                y = graph.yAxis.scale(graph.scope.params[yRaw]);
-                yDrag = true;
-            }
-            else {
-                y = graph.yAxis.scale(yRaw);
-                yDrag = false;
-            }
-            var div = graph.getDiv(this.name);
-            div.style('cursor', 'move').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
-            // Set left pixel margin
-            var halfWidth = width * 0.5;
-            // Default to centered on x coordinate
-            var leftPixels = x - halfWidth;
-            if (this.align == 'left') {
-                // move right by half the width of the div if left aligned
-                leftPixels += halfWidth;
-            }
-            else if (this.align == 'right') {
-                // move left by half the width of the div if right aligned
-                leftPixels -= halfWidth;
-            }
-            div.style('left', leftPixels + 'px');
-            // Set top pixel margin
-            var halfHeight = height * 0.5;
-            // Default to centered on x coordinate
-            var topPixels = y - halfHeight;
-            if (this.valign == 'top') {
-                // move down by half the height of the div if top aligned
-                topPixels += halfWidth;
-            }
-            else if (this.align == 'right') {
-                // move up by half the height of the div if right aligned
-                topPixels -= halfWidth;
-            }
-            div.style('top', topPixels + 'px');
-            // establish drag behavior
-            var drag = d3.behavior.drag().on("drag", function () {
-                console.log('dragging');
-                var dragUpdate = {}, newX, newY;
-                if (xDrag) {
-                    newX = graph.xAxis.scale.invert(d3.event.x);
-                    if (graph.xAxis.domain.contains(newX)) {
-                        dragUpdate[xRaw] = graph.xAxis.scale.invert(d3.event.x);
-                    }
-                }
-                if (yDrag) {
-                    newY = graph.yAxis.scale.invert(d3.event.y);
-                    if (graph.yAxis.domain.contains(newY)) {
-                        dragUpdate[yRaw] = graph.yAxis.scale.invert(d3.event.y);
-                    }
-                }
-                graph.updateParams(dragUpdate);
-            });
-            katex.render(text, div[0][0]);
-            div.call(drag);
-            return graph;
-        };
-        return ControlDiv;
-    })(KineticGraphs.GraphDiv);
-    KineticGraphs.ControlDiv = ControlDiv;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var LinePlot = (function (_super) {
-        __extends(LinePlot, _super);
-        function LinePlot() {
-            _super.call(this);
-            this.data = [];
-            this.interpolation = 'linear';
-        }
-        LinePlot.prototype.render = function (graph) {
-            // constants TODO should these be defined somewhere else?
-            var DATA_PATH_CLASS = 'dataPath';
-            var dataCoordinates = graph.dataCoordinates(this.data);
-            function init(newGroup) {
-                newGroup.append('path').attr('class', DATA_PATH_CLASS);
-                return newGroup;
-            }
-            var group = graph.objectGroup(this.name, init);
-            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
-                return d.x;
-            }).y(function (d) {
-                return d.y;
-            });
-            var dataPath = group.select('.' + DATA_PATH_CLASS);
-            dataPath.attr({
-                'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
-                'd': dataLine(dataCoordinates)
-            });
-            return graph;
-        };
-        return LinePlot;
-    })(KineticGraphs.GraphObject);
-    KineticGraphs.LinePlot = LinePlot;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var Scatter = (function (_super) {
-        __extends(Scatter, _super);
-        function Scatter() {
-            _super.call(this);
-            // establish defaults
-            this.data = [];
-            this.size = 25;
-            this.symbol = 'circle';
-        }
-        Scatter.prototype.render = function (graph) {
-            // constants TODO should these be defined somewhere else?
-            var DATA_PATH_CLASS = 'scatter', scope = graph.scope;
-            function init(newGroup) {
-                return newGroup;
-            }
-            var group = graph.objectGroup(this.name, init);
-            var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
-            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS + ' asset').on('mouseover', function (d) {
-                scope.$apply(function () {
-                    scope.selectedWeights = d.weights;
-                });
-            }).on('mouseout', function (d) {
-                scope.$apply(function () {
-                    scope.selectedWeights = [];
-                });
-            });
-            dataPoints.attr({
-                'd': d3.svg.symbol().type(this.symbol).size(this.size),
-                'fill': function (d) {
-                    return d.color;
+            $scope.$watchCollection('params', redrawObjects);
+            $scope.init({
+                params: {
+                    x: 5,
+                    y: 5
                 },
-                'transform': function (d) {
-                    return "translate(" + graph.xAxis.scale(d.x) + "," + graph.yAxis.scale(d.y) + ")";
-                }
+                model: {
+                    type: 'Sample.TwoPoints',
+                    definition: {
+                        point1: {
+                            type: 'Sample.SinglePoint',
+                            definition: {
+                                name: 'p1',
+                                x: 'params.x',
+                                y: 6
+                            }
+                        },
+                        point2: {
+                            type: 'Sample.SinglePoint',
+                            definition: {
+                                name: 'p2',
+                                x: 3,
+                                y: 'params.y'
+                            }
+                        }
+                    }
+                },
+                views: [
+                    {
+                        type: 'KineticGraphs.Graph',
+                        definition: {
+                            element_id: 'graph',
+                            dimensions: { width: 700, height: 700 },
+                            xAxis: { min: 0, max: 10, title: '"Standard Deviation"' },
+                            yAxis: { min: 0, max: 10, title: '"Mean"' },
+                            objects: ['model.point1.point()']
+                        }
+                    }
+                ]
             });
-            dataPoints.exit().remove();
-            return graph;
-        };
-        return Scatter;
-    })(KineticGraphs.GraphObject);
-    KineticGraphs.Scatter = Scatter;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var PathFamily = (function (_super) {
-        __extends(PathFamily, _super);
-        function PathFamily() {
-            _super.call(this);
-            this.data = [];
-            this.interpolation = 'basis';
+            render(true);
+            /*var graphDef = "{element_id:'graph', dimensions: {width: 700, height: 700}, xAxis: {min: 0, max: 1, title: 'Standard Deviation'},yAxis: {min: 0, max: 0.5, title: 'Mean'}, graphObjects:[";
+             var point1 = ",{type:'ControlDiv', definition: {name:'asset1', show:true, className: 'asset', text:'a_1', coordinates: functions.asset1.coordinates()}}";
+             var point2 = ",{type:'ControlDiv', definition: {name:'asset2', show:true, className: 'asset', text:'a_2', coordinates: functions.asset2.coordinates()}}";
+             var point3 = ",{type:'ControlDiv', definition: {name:'asset3', show:true, className: 'asset', text:'a_3', coordinates: functions.asset3.coordinates()}}";
+             var linePlot3 = ",{type:'LinePlot', definition: {name: 'myLinePlot3', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,1,[0,0,0],params.maxLeverage)}}";
+             var linePlot2 = ",{type:'LinePlot', definition: {name: 'myLinePlot2', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(1,2,[0,0,0],params.maxLeverage)}}";
+             var linePlot1 = "{type:'LinePlot', definition: {name: 'myLinePlot1', show: true, className: 'draw', data:functions.portfolio.twoAssetPortfolio(0,2,[0,0,0],params.maxLeverage)}}";
+             var portfolioPaths = ",{type:'PathFamily', definition: {name: 'myDataPaths', show: true, className: 'draw', data:functions.portfolio.data(params.maxLeverage)}}";
+             var graphDefEnd = "]}";
+             $scope.interactiveDefinitions = {
+             graphs: [graphDef + linePlot1 + linePlot2 + linePlot3 + portfolioPaths + point1 + point2 + point3 + graphDefEnd],
+             sliders: [
+             "{element_id: 'slider12', param: 'rho01', precision: '0.1', axis: {min: -1, max: 1, tickValues: [-1,0,1]}}",
+             "{element_id: 'slider23', param: 'rho12', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
+             "{element_id: 'slider13', param: 'rho02', precision: '0.1', axis: {min: -0.5, max: 0.5, tickValues: [-0.5,0,0.5]}}",
+             "{element_id: 'leverageSlider', param: 'maxLeverage', precision: '1', axis: {min: 0, max: 400, tickValues: [0,200,400]}}"
+             ]
+             };
+             $scope.params = ;
+             $scope.functionDefinitions = {finance: [
+             {name: 'asset1', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean1', stdev: 'stdev1'}"},
+             {name: 'asset2', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean2', stdev: 'stdev2'}"},
+             {name: 'asset3', model: 'PortfolioAnalysis', type: 'Asset', definition: "{mean: 'mean3', stdev: 'stdev3'}"},
+             {name: 'portfolio', model: 'PortfolioAnalysis', type: 'Portfolio', definition: "{assets:[functions.asset1, functions.asset2, functions.asset3], correlationCoefficients: {rho12: params.rho12, rho23: params.rho23, rho13: params.rho13}}"}
+             ]};
+
+             // Creates graph objects from (string) graph definitions
+             function createViews() {
+             var interactives:IView[] = [];
+             if($scope.hasOwnProperty('interactiveDefinitions')){
+             if($scope.interactiveDefinitions.hasOwnProperty('graphs')) {
+             $scope.interactiveDefinitions.graphs.forEach(function(graphDefinition) {
+             interactives.push(new Graph(graphDefinition))
+             })
+             }
+             if($scope.interactiveDefinitions.hasOwnProperty('sliders')) {
+             $scope.interactiveDefinitions.sliders.forEach(function(sliderDefinition) {
+             interactives.push(new Slider(sliderDefinition))
+             })
+             }
+             }
+             return interactives;
+             }
+
+             // Creates functions
+             function createFunctions() {
+             var functions = {};
+             if($scope.hasOwnProperty('functionDefinitions')){
+             if($scope.functionDefinitions.hasOwnProperty('finance')) {
+             $scope.functionDefinitions.finance.forEach(function(functionDefinition) {
+             functions[functionDefinition.name] = new FinanceGraphs[functionDefinition.model][functionDefinition.type](functionDefinition.definition);
+             })
+             }
+             }
+             return functions;
+             }*/
         }
-        PathFamily.prototype.render = function (graph) {
-            // constants TODO should these be defined somewhere else?
-            var DATA_PATH_FAMILY_CLASS = 'dataPathFamily';
-            function init(newGroup) {
-                newGroup.append('g').attr('class', DATA_PATH_FAMILY_CLASS);
-                return newGroup;
-            }
-            var group = graph.objectGroup(this.name, init);
-            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
-                return graph.xAxis.scale(d.x);
-            }).y(function (d) {
-                return graph.yAxis.scale(d.y);
-            });
-            var dataPaths = group.select('.' + DATA_PATH_FAMILY_CLASS).selectAll('path').data(this.data);
-            dataPaths.enter().append('path');
-            dataPaths.attr({
-                'd': function (d) {
-                    return dataLine(d);
-                }
-            });
-            dataPaths.exit().remove();
-            return graph;
-        };
-        return PathFamily;
-    })(KineticGraphs.GraphObject);
-    KineticGraphs.PathFamily = PathFamily;
+        return Controller;
+    })();
+    KineticGraphs.Controller = Controller;
 })(KineticGraphs || (KineticGraphs = {}));
 /**
- * Created by cmakler on 4/27/15.
+ * Created by cmakler on 5/21/15.
  */
-var FinanceGraphs;
-(function (FinanceGraphs) {
-    var PortfolioAnalysis;
-    (function (PortfolioAnalysis) {
-        var Asset = (function (_super) {
-            __extends(Asset, _super);
-            function Asset(definitionString) {
-                _super.call(this, definitionString);
-            }
-            Asset.prototype._update = function () {
-                this.mean = this.definition.mean;
-                this.stdev = this.definition.stdev;
-            };
-            Asset.prototype.coordinates = function () {
-                return { x: this.stdev, y: this.mean };
-            };
-            return Asset;
-        })(KineticGraphs.Interactive);
-        PortfolioAnalysis.Asset = Asset;
-    })(PortfolioAnalysis = FinanceGraphs.PortfolioAnalysis || (FinanceGraphs.PortfolioAnalysis = {}));
-})(FinanceGraphs || (FinanceGraphs = {}));
-/// <reference path="../kg.ts"/>
-/// <reference path="../helpers.ts"/>
-var FinanceGraphs;
-(function (FinanceGraphs) {
-    var PortfolioAnalysis;
-    (function (PortfolioAnalysis) {
-        var Portfolio = (function (_super) {
-            __extends(Portfolio, _super);
-            function Portfolio(definitionString) {
-                _super.call(this, definitionString);
-            }
-            Portfolio.prototype._update = function () {
-                var p = this, scope = this.scope;
-                p.assets = p.definition.assets;
-                p.meanArray = p.assets.map(function (asset) {
-                    return KineticGraphs.propertyAsNumber(asset, 'mean', scope);
-                });
-                p.stdevArray = p.assets.map(function (asset) {
-                    return KineticGraphs.propertyAsNumber(asset, 'stdev', scope);
-                });
-                p.correlationMatrix = [];
-                p.covarianceMatrix = [];
-                function correlationCoefficient(i, j) {
-                    if (i == j) {
-                        return 1;
-                    }
-                    if (scope.params.hasOwnProperty('rho' + i + j)) {
-                        return scope.params['rho' + i + j];
-                    }
-                    if (scope.params.hasOwnProperty('rho' + j + i)) {
-                        return scope.params['rho' + j + i];
-                    }
-                    console.log('no coefficient specified for ', i, j);
-                }
-                for (var i = 0; i < p.assets.length; i++) {
-                    var correlationMatrixRow = [];
-                    for (var j = 0; j < p.assets.length; j++) {
-                        correlationMatrixRow.push(correlationCoefficient(i, j));
-                    }
-                    p.correlationMatrix.push(correlationMatrixRow);
-                    p.covarianceMatrix.push(correlationMatrixRow.map(function (coeff, j) {
-                        return coeff * p.stdevArray[i] * p.stdevArray[j];
-                    }));
-                }
-            };
-            Portfolio.prototype.mean = function (weightArray) {
-                return numeric.dot(this.meanArray, weightArray);
-            };
-            Portfolio.prototype.stdev = function (weightArray) {
-                var variance = numeric.dot(weightArray, numeric.dot(this.covarianceMatrix, weightArray));
-                if (variance >= 0) {
-                    return Math.sqrt(variance);
-                }
-                else {
-                    console.log('oops! getting a negative variance with weights ', weightArray[0], ',', weightArray[1], ',', weightArray[2], '!');
-                    return 0;
-                }
-            };
-            // Generate dataset of portfolio means and variances for various weights
-            Portfolio.prototype.data = function (maxLeverage) {
-                var portfolio = this, d = [], w;
-                var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 2 * (10 + maxLeverage * 0.2);
-                for (var i = 0; i < dataPoints + 1; i++) {
-                    w = min + i * (max - min) / dataPoints;
-                    d.push(portfolio.twoAssetPortfolio(1, 2, [w, 0, 0], maxLeverage));
-                    d.push(portfolio.twoAssetPortfolio(0, 2, [0, w, 0], maxLeverage));
-                    d.push(portfolio.twoAssetPortfolio(0, 1, [0, 0, w], maxLeverage));
-                }
-                return d;
-            };
-            // Generate lines representing combinations of two assets
-            Portfolio.prototype.twoAssetPortfolio = function (asset1, asset2, weightArray, maxLeverage) {
-                var portfolio = this, d = [], otherAssets = 0;
-                weightArray.forEach(function (w) {
-                    otherAssets += w;
-                });
-                var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 2 * (10 + maxLeverage * 0.2);
-                var colorScale = d3.scale.linear().domain([0, 1]).range(["red", "blue"]);
-                for (var i = 0; i < dataPoints + 1; i++) {
-                    weightArray[asset1] = min + i * (max - min) / dataPoints;
-                    weightArray[asset2] = 1 - weightArray[asset1] - otherAssets;
-                    if (weightArray[asset2] >= min) {
-                        d.push({
-                            x: portfolio.stdev(weightArray),
-                            y: portfolio.mean(weightArray),
-                            color: colorScale(weightArray[asset1]),
-                            weights: weightArray
-                        });
-                    }
-                }
-                return d;
-            };
-            return Portfolio;
-        })(KineticGraphs.Parameterizable);
-        PortfolioAnalysis.Portfolio = Portfolio;
-    })(PortfolioAnalysis = FinanceGraphs.PortfolioAnalysis || (FinanceGraphs.PortfolioAnalysis = {}));
-})(FinanceGraphs || (FinanceGraphs = {}));
+var Sample;
+(function (Sample) {
+    var SinglePoint = (function (_super) {
+        __extends(SinglePoint, _super);
+        function SinglePoint(definition) {
+            _super.call(this, definition);
+            this.p = new KineticGraphs.Point({ name: definition.name, coordinates: { x: definition.x, y: definition.y } });
+        }
+        SinglePoint.prototype.coordinates = function () {
+            return { x: this.x, y: this.y };
+        };
+        SinglePoint.prototype.point = function () {
+            var p = this.p;
+            p.coordinates = this.coordinates();
+            return p;
+        };
+        return SinglePoint;
+    })(KineticGraphs.Model);
+    Sample.SinglePoint = SinglePoint;
+    var TwoPoints = (function (_super) {
+        __extends(TwoPoints, _super);
+        function TwoPoints(definition) {
+            _super.call(this, definition);
+        }
+        return TwoPoints;
+    })(KineticGraphs.Model);
+    Sample.TwoPoints = TwoPoints;
+})(Sample || (Sample = {}));
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
-/// <reference path="model.ts" />
+/// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
 /// <reference path="helpers.ts" />
-/// <reference path="interactives/interactive.ts" />
-/// <reference path="interactives/axis.ts" />
-/// <reference path="interactives/graph.ts" />
-/// <reference path="interactives/slider.ts" />
-/// <reference path="graphObjects/graphObjects.ts" />
-/// <reference path="graphObjects/graphDiv.ts" />
-/// <reference path="graphObjects/point.ts" />
-/// <reference path="graphObjects/controlDiv.ts" />
-/// <reference path="graphObjects/linePlot.ts" />
-/// <reference path="graphObjects/scatter.ts" />
-/// <reference path="graphObjects/pathFamily.ts" />
-/// <reference path="finance/asset.ts"/>
-/// <reference path="finance/portfolio.ts"/>
-angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.ModelController);
+/// <reference path="model.ts" />
+/// <reference path="viewObjects/viewObject.ts"/>
+/// <reference path="viewObjects/point.ts"/>
+/// <reference path="view.ts" />
+/// <reference path="views/axis.ts" />
+/// <reference path="views/graph.ts" />
+/// <reference path="controller.ts" />
+/// <reference path="sample/sample.ts" />
+angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.Controller);
 //# sourceMappingURL=kinetic-graphs.js.map

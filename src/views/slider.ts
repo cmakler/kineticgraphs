@@ -1,30 +1,33 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="interactive.ts" />
-
 
 module KineticGraphs
 {
 
     // Slider Definition
-    export interface ISliderDefinition extends IInteractiveDefinition
+    export interface ISliderDefinition extends IViewDefinition
     {
         param: string;
         precision: number;
         axis: IAxisDefinition;
     }
 
-    export interface ISlider extends IInteractive
+    export interface ISlider extends IView
     {
         circle: D3.Selection;
         axis: IAxis;
     }
 
-    export class Slider extends Interactive implements ISlider {
+    export class Slider extends View implements ISlider {
         public circle;
         public axis;
 
-        constructor(public definitionString:string) {
-            super(definitionString);
+        constructor(public definition: ISliderDefinition) {
+            definition = _.defaults(definition,{
+                height: 50,
+                width: 300,
+                precision: 1,
+            })
+            super(definition);
             this.axis = new XAxis();
         }
 
@@ -36,16 +39,6 @@ module KineticGraphs
                 updateDimensions = this.updateDimensions;
 
             console.log('redrawing slider!');
-
-            // Set default height to 50
-            if(!definition.hasOwnProperty('dimensions')) {
-                definition.dimensions = {height: 50, width:300};
-            }
-
-            // Set defualt precision to 1
-            if(!definition.hasOwnProperty('precision')) {
-                definition.precision = 1;
-            }
 
             // Establish dimensions of the graph
             var element = $('#' + definition.element_id)[0];

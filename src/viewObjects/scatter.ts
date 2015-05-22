@@ -4,7 +4,7 @@
 module KineticGraphs
 {
 
-    export interface IScatter extends IGraphObject {
+    export interface IScatter extends IViewObject {
 
         // point-specific attributes
         data: any;
@@ -12,7 +12,7 @@ module KineticGraphs
         size: number;
     }
 
-    export class Scatter extends GraphObject implements IScatter
+    export class Scatter extends ViewObject implements IScatter
     {
 
         // point-specific attributes
