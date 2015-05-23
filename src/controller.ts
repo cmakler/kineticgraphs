@@ -14,6 +14,7 @@ module KineticGraphs
         model: Model; // the base model (constant)
         views: View[]; // array of interactive elements, indexed by element ID
         init: (definition: any) => void;
+        updateParams: (params) => void;
     }
 
     export class Controller
@@ -47,6 +48,12 @@ module KineticGraphs
             function redrawObjects() { render(false) }
             $scope.$watchCollection('params',redrawObjects);
 
+            $scope.updateParams = function(params) {
+                console.log(JSON.stringify(params));
+                $scope.params = _.defaults(params,$scope.params);
+                $scope.$apply();
+            };
+
             $scope.init({
                 params: {
                     x: 5,
@@ -60,15 +67,16 @@ module KineticGraphs
                             definition: {
                                 name: 'p1',
                                 x: 'params.x',
-                                y: 6
+                                y: 5
                             }
                         },
                         point2: {
                             type: 'Sample.SinglePoint',
                             definition: {
                                 name: 'p2',
-                                x: 3,
-                                y: 'params.y'
+                                x: 'params.x',
+                                y: 'params.y',
+                                size: 300
                             }
                         }
                     }
@@ -81,7 +89,7 @@ module KineticGraphs
                             dimensions: {width: 700, height: 700},
                             xAxis: {min: 0, max: 10, title: '"Standard Deviation"'},
                             yAxis: {min: 0, max: 10, title: '"Mean"'},
-                            objects: ['model.point1.point()']
+                            objects: ['model.point1.point()','model.point2.point({size: 200})','model.point2.controlDiv()']
                         }
                     }
                 ]
@@ -149,6 +157,8 @@ module KineticGraphs
 
 
         }
+
+
 
     }
 

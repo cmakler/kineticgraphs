@@ -184,6 +184,194 @@ var KineticGraphs;
     })(KineticGraphs.ViewObject);
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var GraphDiv = (function (_super) {
+        __extends(GraphDiv, _super);
+        function GraphDiv(definition) {
+            definition = _.defaults(definition, {
+                coordinates: { x: 0, y: 0 },
+                dimensions: { width: 100, height: 20 },
+                math: false,
+                align: 'center',
+                text: ''
+            });
+            _super.call(this, definition);
+        }
+        GraphDiv.prototype.render = function (graph) {
+            var graphDiv = this, width = this.dimensions.width, height = this.dimensions.height;
+            var el = graph.getDiv(graphDiv.name);
+            var style = 'text-align:center; color:gray; position:absolute; width: ' + width + 'px; height: ' + height + 'px; line-height: ' + height + 'px;';
+            // Set left pixel margin
+            var halfWidth = width * 0.5;
+            // Default to centered on x coordinate
+            var leftPixels = graphDiv.coordinates.x - halfWidth;
+            if (graphDiv.align == 'left') {
+                // move right by half the width of the div if left aligned
+                leftPixels += halfWidth;
+            }
+            else if (graphDiv.align == 'right') {
+                // move left by half the width of the div if right aligned
+                leftPixels -= halfWidth;
+            }
+            style += 'left: ' + leftPixels + 'px;';
+            // Set top pixel margin
+            var halfHeight = height * 0.5;
+            // Default to centered on x coordinate
+            var topPixels = graphDiv.coordinates.y - halfHeight;
+            if (graphDiv.valign == 'top') {
+                // move down by half the height of the div if top aligned
+                topPixels += halfWidth;
+            }
+            else if (graphDiv.align == 'right') {
+                // move up by half the height of the div if right aligned
+                topPixels -= halfWidth;
+            }
+            style += 'top: ' + topPixels + 'px;';
+            //format the div
+            el.attr('style', style);
+            el.text(graphDiv.text);
+            return graph;
+        };
+        return GraphDiv;
+    })(KineticGraphs.ViewObject);
+    KineticGraphs.GraphDiv = GraphDiv;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var ControlDiv = (function (_super) {
+        __extends(ControlDiv, _super);
+        function ControlDiv(definition) {
+            _super.call(this, definition);
+        }
+        ControlDiv.prototype.render = function (view) {
+            var cd = this;
+            var x = view.margins.left + view.xAxis.scale(cd.coordinates.x), y = view.margins.top + view.yAxis.scale(cd.coordinates.y), width = cd.dimensions.width, height = cd.dimensions.height, text = cd.text;
+            var xDrag = cd.hasOwnProperty('xParam'), yDrag = cd.hasOwnProperty('yParam');
+            var div = view.getDiv(this.name);
+            div.style('cursor', 'move').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
+            // Set left pixel margin; default to centered on x coordinate
+            var xAlignDelta = width * 0.5;
+            if (cd.align == 'left') {
+                xAlignDelta = 0;
+            }
+            else if (this.align == 'right') {
+                // move left by half the width of the div if right aligned
+                xAlignDelta = width;
+            }
+            div.style('left', (x - xAlignDelta) + 'px');
+            // Set top pixel margin; default to centered on y coordinate
+            var vAlignDelta = height * 0.5;
+            // Default to centered on x coordinate
+            if (this.valign == 'top') {
+                vAlignDelta = 0;
+            }
+            else if (this.align == 'bottom') {
+                vAlignDelta = height;
+            }
+            div.style('top', (y - vAlignDelta) + 'px');
+            // establish drag behavior
+            var drag = d3.behavior.drag().on("drag", function () {
+                d3.event.sourceEvent.preventDefault();
+                console.log('dragging');
+                var dragUpdate = {}, newX, newY;
+                if (xDrag) {
+                    newX = view.xAxis.scale.invert(d3.event.x - view.margins.left);
+                    if (view.xAxis.domain.contains(newX)) {
+                        dragUpdate[cd.xParam] = newX;
+                    }
+                }
+                if (yDrag) {
+                    newY = view.yAxis.scale.invert(view.dimensions.height - vAlignDelta + d3.event.y);
+                    if (view.yAxis.domain.contains(newY)) {
+                        dragUpdate[cd.yParam] = newY;
+                    }
+                }
+                view.updateParams(dragUpdate);
+            });
+            katex.render(text, div[0][0]);
+            div.call(drag);
+            return view;
+        };
+        return ControlDiv;
+    })(KineticGraphs.GraphDiv);
+    KineticGraphs.ControlDiv = ControlDiv;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var LinePlot = (function (_super) {
+        __extends(LinePlot, _super);
+        function LinePlot(definition) {
+            definition = _.defaults(definition, { data: [], interpolation: 'linear' });
+            _super.call(this, definition);
+        }
+        LinePlot.prototype.render = function (graph) {
+            // constants TODO should these be defined somewhere else?
+            var DATA_PATH_CLASS = 'dataPath';
+            var dataCoordinates = graph.dataCoordinates(this.data);
+            function init(newGroup) {
+                newGroup.append('path').attr('class', DATA_PATH_CLASS);
+                return newGroup;
+            }
+            var group = graph.objectGroup(this.name, init);
+            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
+                return d.x;
+            }).y(function (d) {
+                return d.y;
+            });
+            var dataPath = group.select('.' + DATA_PATH_CLASS);
+            dataPath.attr({
+                'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
+                'd': dataLine(dataCoordinates)
+            });
+            return graph;
+        };
+        return LinePlot;
+    })(KineticGraphs.ViewObject);
+    KineticGraphs.LinePlot = LinePlot;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+var KineticGraphs;
+(function (KineticGraphs) {
+    var PathFamily = (function (_super) {
+        __extends(PathFamily, _super);
+        function PathFamily(definition) {
+            definition = _.defaults(definition, {
+                data: [],
+                interpolation: 'basis'
+            });
+            _super.call(this, definition);
+        }
+        PathFamily.prototype.render = function (graph) {
+            // constants TODO should these be defined somewhere else?
+            var DATA_PATH_FAMILY_CLASS = 'dataPathFamily';
+            function init(newGroup) {
+                newGroup.append('g').attr('class', DATA_PATH_FAMILY_CLASS);
+                return newGroup;
+            }
+            var group = graph.objectGroup(this.name, init);
+            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
+                return graph.xAxis.scale(d.x);
+            }).y(function (d) {
+                return graph.yAxis.scale(d.y);
+            });
+            var dataPaths = group.select('.' + DATA_PATH_FAMILY_CLASS).selectAll('path').data(this.data);
+            dataPaths.enter().append('path');
+            dataPaths.attr({
+                'd': function (d) {
+                    return dataLine(d);
+                }
+            });
+            dataPaths.exit().remove();
+            return graph;
+        };
+        return PathFamily;
+    })(KineticGraphs.ViewObject);
+    KineticGraphs.PathFamily = PathFamily;
+})(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="kg.ts"/>
 var KineticGraphs;
 (function (KineticGraphs) {
@@ -201,6 +389,9 @@ var KineticGraphs;
         View.prototype.render = function (scope, redraw) {
             var view = this;
             view.update(scope, function () {
+                view.updateParams = function (params) {
+                    scope.updateParams(params);
+                };
                 if (redraw) {
                     view.redraw(scope);
                 }
@@ -257,6 +448,9 @@ var KineticGraphs;
                 object.update(scope).render(view);
             });
             return view;
+        };
+        View.prototype.updateParams = function (params) {
+            console.log('updateParams called before scope applied');
         };
         return View;
     })(KineticGraphs.Model);
@@ -425,6 +619,11 @@ var KineticGraphs;
                 render(false);
             }
             $scope.$watchCollection('params', redrawObjects);
+            $scope.updateParams = function (params) {
+                console.log(JSON.stringify(params));
+                $scope.params = _.defaults(params, $scope.params);
+                $scope.$apply();
+            };
             $scope.init({
                 params: {
                     x: 5,
@@ -438,15 +637,16 @@ var KineticGraphs;
                             definition: {
                                 name: 'p1',
                                 x: 'params.x',
-                                y: 6
+                                y: 5
                             }
                         },
                         point2: {
                             type: 'Sample.SinglePoint',
                             definition: {
                                 name: 'p2',
-                                x: 3,
-                                y: 'params.y'
+                                x: 'params.x',
+                                y: 'params.y',
+                                size: 300
                             }
                         }
                     }
@@ -459,7 +659,7 @@ var KineticGraphs;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 10, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 10, title: '"Mean"' },
-                            objects: ['model.point1.point()']
+                            objects: ['model.point1.point()', 'model.point2.point({size: 200})', 'model.point2.controlDiv()']
                         }
                     }
                 ]
@@ -535,7 +735,17 @@ var Sample;
         __extends(SinglePoint, _super);
         function SinglePoint(definition) {
             _super.call(this, definition);
-            this.p = new KineticGraphs.Point({ name: definition.name, coordinates: { x: definition.x, y: definition.y } });
+            this.c = new KineticGraphs.ControlDiv({
+                name: definition.name + 'control',
+                coordinates: { x: definition.x, y: definition.y },
+                text: 'A'
+            });
+            this.p = new KineticGraphs.Point({
+                name: definition.name + 'point',
+                coordinates: { x: definition.x, y: definition.y },
+                size: definition.size,
+                symbol: definition.symbol
+            });
         }
         SinglePoint.prototype.coordinates = function () {
             return { x: this.x, y: this.y };
@@ -544,6 +754,13 @@ var Sample;
             var p = this.p;
             p.coordinates = this.coordinates();
             return p;
+        };
+        SinglePoint.prototype.controlDiv = function () {
+            var c = this.c;
+            c.xParam = 'x';
+            c.yParam = 'y';
+            c.coordinates = this.coordinates();
+            return c;
         };
         return SinglePoint;
     })(KineticGraphs.Model);
@@ -566,6 +783,10 @@ var Sample;
 /// <reference path="model.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
+/// <reference path="viewObjects/graphDiv.ts"/>
+/// <reference path="viewObjects/controlDiv.ts"/>
+/// <reference path="viewObjects/linePlot.ts"/>
+/// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />

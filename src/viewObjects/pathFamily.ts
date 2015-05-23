@@ -1,5 +1,4 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
 
 module KineticGraphs {
 
@@ -14,11 +13,13 @@ module KineticGraphs {
         public data;
         public interpolation;
 
-        constructor() {
+        constructor(definition) {
 
-            super();
-            this.data = [];
-            this.interpolation = 'basis';
+            definition = _.defaults(definition, {
+                data: [],
+                interpolation: 'basis'
+            });
+            super(definition);
 
         }
 

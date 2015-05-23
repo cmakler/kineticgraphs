@@ -10,6 +10,10 @@
 
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
+/// <reference path="viewObjects/graphDiv.ts"/>
+/// <reference path="viewObjects/controlDiv.ts"/>
+/// <reference path="viewObjects/linePlot.ts"/>
+/// <reference path="viewObjects/pathFamily.ts"/>
 
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />

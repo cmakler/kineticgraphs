@@ -1,8 +1,18 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
 
 module KineticGraphs
 {
+
+    export interface GraphDivDefinition extends ViewObjectDefinition {
+
+        coordinates: ICoordinates; // pixel coordinates, not model coordinates
+        dimensions?: IDimensions;
+        text?: string;
+        math?: boolean;
+        align?: string;
+        valign?: string;
+
+    }
 
     export interface IGraphDiv extends IViewObject {
 
@@ -26,15 +36,18 @@ module KineticGraphs
         public align;
         public valign;
 
-        constructor() {
+        constructor(definition:GraphDivDefinition) {
 
-            super();
-            // establish defaults
-            this.coordinates = {x: 0, y: 0};
-            this.math = false;
-            this.dimensions = {width: 100, height: 20};
-            this.align = 'center';
-            this.text = '';
+            definition = _.defaults(definition,{
+                coordinates: {x: 0, y: 0},
+                dimensions: {width: 100, height: 20},
+                math: false,
+                align: 'center',
+                text: ''
+            });
+
+            super(definition);
+
         }
 
         render(graph) {

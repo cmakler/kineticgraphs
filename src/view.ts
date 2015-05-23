@@ -24,6 +24,8 @@ module KineticGraphs
         redraw: (scope:IScope) => void;
         drawObjects: (scope:IScope) => void;
 
+        updateParams: (any) => void;
+
     }
 
     export class View extends Model implements IView
@@ -51,6 +53,9 @@ module KineticGraphs
 
             var view = this;
             view.update(scope, function(){
+                view.updateParams = function(params){
+                    scope.updateParams(params)
+                };
                 if(redraw){
                     view.redraw(scope);
                 } else {
@@ -123,6 +128,10 @@ module KineticGraphs
             var view = this;
             view.objects.forEach(function(object) {object.update(scope).render(view)});
             return view;
+        }
+
+        updateParams(params) {
+            console.log('updateParams called before scope applied');
         }
 
     }

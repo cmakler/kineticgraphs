@@ -34,7 +34,7 @@ module KineticGraphs
 
         constructor(definition:PointDefinition) {
 
-            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle', label: ''})
+            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle', label: ''});
             super(definition);
 
             //this.labelDiv = new GraphDiv({coordinates: definition.coordinates, label: definition.label});

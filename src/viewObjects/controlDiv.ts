@@ -1,54 +1,42 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="graphDiv.ts"/>
 
 declare var katex: any;
 
 module KineticGraphs
 {
+    export interface ControlDivDefinition extends GraphDivDefinition {
+        xParam?: string;
+        yParam?: string;
+    }
 
     export interface IControlDiv extends IGraphDiv {
-        xDomain: IDomain;
-        yDomain: IDomain;
+
     }
 
     export class ControlDiv extends GraphDiv implements IControlDiv
     {
 
-        // control-point-specific attributes
-        public xDomain;
-        public yDomain;
+        public xParam;
+        public yParam;
 
-        constructor() {
-            super();
+        constructor(definition:ControlDivDefinition) {
+            super(definition);
         }
 
-        render(graph) {
+        render(view) {
 
-            var xRaw = this.coordinates.x,
-                yRaw = this.coordinates.y,
-                width = this.dimensions.width,
-                height = this.dimensions.height,
-                text = this.text;
+            var cd = this;
 
-            var x,y,xDrag,yDrag;
+            var x = view.margins.left + view.xAxis.scale(cd.coordinates.x),
+                y = view.margins.top + view.yAxis.scale(cd.coordinates.y),
+                width = cd.dimensions.width,
+                height = cd.dimensions.height,
+                text = cd.text;
 
-            if(typeof xRaw == 'string' && graph.scope.params.hasOwnProperty(xRaw)) {
-                x = graph.xAxis.scale(graph.scope.$eval('params.' + xRaw));
-                xDrag = true;
-            } else {
-                x = graph.xAxis.scale(xRaw);
-                xDrag = false;
-            }
+            var xDrag = cd.hasOwnProperty('xParam'),
+                yDrag = cd.hasOwnProperty('yParam');
 
-            if(typeof yRaw == 'string' && graph.scope.params.hasOwnProperty(yRaw)) {
-                y = graph.yAxis.scale(graph.scope.params[yRaw]);
-                yDrag = true;
-            } else {
-                y = graph.yAxis.scale(yRaw);
-                yDrag = false;
-            }
-
-            var div:D3.Selection = graph.getDiv(this.name);
+            var div:D3.Selection = view.getDiv(this.name);
 
             div
                 .style('cursor','move')
@@ -59,57 +47,52 @@ module KineticGraphs
                 .style('height',height + 'px')
                 .style('line-height',height + 'px')
 
-            // Set left pixel margin
-            var halfWidth = width * 0.5;
-            // Default to centered on x coordinate
-            var leftPixels = x - halfWidth;
-            if (this.align == 'left') {
-                // move right by half the width of the div if left aligned
-                leftPixels += halfWidth
+            // Set left pixel margin; default to centered on x coordinate
+            var xAlignDelta = width*0.5;
+            if (cd.align == 'left') {
+                xAlignDelta = 0;
             } else if (this.align == 'right') {
                 // move left by half the width of the div if right aligned
-                leftPixels -= halfWidth;
+                xAlignDelta = width;
             }
-            div.style('left',leftPixels + 'px');
+            div.style('left',(x - xAlignDelta) + 'px');
 
-            // Set top pixel margin
-            var halfHeight = height * 0.5;
+            // Set top pixel margin; default to centered on y coordinate
+            var vAlignDelta = height*0.5;
             // Default to centered on x coordinate
-            var topPixels = y - halfHeight;
             if (this.valign == 'top') {
-                // move down by half the height of the div if top aligned
-                topPixels += halfWidth
-            } else if (this.align == 'right') {
-                // move up by half the height of the div if right aligned
-                topPixels -= halfWidth;
+                vAlignDelta = 0;
+            } else if (this.align == 'bottom') {
+                vAlignDelta = height;
             }
-            div.style('top',topPixels + 'px');
+            div.style('top',(y - vAlignDelta) + 'px');
 
             // establish drag behavior
             var drag = d3.behavior.drag()
                 .on("drag", function () {
+                    d3.event.sourceEvent.preventDefault();
                     console.log('dragging');
                     var dragUpdate = {}, newX, newY;
                     if(xDrag) {
-                        newX = graph.xAxis.scale.invert(d3.event.x);
-                        if(graph.xAxis.domain.contains(newX)) {
-                            dragUpdate[xRaw] = graph.xAxis.scale.invert(d3.event.x)
+                        newX = view.xAxis.scale.invert(d3.event.x - view.margins.left);
+                        if(view.xAxis.domain.contains(newX)) {
+                            dragUpdate[cd.xParam] = newX;
                         }
                     }
                     if(yDrag) {
-                        newY = graph.yAxis.scale.invert(d3.event.y);
-                        if(graph.yAxis.domain.contains(newY)) {
-                            dragUpdate[yRaw] = graph.yAxis.scale.invert(d3.event.y)
+                        newY = view.yAxis.scale.invert(view.dimensions.height - vAlignDelta + d3.event.y);
+                        if(view.yAxis.domain.contains(newY)) {
+                            dragUpdate[cd.yParam] = newY;
                         }
                     }
-                    graph.updateParams(dragUpdate)
+                    view.updateParams(dragUpdate)
                 });
 
             katex.render(text,div[0][0]);
 
             div.call(drag);
 
-            return graph;
+            return view;
 
         }
     }
