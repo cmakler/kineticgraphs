@@ -59,7 +59,7 @@ var KineticGraphs;
             this.definition = definition;
             var model = this;
             for (var key in definition) {
-                if (definition.hasOwnProperty(key)) {
+                if (definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];
                     if (value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
                         model[key] = KineticGraphs.createInstance(value);
@@ -159,7 +159,7 @@ var KineticGraphs;
                 newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
                 return newGroup;
             }
-            var group = view.objectGroup(point.name, init);
+            var group = view.objectGroup(point.name, init, true);
             var showPoint = function () {
                 if (point.symbol === 'none') {
                     return false;
@@ -407,6 +407,7 @@ var KineticGraphs;
             // Establish dimensions of the view
             var element = $('#' + view.element_id)[0];
             view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
+            view.dimensions.height = Math.min(view.dimensions.height, window.innerHeight - element.offsetTop);
             var frameTranslation = KineticGraphs.positionByPixelCoordinates({ x: 0, y: 0 });
             var visTranslation = KineticGraphs.translateByPixelCoordinates({ x: view.margins.left, y: view.margins.top });
             d3.select(element).select('div').remove();
@@ -417,8 +418,9 @@ var KineticGraphs;
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({ style: visTranslation });
             // Establish SVG groups for visualization area (vis), mask, axes
-            view.vis = svg.append("g").attr("transform", visTranslation);
+            view.masked = svg.append("g").attr("transform", visTranslation);
             var mask = svg.append("g").attr("class", "mask");
+            view.unmasked = svg.append("g").attr("transform", visTranslation);
             // Put mask around vis to clip objects that extend beyond the desired viewable area
             mask.append("rect").attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top });
             mask.append("rect").attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom });
@@ -451,6 +453,28 @@ var KineticGraphs;
         };
         View.prototype.updateParams = function (params) {
             console.log('updateParams called before scope applied');
+        };
+        View.prototype.objectGroup = function (name, init, unmasked) {
+            var layer = unmasked ? this.unmasked : this.masked;
+            var group = layer.select('#' + name);
+            if (group.empty()) {
+                group = layer.append('g').attr('id', name);
+                group = init(group);
+            }
+            return group;
+        };
+        View.prototype.getDiv = function (name) {
+            var selection = this.divs.select('#' + name);
+            if (selection.empty()) {
+                selection = this.divs.append('div').attr('id', name);
+            }
+            return selection;
+        };
+        View.prototype.xOnGraph = function (x) {
+            return this.xAxis.domain.contains(x);
+        };
+        View.prototype.yOnGraph = function (y) {
+            return this.yAxis.domain.contains(y);
         };
         return View;
     })(KineticGraphs.Model);
@@ -527,38 +551,7 @@ var KineticGraphs;
             _super.call(this, definition);
             this.xAxis = new KineticGraphs.XAxis(definition.xAxis);
             this.yAxis = new KineticGraphs.YAxis(definition.yAxis);
-            this.graphDivs = [];
         }
-        /*// Used to update parameters of the model from within the graph
-        updateParams(params:any) {
-            for (var key in params) {
-                if (params.hasOwnProperty(key) && this.scope.params.hasOwnProperty(key)) {
-                    this.scope.params[key] = params[key];
-                }
-            }
-            this.scope.$apply();
-        }*/
-        Graph.prototype.objectGroup = function (name, init) {
-            var group = this.vis.select('#' + name);
-            if (group.empty()) {
-                group = this.vis.append('g').attr('id', name);
-                group = init(group);
-            }
-            return group;
-        };
-        Graph.prototype.getDiv = function (name) {
-            var selection = this.divs.select('#' + name);
-            if (selection.empty()) {
-                selection = this.divs.append('div').attr('id', name);
-            }
-            return selection;
-        };
-        Graph.prototype.xOnGraph = function (x) {
-            return this.xAxis.domain.contains(x);
-        };
-        Graph.prototype.yOnGraph = function (y) {
-            return this.yAxis.domain.contains(y);
-        };
         // Check to see if a point is on the graph
         Graph.prototype.onGraph = function (coordinates) {
             return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
@@ -646,6 +639,8 @@ var KineticGraphs;
                                 name: 'p2',
                                 x: 'params.x',
                                 y: 'params.y',
+                                xParam: 'x',
+                                yParam: 'y',
                                 size: 300
                             }
                         }
@@ -659,7 +654,7 @@ var KineticGraphs;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 10, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 10, title: '"Mean"' },
-                            objects: ['model.point1.point()', 'model.point2.point({size: 200})', 'model.point2.controlDiv()']
+                            objects: ['model.point1.point()', 'model.point2.point()', 'model.point2.controlDiv()']
                         }
                     }
                 ]
@@ -738,6 +733,8 @@ var Sample;
             this.c = new KineticGraphs.ControlDiv({
                 name: definition.name + 'control',
                 coordinates: { x: definition.x, y: definition.y },
+                xParam: definition.xParam,
+                yParam: definition.yParam,
                 text: 'A'
             });
             this.p = new KineticGraphs.Point({
@@ -757,8 +754,6 @@ var Sample;
         };
         SinglePoint.prototype.controlDiv = function () {
             var c = this.c;
-            c.xParam = 'x';
-            c.yParam = 'y';
             c.coordinates = this.coordinates();
             return c;
         };

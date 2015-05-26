@@ -18,7 +18,7 @@ module KineticGraphs
             var model = this;
 
             for (var key in definition) {
-                if(definition.hasOwnProperty(key)) {
+                if(definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];
                     if(value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
                         model[key] = createInstance(value)

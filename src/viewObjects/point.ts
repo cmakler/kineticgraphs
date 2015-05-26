@@ -54,7 +54,7 @@ module KineticGraphs
                 return newGroup;
             }
 
-            var group:D3.Selection = view.objectGroup(point.name, init);
+            var group:D3.Selection = view.objectGroup(point.name, init, true);
 
             var showPoint = function(){
                 if (point.symbol === 'none') {

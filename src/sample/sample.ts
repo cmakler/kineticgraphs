@@ -9,6 +9,8 @@ module Sample {
         name: string;
         x: any;
         y: any;
+        xParam: string;
+        yParam: string;
         size?: number;
         symbol?: string;
     }
@@ -36,7 +38,9 @@ module Sample {
             this.c = new KineticGraphs.ControlDiv({
                 name: definition.name+'control',
                 coordinates: {x: definition.x, y: definition.y},
-                text:'A'})
+                xParam: definition.xParam,
+                yParam: definition.yParam,
+                text:'A'});
             this.p = new KineticGraphs.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.x, y:definition.y},
@@ -57,8 +61,6 @@ module Sample {
 
         controlDiv(){
             var c = this.c;
-            c.xParam = 'x';
-            c.yParam = 'y';
             c.coordinates = this.coordinates();
             return c;
         }
