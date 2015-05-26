@@ -1,4 +1,4 @@
-/// <reference path="kg.ts"/>
+/// <reference path='kg.ts'/>
 
 module KineticGraphs
 {
@@ -96,28 +96,28 @@ module KineticGraphs
             var frame = d3.select(element).append('div').attr({style: frameTranslation});
 
             // Create new SVG element for the view visualization
-            var svg = frame.append("svg")
-                .attr("width", view.dimensions.width)
-                .attr("height", view.dimensions.height);
+            var svg = frame.append('svg')
+                .attr('width', view.dimensions.width)
+                .attr('height', view.dimensions.height);
 
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({style: visTranslation});
 
             // Establish SVG groups for visualization area (vis), mask, axes
-            view.masked = svg.append("g").attr("transform", visTranslation);
-            var mask = svg.append("g").attr("class","mask");
-            view.unmasked = svg.append("g").attr("transform", visTranslation);
+            view.masked = svg.append('g').attr('transform', visTranslation);
+            var mask = svg.append('g').attr('class','mask');
+            view.unmasked = svg.append('g').attr('transform', visTranslation);
 
             // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append("rect").attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top});
-            mask.append("rect").attr({x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom});
-            mask.append("rect").attr({x: 0, y: 0, width: view.margins.left, height: view.dimensions.height});
-            mask.append("rect").attr({x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height});
+            mask.append('rect').attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top});
+            mask.append('rect').attr({x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom});
+            mask.append('rect').attr({x: 0, y: 0, width: view.margins.left, height: view.dimensions.height});
+            mask.append('rect').attr({x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height});
 
             if(view.xAxis || view.yAxis) {
 
                 // Establish SVG group for axes
-                var axes = svg.append("g").attr("class","axes").attr("transform", visTranslation);
+                var axes = svg.append('g').attr('class','axes').attr('transform', visTranslation);
 
                 // Establish dimensions of axes (element dimensions minus margins)
                 var axisDimensions = {
@@ -174,7 +174,40 @@ module KineticGraphs
             return this.yAxis.domain.contains(y);
         }
 
+        drag(xParam:string, yParam:string, xDelta:number, yDelta:number) {
 
+            var view = this;
+            var xAxis = view.xAxis;
+            var yAxis = view.yAxis;
+
+            return d3.behavior.drag()
+                .on('drag', function () {
+                    d3.event.sourceEvent.preventDefault();
+                    console.log('dragging');
+                    var dragUpdate = {}, newX, newY;
+                    if(xParam !== null) {
+                        newX = xAxis.scale.invert(d3.event.x + xDelta);
+                        if(newX < xAxis.domain.min) {
+                            dragUpdate[xParam] = xAxis.domain.min;
+                        } else if(newX > xAxis.domain.max) {
+                            dragUpdate[xParam] = xAxis.domain.max;
+                        } else {
+                            dragUpdate[xParam] = newX;
+                        }
+                    }
+                    if(yParam !== null) {
+                        newY = yAxis.scale.invert(d3.event.y + yDelta);
+                        if(newY < yAxis.domain.min) {
+                            dragUpdate[yParam] = yAxis.domain.min;
+                        } else if(newY > xAxis.domain.max) {
+                            dragUpdate[yParam] = yAxis.domain.max;
+                        } else {
+                            dragUpdate[yParam] = newY;
+                        }
+                    }
+                    view.updateParams(dragUpdate)
+                });
+        }
 
     }
 }

@@ -34,8 +34,6 @@ module KineticGraphs
             this.yAxis = new YAxis(definition.yAxis);
         }
 
-
-
         // Check to see if a point is on the graph
         onGraph(coordinates:ICoordinates) {
             return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));

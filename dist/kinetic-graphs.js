@@ -272,27 +272,8 @@ var KineticGraphs;
                 vAlignDelta = height;
             }
             div.style('top', (y - vAlignDelta) + 'px');
-            // establish drag behavior
-            var drag = d3.behavior.drag().on("drag", function () {
-                d3.event.sourceEvent.preventDefault();
-                console.log('dragging');
-                var dragUpdate = {}, newX, newY;
-                if (xDrag) {
-                    newX = view.xAxis.scale.invert(d3.event.x - view.margins.left);
-                    if (view.xAxis.domain.contains(newX)) {
-                        dragUpdate[cd.xParam] = newX;
-                    }
-                }
-                if (yDrag) {
-                    newY = view.yAxis.scale.invert(view.dimensions.height - vAlignDelta + d3.event.y);
-                    if (view.yAxis.domain.contains(newY)) {
-                        dragUpdate[cd.yParam] = newY;
-                    }
-                }
-                view.updateParams(dragUpdate);
-            });
             katex.render(text, div[0][0]);
-            div.call(drag);
+            div.call(view.drag(cd.xParam, cd.yParam, -view.margins.left, view.dimensions.height - vAlignDelta));
             return view;
         };
         return ControlDiv;
@@ -372,7 +353,7 @@ var KineticGraphs;
     })(KineticGraphs.ViewObject);
     KineticGraphs.PathFamily = PathFamily;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="kg.ts"/>
+/// <reference path='kg.ts'/>
 var KineticGraphs;
 (function (KineticGraphs) {
     var View = (function (_super) {
@@ -414,21 +395,21 @@ var KineticGraphs;
             // Create new div element to contain SVG
             var frame = d3.select(element).append('div').attr({ style: frameTranslation });
             // Create new SVG element for the view visualization
-            var svg = frame.append("svg").attr("width", view.dimensions.width).attr("height", view.dimensions.height);
+            var svg = frame.append('svg').attr('width', view.dimensions.width).attr('height', view.dimensions.height);
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({ style: visTranslation });
             // Establish SVG groups for visualization area (vis), mask, axes
-            view.masked = svg.append("g").attr("transform", visTranslation);
-            var mask = svg.append("g").attr("class", "mask");
-            view.unmasked = svg.append("g").attr("transform", visTranslation);
+            view.masked = svg.append('g').attr('transform', visTranslation);
+            var mask = svg.append('g').attr('class', 'mask');
+            view.unmasked = svg.append('g').attr('transform', visTranslation);
             // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append("rect").attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top });
-            mask.append("rect").attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom });
-            mask.append("rect").attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height });
-            mask.append("rect").attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height });
+            mask.append('rect').attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top });
+            mask.append('rect').attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom });
+            mask.append('rect').attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height });
+            mask.append('rect').attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height });
             if (view.xAxis || view.yAxis) {
                 // Establish SVG group for axes
-                var axes = svg.append("g").attr("class", "axes").attr("transform", visTranslation);
+                var axes = svg.append('g').attr('class', 'axes').attr('transform', visTranslation);
                 // Establish dimensions of axes (element dimensions minus margins)
                 var axisDimensions = {
                     width: view.dimensions.width - view.margins.left - view.margins.right,
@@ -475,6 +456,41 @@ var KineticGraphs;
         };
         View.prototype.yOnGraph = function (y) {
             return this.yAxis.domain.contains(y);
+        };
+        View.prototype.drag = function (xParam, yParam, xDelta, yDelta) {
+            var view = this;
+            var xAxis = view.xAxis;
+            var yAxis = view.yAxis;
+            return d3.behavior.drag().on('drag', function () {
+                d3.event.sourceEvent.preventDefault();
+                console.log('dragging');
+                var dragUpdate = {}, newX, newY;
+                if (xParam !== null) {
+                    newX = xAxis.scale.invert(d3.event.x + xDelta);
+                    if (newX < xAxis.domain.min) {
+                        dragUpdate[xParam] = xAxis.domain.min;
+                    }
+                    else if (newX > xAxis.domain.max) {
+                        dragUpdate[xParam] = xAxis.domain.max;
+                    }
+                    else {
+                        dragUpdate[xParam] = newX;
+                    }
+                }
+                if (yParam !== null) {
+                    newY = yAxis.scale.invert(d3.event.y + yDelta);
+                    if (newY < yAxis.domain.min) {
+                        dragUpdate[yParam] = yAxis.domain.min;
+                    }
+                    else if (newY > xAxis.domain.max) {
+                        dragUpdate[yParam] = yAxis.domain.max;
+                    }
+                    else {
+                        dragUpdate[yParam] = newY;
+                    }
+                }
+                view.updateParams(dragUpdate);
+            });
         };
         return View;
     })(KineticGraphs.Model);

@@ -67,30 +67,9 @@ module KineticGraphs
             }
             div.style('top',(y - vAlignDelta) + 'px');
 
-            // establish drag behavior
-            var drag = d3.behavior.drag()
-                .on("drag", function () {
-                    d3.event.sourceEvent.preventDefault();
-                    console.log('dragging');
-                    var dragUpdate = {}, newX, newY;
-                    if(xDrag) {
-                        newX = view.xAxis.scale.invert(d3.event.x - view.margins.left);
-                        if(view.xAxis.domain.contains(newX)) {
-                            dragUpdate[cd.xParam] = newX;
-                        }
-                    }
-                    if(yDrag) {
-                        newY = view.yAxis.scale.invert(view.dimensions.height - vAlignDelta + d3.event.y);
-                        if(view.yAxis.domain.contains(newY)) {
-                            dragUpdate[cd.yParam] = newY;
-                        }
-                    }
-                    view.updateParams(dragUpdate)
-                });
-
             katex.render(text,div[0][0]);
 
-            div.call(drag);
+            div.call(view.drag(cd.xParam, cd.yParam, -view.margins.left, view.dimensions.height - vAlignDelta));
 
             return view;
 
