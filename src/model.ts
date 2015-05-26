@@ -1,3 +1,5 @@
+'use strict';
+
 module KineticGraphs
 {
     export interface ModelDefinition
@@ -40,7 +42,7 @@ module KineticGraphs
                         if(obj[key] instanceof KineticGraphs.Model) {
                             // if the property is itself a model, update the model
                             obj[key].update(scope);
-                        } else {
+                        } else if(def[key] !== undefined) {
                             // otherwise parse the current value of the property
                             obj[key] = deepParse(def[key]);
                         }

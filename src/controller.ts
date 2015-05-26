@@ -1,5 +1,7 @@
 /// <reference path="kg.ts" />
 
+'use strict';
+
 module KineticGraphs
 {
     export interface ScopeDefinition {
@@ -76,8 +78,8 @@ module KineticGraphs
                                 name: 'p2',
                                 x: 'params.x',
                                 y: 'params.y',
-                                xParam: 'x',
-                                yParam: 'y',
+                                //xDragParam: 'x',
+                                yDragParam: 'y',
                                 size: 300
                             }
                         }

@@ -1,5 +1,6 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
+
+'use strict';
 
 module KineticGraphs
 {

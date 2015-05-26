@@ -1,4 +1,5 @@
 /// <reference path="kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var Domain = (function () {
@@ -52,6 +53,7 @@ var KineticGraphs;
     }
     KineticGraphs.createInstance = createInstance;
 })(KineticGraphs || (KineticGraphs = {}));
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var Model = (function () {
@@ -79,7 +81,7 @@ var KineticGraphs;
                             // if the property is itself a model, update the model
                             obj[key].update(scope);
                         }
-                        else {
+                        else if (def[key] !== undefined) {
                             // otherwise parse the current value of the property
                             obj[key] = deepParse(def[key]);
                         }
@@ -115,6 +117,7 @@ var KineticGraphs;
     KineticGraphs.Model = Model;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
+'use strict';
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -141,6 +144,7 @@ var KineticGraphs;
     KineticGraphs.ViewObject = ViewObject;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var Point = (function (_super) {
@@ -185,6 +189,7 @@ var KineticGraphs;
     KineticGraphs.Point = Point;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var GraphDiv = (function (_super) {
@@ -199,69 +204,21 @@ var KineticGraphs;
             });
             _super.call(this, definition);
         }
-        GraphDiv.prototype.render = function (graph) {
-            var graphDiv = this, width = this.dimensions.width, height = this.dimensions.height;
-            var el = graph.getDiv(graphDiv.name);
-            var style = 'text-align:center; color:gray; position:absolute; width: ' + width + 'px; height: ' + height + 'px; line-height: ' + height + 'px;';
-            // Set left pixel margin
-            var halfWidth = width * 0.5;
-            // Default to centered on x coordinate
-            var leftPixels = graphDiv.coordinates.x - halfWidth;
-            if (graphDiv.align == 'left') {
-                // move right by half the width of the div if left aligned
-                leftPixels += halfWidth;
-            }
-            else if (graphDiv.align == 'right') {
-                // move left by half the width of the div if right aligned
-                leftPixels -= halfWidth;
-            }
-            style += 'left: ' + leftPixels + 'px;';
-            // Set top pixel margin
-            var halfHeight = height * 0.5;
-            // Default to centered on x coordinate
-            var topPixels = graphDiv.coordinates.y - halfHeight;
-            if (graphDiv.valign == 'top') {
-                // move down by half the height of the div if top aligned
-                topPixels += halfWidth;
-            }
-            else if (graphDiv.align == 'right') {
-                // move up by half the height of the div if right aligned
-                topPixels -= halfWidth;
-            }
-            style += 'top: ' + topPixels + 'px;';
-            //format the div
-            el.attr('style', style);
-            el.text(graphDiv.text);
-            return graph;
-        };
-        return GraphDiv;
-    })(KineticGraphs.ViewObject);
-    KineticGraphs.GraphDiv = GraphDiv;
-})(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
-var KineticGraphs;
-(function (KineticGraphs) {
-    var ControlDiv = (function (_super) {
-        __extends(ControlDiv, _super);
-        function ControlDiv(definition) {
-            _super.call(this, definition);
-        }
-        ControlDiv.prototype.render = function (view) {
+        GraphDiv.prototype.render = function (view) {
             var cd = this;
-            var x = view.margins.left + view.xAxis.scale(cd.coordinates.x), y = view.margins.top + view.yAxis.scale(cd.coordinates.y), width = cd.dimensions.width, height = cd.dimensions.height, text = cd.text;
-            var xDrag = cd.hasOwnProperty('xParam'), yDrag = cd.hasOwnProperty('yParam');
+            var x = view.margins.left + view.xAxis.scale(cd.coordinates.x), y = view.margins.top + view.yAxis.scale(cd.coordinates.y), width = cd.dimensions.width, height = cd.dimensions.height, text = cd.text, draggable = (cd.hasOwnProperty('xDragParam') || cd.hasOwnProperty('yDragParam'));
             var div = view.getDiv(this.name);
-            div.style('cursor', 'move').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
+            div.style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
             // Set left pixel margin; default to centered on x coordinate
-            var xAlignDelta = width * 0.5;
+            var alignDelta = width * 0.5;
             if (cd.align == 'left') {
-                xAlignDelta = 0;
+                alignDelta = 0;
             }
             else if (this.align == 'right') {
                 // move left by half the width of the div if right aligned
-                xAlignDelta = width;
+                alignDelta = width;
             }
-            div.style('left', (x - xAlignDelta) + 'px');
+            div.style('left', (x - alignDelta) + 'px');
             // Set top pixel margin; default to centered on y coordinate
             var vAlignDelta = height * 0.5;
             // Default to centered on x coordinate
@@ -273,14 +230,31 @@ var KineticGraphs;
             }
             div.style('top', (y - vAlignDelta) + 'px');
             katex.render(text, div[0][0]);
-            div.call(view.drag(cd.xParam, cd.yParam, -view.margins.left, view.dimensions.height - vAlignDelta));
+            if (draggable) {
+                if (!cd.hasOwnProperty('xDragParam')) {
+                    // allow vertical dragging only
+                    div.style('cursor', 'ns-resize');
+                    div.call(view.drag(null, cd.yDragParam, 0, view.dimensions.height - vAlignDelta));
+                }
+                else if (!cd.hasOwnProperty('yDragParam')) {
+                    // allow horizontal dragging only
+                    div.style('cursor', 'ew-resize');
+                    div.call(view.drag(cd.xDragParam, null, -view.margins.left, 0));
+                }
+                else {
+                    // allow bidirectional dragging
+                    div.style('cursor', 'move');
+                    div.call(view.drag(cd.xDragParam, cd.yDragParam, -view.margins.left, view.dimensions.height - vAlignDelta));
+                }
+            }
             return view;
         };
-        return ControlDiv;
-    })(KineticGraphs.GraphDiv);
-    KineticGraphs.ControlDiv = ControlDiv;
+        return GraphDiv;
+    })(KineticGraphs.ViewObject);
+    KineticGraphs.GraphDiv = GraphDiv;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var LinePlot = (function (_super) {
@@ -315,6 +289,7 @@ var KineticGraphs;
     KineticGraphs.LinePlot = LinePlot;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var PathFamily = (function (_super) {
@@ -354,6 +329,7 @@ var KineticGraphs;
     KineticGraphs.PathFamily = PathFamily;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path='kg.ts'/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var View = (function (_super) {
@@ -497,6 +473,7 @@ var KineticGraphs;
     KineticGraphs.View = View;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts" />
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var Axis = (function (_super) {
@@ -556,6 +533,7 @@ var KineticGraphs;
     KineticGraphs.YAxis = YAxis;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var Graph = (function (_super) {
@@ -595,6 +573,7 @@ var KineticGraphs;
     KineticGraphs.Graph = Graph;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="kg.ts" />
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var Controller = (function () {
@@ -655,8 +634,8 @@ var KineticGraphs;
                                 name: 'p2',
                                 x: 'params.x',
                                 y: 'params.y',
-                                xParam: 'x',
-                                yParam: 'y',
+                                //xDragParam: 'x',
+                                yDragParam: 'y',
                                 size: 300
                             }
                         }
@@ -737,20 +716,18 @@ var KineticGraphs;
     })();
     KineticGraphs.Controller = Controller;
 })(KineticGraphs || (KineticGraphs = {}));
-/**
- * Created by cmakler on 5/21/15.
- */
+'use strict';
 var Sample;
 (function (Sample) {
     var SinglePoint = (function (_super) {
         __extends(SinglePoint, _super);
         function SinglePoint(definition) {
             _super.call(this, definition);
-            this.c = new KineticGraphs.ControlDiv({
+            this.c = new KineticGraphs.GraphDiv({
                 name: definition.name + 'control',
                 coordinates: { x: definition.x, y: definition.y },
-                xParam: definition.xParam,
-                yParam: definition.yParam,
+                xDragParam: definition.xDragParam,
+                yDragParam: definition.yDragParam,
                 text: 'A'
             });
             this.p = new KineticGraphs.Point({
@@ -795,7 +772,6 @@ var Sample;
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
-/// <reference path="viewObjects/controlDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="view.ts" />
@@ -803,5 +779,6 @@ var Sample;
 /// <reference path="views/graph.ts" />
 /// <reference path="controller.ts" />
 /// <reference path="sample/sample.ts" />
+'use strict';
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', KineticGraphs.Controller);
 //# sourceMappingURL=kinetic-graphs.js.map

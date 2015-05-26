@@ -1,6 +1,8 @@
 /// <reference path="../kg.ts"/>
 /// <reference path="../helpers.ts"/>
 
+'use strict';
+
 // numeric lacks a definitions file for now; need to add this to make Typescript happy
 declare var numeric: any;
 

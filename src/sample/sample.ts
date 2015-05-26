@@ -1,6 +1,4 @@
-/**
- * Created by cmakler on 5/21/15.
- */
+'use strict';
 
 module Sample {
 
@@ -9,8 +7,8 @@ module Sample {
         name: string;
         x: any;
         y: any;
-        xParam: string;
-        yParam: string;
+        xDragParam: string;
+        yDragParam: string;
         size?: number;
         symbol?: string;
     }
@@ -31,15 +29,15 @@ module Sample {
         public x;
         public y;
         private p: KineticGraphs.Point;
-        private c: KineticGraphs.ControlDiv;
+        private c: KineticGraphs.GraphDiv;
 
         constructor(definition:SinglePointDefinition) {
             super(definition);
-            this.c = new KineticGraphs.ControlDiv({
+            this.c = new KineticGraphs.GraphDiv({
                 name: definition.name+'control',
                 coordinates: {x: definition.x, y: definition.y},
-                xParam: definition.xParam,
-                yParam: definition.yParam,
+                xDragParam: definition.xDragParam,
+                yDragParam: definition.yDragParam,
                 text:'A'});
             this.p = new KineticGraphs.Point({
                 name: definition.name+'point',

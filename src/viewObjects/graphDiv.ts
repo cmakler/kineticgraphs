@@ -1,5 +1,9 @@
 /// <reference path="../kg.ts"/>
 
+'use strict';
+
+declare var katex;
+
 module KineticGraphs
 {
 
@@ -23,6 +27,8 @@ module KineticGraphs
         math: boolean;
         align: string;
         valign: string;
+        xDragParam: string;
+        yDragParam: string;
     }
 
     export class GraphDiv extends ViewObject implements IGraphDiv
@@ -35,6 +41,8 @@ module KineticGraphs
         public math;
         public align;
         public valign;
+        public xDragParam;
+        public yDragParam;
 
         constructor(definition:GraphDivDefinition) {
 
@@ -50,48 +58,70 @@ module KineticGraphs
 
         }
 
-        render(graph) {
+        render(view) {
 
-            var graphDiv = this,
-                width = this.dimensions.width,
-                height = this.dimensions.height;
+            var cd = this;
 
-            var el:D3.Selection = graph.getDiv(graphDiv.name);
+            var x = view.margins.left + view.xAxis.scale(cd.coordinates.x),
+                y = view.margins.top + view.yAxis.scale(cd.coordinates.y),
+                width = cd.dimensions.width,
+                height = cd.dimensions.height,
+                text = cd.text,
+                draggable = (cd.hasOwnProperty('xDragParam') || cd.hasOwnProperty('yDragParam'))
 
-            var style='text-align:center; color:gray; position:absolute; width: ' + width + 'px; height: ' + height + 'px; line-height: ' + height + 'px;';
+            var div:D3.Selection = view.getDiv(this.name);
 
-            // Set left pixel margin
-            var halfWidth = width * 0.5;
-            // Default to centered on x coordinate
-            var leftPixels = graphDiv.coordinates.x - halfWidth;
-            if (graphDiv.align == 'left') {
-                // move right by half the width of the div if left aligned
-                leftPixels += halfWidth
-            } else if (graphDiv.align == 'right') {
+            div
+                .style('text-align','center')
+                .style('color','gray')
+                .style('position','absolute')
+                .style('width',width + 'px')
+                .style('height',height + 'px')
+                .style('line-height',height + 'px')
+
+            // Set left pixel margin; default to centered on x coordinate
+            var alignDelta = width*0.5;
+            if (cd.align == 'left') {
+                alignDelta = 0;
+            } else if (this.align == 'right') {
                 // move left by half the width of the div if right aligned
-                leftPixels -= halfWidth;
+                alignDelta = width;
             }
-            style += 'left: ' + leftPixels + 'px;';
+            div.style('left',(x - alignDelta) + 'px');
 
-            // Set top pixel margin
-            var halfHeight = height * 0.5;
+            // Set top pixel margin; default to centered on y coordinate
+            var vAlignDelta = height*0.5;
             // Default to centered on x coordinate
-            var topPixels = graphDiv.coordinates.y - halfHeight;
-            if (graphDiv.valign == 'top') {
-                // move down by half the height of the div if top aligned
-                topPixels += halfWidth
-            } else if (graphDiv.align == 'right') {
-                // move up by half the height of the div if right aligned
-                topPixels -= halfWidth;
+            if (this.valign == 'top') {
+                vAlignDelta = 0;
+            } else if (this.align == 'bottom') {
+                vAlignDelta = height;
             }
-            style += 'top: ' + topPixels + 'px;';
+            div.style('top',(y - vAlignDelta) + 'px');
 
-            //format the div
-            el.attr('style',style);
+            katex.render(text,div[0][0]);
 
-            el.text(graphDiv.text);
+            if(draggable){
+                if(!cd.hasOwnProperty('xDragParam')) {
+                    // allow vertical dragging only
+                    div.style('cursor','ns-resize');
+                    div.call(view.drag(null, cd.yDragParam, 0, view.dimensions.height - vAlignDelta));
+                } else if(!cd.hasOwnProperty('yDragParam')){
+                    // allow horizontal dragging only
+                    div.style('cursor','ew-resize');
+                    div.call(view.drag(cd.xDragParam, null, -view.margins.left, 0));
+                } else {
+                    // allow bidirectional dragging
+                    div.style('cursor','move');
+                    div.call(view.drag(cd.xDragParam, cd.yDragParam, -view.margins.left, view.dimensions.height - vAlignDelta));
+                }
 
-            return graph;
+
+            }
+
+
+
+            return view;
 
         }
     }

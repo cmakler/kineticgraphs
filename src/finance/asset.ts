@@ -1,10 +1,4 @@
-/**
- * Created by cmakler on 4/27/15.
- */
-
-/**
- * Created by cmakler on 4/24/15.
- */
+'use strict';
 
 // numeric lacks a definitions file for now; need to add this to make Typescript happy
 declare var numeric: any;
