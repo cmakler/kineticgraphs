@@ -60,9 +60,11 @@ module KineticGraphs
                 } else if(typeof value == 'object') {
                     // If the object's property is an object, parses the object.
                     return parseObject(value)
-                } else {
+                } else if(value.toString() !== undefined) {
                     var e = scope.$eval(value.toString());
                     return (e == undefined) ? value : e;
+                } else {
+                    return value;
                 }
             }
 

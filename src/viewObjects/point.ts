@@ -19,9 +19,7 @@ module KineticGraphs
         symbol: string;
         size: number;
         label: string;
-
-        //labelDiv: IGraphDiv;
-        //renderLabel: (graph:IGraph) => void;
+        labelDiv: IGraphDiv;
     }
 
     export class Point extends ViewObject implements IPoint
@@ -36,48 +34,53 @@ module KineticGraphs
 
         constructor(definition:PointDefinition) {
 
-            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle', label: ''});
+            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle'});
             super(definition);
 
-            //this.labelDiv = new GraphDiv({coordinates: definition.coordinates, label: definition.label});
+            if(definition.label) {
+                this.labelDiv = new GraphDiv(definition);
+            }
+
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'pointSymbol';
+        }
+
+        createSubObjects(view) {
+            var labelDiv = this.labelDiv;
+            if(labelDiv) {
+                return view.addObject(labelDiv);
+            } else {
+                return view;
+            }
         }
 
         render(view) {
 
             var point = this,
-                label = this.label;
+                draggable = (point.hasOwnProperty('xDragParam') || point.hasOwnProperty('yDragParam'));;
 
-            // constants TODO should these be defined somewhere else?
-            var POINT_SYMBOL_CLASS = 'pointSymbol';
+            var group:D3.Selection = view.objectGroup(point.name, point.initGroupFn(), true);
 
-            // initialization of D3 graph object group
-            function init(newGroup:D3.Selection) {
-                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
-                return newGroup;
+            if (point.symbol === 'none') {
+                point.show = false;
+                point.labelDiv.show = false;
             }
 
-            var group:D3.Selection = view.objectGroup(point.name, init, true);
-
-            var showPoint = function(){
-                if (point.symbol === 'none') {
-                    return false;
-                }
-                return view.onGraph(point.coordinates);
-            }();
-
             // draw the symbol at the point
-            var pointSymbol:D3.Selection = group.select('.'+ POINT_SYMBOL_CLASS);
-            if(showPoint) {
-                pointSymbol
-                    .attr({
-                        'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
-                        'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                        'transform': view.translateByCoordinates(point.coordinates)
-                    });
-                //point.labelDiv.update({name: point.name+'-label', coordinates: point.coordinates, text: point.label}).render(graph);
+            var pointSymbol:D3.Selection = group.select('.'+ point.viewObjectClass);
+            pointSymbol
+                .attr({
+                    'class': point.classAndVisibility(),
+                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                    'transform': view.translateByCoordinates(point.coordinates)
+                });
+
+            if(draggable){
+                point.xDragDelta = 0;
+                point.yDragDelta = 0;
+                return point.setDragBehavior(view,pointSymbol);
             } else {
-                pointSymbol.attr('class','invisible ' + POINT_SYMBOL_CLASS);
-                //TODO make label disappear
+                return view;
             }
 
             return view;

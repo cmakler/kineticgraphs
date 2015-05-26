@@ -12,6 +12,7 @@ a {
 
 .axis text {
     font: 18px sans-serif;
+    cursor: default;
 }
 
 .axis path,

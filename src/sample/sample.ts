@@ -11,6 +11,7 @@ module Sample {
         yDragParam: string;
         size?: number;
         symbol?: string;
+        label: string;
     }
 
     export interface ISinglePoint extends KineticGraphs.IModel
@@ -29,21 +30,17 @@ module Sample {
         public x;
         public y;
         private p: KineticGraphs.Point;
-        private c: KineticGraphs.GraphDiv;
 
         constructor(definition:SinglePointDefinition) {
             super(definition);
-            this.c = new KineticGraphs.GraphDiv({
-                name: definition.name+'control',
-                coordinates: {x: definition.x, y: definition.y},
-                xDragParam: definition.xDragParam,
-                yDragParam: definition.yDragParam,
-                text:'A'});
             this.p = new KineticGraphs.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.x, y:definition.y},
                 size: definition.size,
-                symbol: definition.symbol
+                symbol: definition.symbol,
+                xDragParam: definition.xDragParam,
+                yDragParam: definition.yDragParam,
+                label: definition.label
             })
         }
 
@@ -55,12 +52,6 @@ module Sample {
             var p = this.p;
             p.coordinates = this.coordinates();
             return p;
-        }
-
-        controlDiv(){
-            var c = this.c;
-            c.coordinates = this.coordinates();
-            return c;
         }
     }
 

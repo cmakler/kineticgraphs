@@ -65,7 +65,6 @@ module KineticGraphs
         }
 
         render(scope, redraw) {
-
             var view = this;
             view.update(scope, function(){
                 view.updateParams = function(params){
@@ -142,8 +141,13 @@ module KineticGraphs
 
         drawObjects(scope) {
             var view = this;
+            view.objects.forEach(function(object) {object.createSubObjects(view)});
             view.objects.forEach(function(object) {object.update(scope).render(view)});
             return view;
+        }
+
+        addObject(newObj) {
+            this.objects.push(newObj);
         }
 
         updateParams(params) {

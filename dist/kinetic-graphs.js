@@ -100,9 +100,12 @@ var KineticGraphs;
                     // If the object's property is an object, parses the object.
                     return parseObject(value);
                 }
-                else {
+                else if (value.toString() !== undefined) {
                     var e = scope.$eval(value.toString());
                     return (e == undefined) ? value : e;
+                }
+                else {
+                    return value;
                 }
             }
             // Parse the model object
@@ -131,13 +134,53 @@ var KineticGraphs;
         function ViewObject(definition) {
             definition = _.defaults(definition, { className: '', show: true });
             _super.call(this, definition);
+            this.xDragDelta = 0;
+            this.yDragDelta = 0;
         }
         ViewObject.prototype.classAndVisibility = function () {
-            var VISIBLE_CLASS = this.className + ' visible', INVISIBLE_CLASS = this.className + ' invisible';
-            return this.show ? VISIBLE_CLASS : INVISIBLE_CLASS;
+            var classString = this.viewObjectClass;
+            if (this.className) {
+                classString += ' ' + this.className;
+            }
+            if (this.show) {
+                classString += ' visible';
+            }
+            else {
+                classString += ' invisible';
+            }
+            return classString;
         };
-        ViewObject.prototype.render = function (graph) {
-            return graph; // overridden by child class
+        ViewObject.prototype.render = function (view) {
+            return view; // overridden by child class
+        };
+        ViewObject.prototype.createSubObjects = function (view) {
+            return view; // overridden by child class
+        };
+        ViewObject.prototype.initGroupFn = function () {
+            var viewObjectSVGtype = this.viewObjectSVGtype, viewObjectClass = this.viewObjectClass;
+            return function (newGroup) {
+                newGroup.append(viewObjectSVGtype).attr('class', viewObjectClass);
+                return newGroup;
+            };
+        };
+        ViewObject.prototype.setDragBehavior = function (view, obj) {
+            var viewObj = this;
+            if (!viewObj.hasOwnProperty('xDragParam')) {
+                // allow vertical dragging only
+                obj.style('cursor', 'ns-resize');
+                obj.call(view.drag(null, viewObj.yDragParam, 0, viewObj.yDragDelta));
+            }
+            else if (!viewObj.hasOwnProperty('yDragParam')) {
+                // allow horizontal dragging only
+                obj.style('cursor', 'ew-resize');
+                obj.call(view.drag(viewObj.xDragParam, null, viewObj.xDragDelta, 0));
+            }
+            else {
+                // allow bidirectional dragging
+                obj.style('cursor', 'move');
+                obj.call(view.drag(viewObj.xDragParam, viewObj.yDragParam, viewObj.xDragDelta, viewObj.yDragDelta));
+            }
+            return view;
         };
         return ViewObject;
     })(KineticGraphs.Model);
@@ -150,37 +193,45 @@ var KineticGraphs;
     var Point = (function (_super) {
         __extends(Point, _super);
         function Point(definition) {
-            definition = _.defaults(definition, { coordinates: { x: 0, y: 0 }, size: 100, symbol: 'circle', label: '' });
+            definition = _.defaults(definition, { coordinates: { x: 0, y: 0 }, size: 100, symbol: 'circle' });
             _super.call(this, definition);
-            //this.labelDiv = new GraphDiv({coordinates: definition.coordinates, label: definition.label});
-        }
-        Point.prototype.render = function (view) {
-            var point = this, label = this.label;
-            // constants TODO should these be defined somewhere else?
-            var POINT_SYMBOL_CLASS = 'pointSymbol';
-            // initialization of D3 graph object group
-            function init(newGroup) {
-                newGroup.append('path').attr('class', POINT_SYMBOL_CLASS);
-                return newGroup;
+            if (definition.label) {
+                this.labelDiv = new KineticGraphs.GraphDiv(definition);
             }
-            var group = view.objectGroup(point.name, init, true);
-            var showPoint = function () {
-                if (point.symbol === 'none') {
-                    return false;
-                }
-                return view.onGraph(point.coordinates);
-            }();
-            // draw the symbol at the point
-            var pointSymbol = group.select('.' + POINT_SYMBOL_CLASS);
-            if (showPoint) {
-                pointSymbol.attr({
-                    'class': point.classAndVisibility() + ' ' + POINT_SYMBOL_CLASS,
-                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                    'transform': view.translateByCoordinates(point.coordinates)
-                });
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'pointSymbol';
+        }
+        Point.prototype.createSubObjects = function (view) {
+            var labelDiv = this.labelDiv;
+            if (labelDiv) {
+                return view.addObject(labelDiv);
             }
             else {
-                pointSymbol.attr('class', 'invisible ' + POINT_SYMBOL_CLASS);
+                return view;
+            }
+        };
+        Point.prototype.render = function (view) {
+            var point = this, draggable = (point.hasOwnProperty('xDragParam') || point.hasOwnProperty('yDragParam'));
+            ;
+            var group = view.objectGroup(point.name, point.initGroupFn(), true);
+            if (point.symbol === 'none') {
+                point.show = false;
+                point.labelDiv.show = false;
+            }
+            // draw the symbol at the point
+            var pointSymbol = group.select('.' + point.viewObjectClass);
+            pointSymbol.attr({
+                'class': point.classAndVisibility(),
+                'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                'transform': view.translateByCoordinates(point.coordinates)
+            });
+            if (draggable) {
+                point.xDragDelta = 0;
+                point.yDragDelta = 0;
+                return point.setDragBehavior(view, pointSymbol);
+            }
+            else {
+                return view;
             }
             return view;
         };
@@ -200,18 +251,18 @@ var KineticGraphs;
                 dimensions: { width: 100, height: 20 },
                 math: false,
                 align: 'center',
-                text: ''
+                label: ''
             });
             _super.call(this, definition);
         }
         GraphDiv.prototype.render = function (view) {
-            var cd = this;
-            var x = view.margins.left + view.xAxis.scale(cd.coordinates.x), y = view.margins.top + view.yAxis.scale(cd.coordinates.y), width = cd.dimensions.width, height = cd.dimensions.height, text = cd.text, draggable = (cd.hasOwnProperty('xDragParam') || cd.hasOwnProperty('yDragParam'));
+            var divObj = this;
+            var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x), y = view.margins.top + view.yAxis.scale(divObj.coordinates.y), width = divObj.dimensions.width, height = divObj.dimensions.height, label = divObj.label, draggable = (divObj.hasOwnProperty('xDragParam') || divObj.hasOwnProperty('yDragParam'));
             var div = view.getDiv(this.name);
-            div.style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
+            div.style('cursor', 'default').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
             // Set left pixel margin; default to centered on x coordinate
             var alignDelta = width * 0.5;
-            if (cd.align == 'left') {
+            if (divObj.align == 'left') {
                 alignDelta = 0;
             }
             else if (this.align == 'right') {
@@ -229,25 +280,15 @@ var KineticGraphs;
                 vAlignDelta = height;
             }
             div.style('top', (y - vAlignDelta) + 'px');
-            katex.render(text, div[0][0]);
+            katex.render(label, div[0][0]);
             if (draggable) {
-                if (!cd.hasOwnProperty('xDragParam')) {
-                    // allow vertical dragging only
-                    div.style('cursor', 'ns-resize');
-                    div.call(view.drag(null, cd.yDragParam, 0, view.dimensions.height - vAlignDelta));
-                }
-                else if (!cd.hasOwnProperty('yDragParam')) {
-                    // allow horizontal dragging only
-                    div.style('cursor', 'ew-resize');
-                    div.call(view.drag(cd.xDragParam, null, -view.margins.left, 0));
-                }
-                else {
-                    // allow bidirectional dragging
-                    div.style('cursor', 'move');
-                    div.call(view.drag(cd.xDragParam, cd.yDragParam, -view.margins.left, view.dimensions.height - vAlignDelta));
-                }
+                divObj.xDragDelta = -view.margins.left;
+                divObj.yDragDelta = view.dimensions.height - vAlignDelta;
+                return divObj.setDragBehavior(view, div);
             }
-            return view;
+            else {
+                return view;
+            }
         };
         return GraphDiv;
     })(KineticGraphs.ViewObject);
@@ -404,9 +445,15 @@ var KineticGraphs;
         View.prototype.drawObjects = function (scope) {
             var view = this;
             view.objects.forEach(function (object) {
+                object.createSubObjects(view);
+            });
+            view.objects.forEach(function (object) {
                 object.update(scope).render(view);
             });
             return view;
+        };
+        View.prototype.addObject = function (newObj) {
+            this.objects.push(newObj);
         };
         View.prototype.updateParams = function (params) {
             console.log('updateParams called before scope applied');
@@ -625,7 +672,8 @@ var KineticGraphs;
                             definition: {
                                 name: 'p1',
                                 x: 'params.x',
-                                y: 5
+                                y: 5,
+                                xDragParam: 'x'
                             }
                         },
                         point2: {
@@ -634,9 +682,10 @@ var KineticGraphs;
                                 name: 'p2',
                                 x: 'params.x',
                                 y: 'params.y',
-                                //xDragParam: 'x',
+                                xDragParam: 'x',
                                 yDragParam: 'y',
-                                size: 300
+                                size: 300,
+                                label: 'A'
                             }
                         }
                     }
@@ -649,7 +698,7 @@ var KineticGraphs;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 10, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 10, title: '"Mean"' },
-                            objects: ['model.point1.point()', 'model.point2.point()', 'model.point2.controlDiv()']
+                            objects: ['model.point1.point()', 'model.point2.point()']
                         }
                     }
                 ]
@@ -723,18 +772,14 @@ var Sample;
         __extends(SinglePoint, _super);
         function SinglePoint(definition) {
             _super.call(this, definition);
-            this.c = new KineticGraphs.GraphDiv({
-                name: definition.name + 'control',
-                coordinates: { x: definition.x, y: definition.y },
-                xDragParam: definition.xDragParam,
-                yDragParam: definition.yDragParam,
-                text: 'A'
-            });
             this.p = new KineticGraphs.Point({
                 name: definition.name + 'point',
                 coordinates: { x: definition.x, y: definition.y },
                 size: definition.size,
-                symbol: definition.symbol
+                symbol: definition.symbol,
+                xDragParam: definition.xDragParam,
+                yDragParam: definition.yDragParam,
+                label: definition.label
             });
         }
         SinglePoint.prototype.coordinates = function () {
@@ -744,11 +789,6 @@ var Sample;
             var p = this.p;
             p.coordinates = this.coordinates();
             return p;
-        };
-        SinglePoint.prototype.controlDiv = function () {
-            var c = this.c;
-            c.coordinates = this.coordinates();
-            return c;
         };
         return SinglePoint;
     })(KineticGraphs.Model);
@@ -771,7 +811,7 @@ var Sample;
 /// <reference path="model.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
-/// <reference path="viewObjects/graphDiv.ts"/>
+/// <reference path="viewObjects/label.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="view.ts" />
