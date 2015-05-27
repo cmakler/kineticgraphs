@@ -7,8 +7,8 @@ module Sample {
         name: string;
         x: any;
         y: any;
-        xDragParam: string;
-        yDragParam: string;
+        xDrag: boolean;
+        yDrag: boolean;
         size?: number;
         symbol?: string;
         label: string;
@@ -20,7 +20,7 @@ module Sample {
         x: any;
         y: any;
         coordinates: () => KineticGraphs.ICoordinates;
-        point(): KineticGraphs.Point;
+        point: () => KineticGraphs.Point;
     }
 
     export class SinglePoint extends KineticGraphs.Model implements ISinglePoint
@@ -38,8 +38,8 @@ module Sample {
                 coordinates: {x: definition.x, y:definition.y},
                 size: definition.size,
                 symbol: definition.symbol,
-                xDragParam: definition.xDragParam,
-                yDragParam: definition.yDragParam,
+                xDrag: definition.xDrag,
+                yDrag: definition.yDrag,
                 label: definition.label
             })
         }
@@ -55,14 +55,31 @@ module Sample {
         }
     }
 
-    export class TwoPoints extends KineticGraphs.Model
+    export interface ITwoPoints extends KineticGraphs.IModel
+    {
+        segment:() => KineticGraphs.Segment;
+    }
+
+    export class TwoPoints extends KineticGraphs.Model implements ITwoPoints
     {
         public point1:SinglePoint;
         public point2:SinglePoint;
+        private s:KineticGraphs.Segment;
 
         constructor(definition) {
             super(definition)
+            this.s = new KineticGraphs.Segment({
+                name: 'twoPointSegment',
+                a: {x: definition.point1.definition.x, y: definition.point1.definition.y},
+                b: {x: definition.point2.definition.x, y: definition.point2.definition.y},
+            })
         }
+
+        segment() {
+            return this.s;
+        }
+
+
     }
 
 }

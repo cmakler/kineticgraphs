@@ -132,10 +132,12 @@ var KineticGraphs;
     var ViewObject = (function (_super) {
         __extends(ViewObject, _super);
         function ViewObject(definition) {
-            definition = _.defaults(definition, { className: '', show: true });
+            definition = _.defaults(definition, { className: '', show: true, xDrag: false, yDrag: false });
             _super.call(this, definition);
             this.xDragDelta = 0;
             this.yDragDelta = 0;
+            this.xDragParam = definition.xDrag ? definition.coordinates.x.replace('params.', '') : null;
+            this.yDragParam = definition.yDrag ? definition.coordinates.y.replace('params.', '') : null;
         }
         ViewObject.prototype.classAndVisibility = function () {
             var classString = this.viewObjectClass;
@@ -165,21 +167,8 @@ var KineticGraphs;
         };
         ViewObject.prototype.setDragBehavior = function (view, obj) {
             var viewObj = this;
-            if (!viewObj.hasOwnProperty('xDragParam')) {
-                // allow vertical dragging only
-                obj.style('cursor', 'ns-resize');
-                obj.call(view.drag(null, viewObj.yDragParam, 0, viewObj.yDragDelta));
-            }
-            else if (!viewObj.hasOwnProperty('yDragParam')) {
-                // allow horizontal dragging only
-                obj.style('cursor', 'ew-resize');
-                obj.call(view.drag(viewObj.xDragParam, null, viewObj.xDragDelta, 0));
-            }
-            else {
-                // allow bidirectional dragging
-                obj.style('cursor', 'move');
-                obj.call(view.drag(viewObj.xDragParam, viewObj.yDragParam, viewObj.xDragDelta, viewObj.yDragDelta));
-            }
+            obj.style('cursor', viewObj.xDrag ? (viewObj.yDrag ? 'move' : 'ew-resize') : 'ns-resize');
+            obj.call(view.drag(viewObj.xDragParam, viewObj.yDragParam, viewObj.xDragDelta, viewObj.yDragDelta));
             return view;
         };
         return ViewObject;
@@ -211,8 +200,7 @@ var KineticGraphs;
             }
         };
         Point.prototype.render = function (view) {
-            var point = this, draggable = (point.hasOwnProperty('xDragParam') || point.hasOwnProperty('yDragParam'));
-            ;
+            var point = this, draggable = (point.xDrag || point.yDrag);
             var group = view.objectGroup(point.name, point.initGroupFn(), true);
             if (point.symbol === 'none') {
                 point.show = false;
@@ -226,8 +214,6 @@ var KineticGraphs;
                 'transform': view.translateByCoordinates(point.coordinates)
             });
             if (draggable) {
-                point.xDragDelta = 0;
-                point.yDragDelta = 0;
                 return point.setDragBehavior(view, pointSymbol);
             }
             else {
@@ -238,6 +224,44 @@ var KineticGraphs;
         return Point;
     })(KineticGraphs.ViewObject);
     KineticGraphs.Point = Point;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Segment = (function (_super) {
+        __extends(Segment, _super);
+        function Segment(definition) {
+            _super.call(this, definition);
+            if (definition.label) {
+                var labelDefinition = _.clone(definition);
+                labelDefinition.coordinates = {
+                    x: 0.5 * (definition.a.x + definition.b.x),
+                    y: 0.5 * (definition.a.y + definition.b.y)
+                };
+                this.labelDiv = new KineticGraphs.GraphDiv(labelDefinition);
+            }
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'segment';
+        }
+        Segment.prototype.render = function (view) {
+            var segment = this;
+            var group = view.objectGroup(segment.name, segment.initGroupFn(), false);
+            var dataLine = d3.svg.line().x(function (d) {
+                return view.xAxis.scale(d.x);
+            }).y(function (d) {
+                return view.yAxis.scale(d.y);
+            });
+            var segmentSelection = group.select('.' + segment.viewObjectClass);
+            segmentSelection.attr({
+                'class': segment.classAndVisibility(),
+                'd': dataLine([segment.a, segment.b])
+            });
+            return view;
+        };
+        return Segment;
+    })(KineticGraphs.ViewObject);
+    KineticGraphs.Segment = Segment;
 })(KineticGraphs || (KineticGraphs = {}));
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -257,7 +281,7 @@ var KineticGraphs;
         }
         GraphDiv.prototype.render = function (view) {
             var divObj = this;
-            var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x), y = view.margins.top + view.yAxis.scale(divObj.coordinates.y), width = divObj.dimensions.width, height = divObj.dimensions.height, label = divObj.label, draggable = (divObj.hasOwnProperty('xDragParam') || divObj.hasOwnProperty('yDragParam'));
+            var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x), y = view.margins.top + view.yAxis.scale(divObj.coordinates.y), width = divObj.dimensions.width, height = divObj.dimensions.height, label = divObj.label, draggable = (divObj.xDrag || divObj.yDrag);
             var div = view.getDiv(this.name);
             div.style('cursor', 'default').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
             // Set left pixel margin; default to centered on x coordinate
@@ -673,7 +697,7 @@ var KineticGraphs;
                                 name: 'p1',
                                 x: 'params.x',
                                 y: 5,
-                                xDragParam: 'x'
+                                xDrag: true
                             }
                         },
                         point2: {
@@ -682,8 +706,8 @@ var KineticGraphs;
                                 name: 'p2',
                                 x: 'params.x',
                                 y: 'params.y',
-                                xDragParam: 'x',
-                                yDragParam: 'y',
+                                xDrag: true,
+                                yDrag: true,
                                 size: 300,
                                 label: 'A'
                             }
@@ -698,7 +722,7 @@ var KineticGraphs;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 10, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 10, title: '"Mean"' },
-                            objects: ['model.point1.point()', 'model.point2.point()']
+                            objects: ['model.point1.point()', 'model.point2.point()', 'model.segment()']
                         }
                     }
                 ]
@@ -777,8 +801,8 @@ var Sample;
                 coordinates: { x: definition.x, y: definition.y },
                 size: definition.size,
                 symbol: definition.symbol,
-                xDragParam: definition.xDragParam,
-                yDragParam: definition.yDragParam,
+                xDrag: definition.xDrag,
+                yDrag: definition.yDrag,
                 label: definition.label
             });
         }
@@ -797,7 +821,15 @@ var Sample;
         __extends(TwoPoints, _super);
         function TwoPoints(definition) {
             _super.call(this, definition);
+            this.s = new KineticGraphs.Segment({
+                name: 'twoPointSegment',
+                a: { x: definition.point1.definition.x, y: definition.point1.definition.y },
+                b: { x: definition.point2.definition.x, y: definition.point2.definition.y }
+            });
         }
+        TwoPoints.prototype.segment = function () {
+            return this.s;
+        };
         return TwoPoints;
     })(KineticGraphs.Model);
     Sample.TwoPoints = TwoPoints;
@@ -811,6 +843,7 @@ var Sample;
 /// <reference path="model.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
+/// <reference path="viewObjects/segment.ts"/>
 /// <reference path="viewObjects/label.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>

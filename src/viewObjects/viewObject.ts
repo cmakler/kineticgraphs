@@ -10,22 +10,33 @@ module KineticGraphs
         name: string;
         show?: boolean;
         className?: string;
-        xDragParam?: string;
-        yDragParam?: string;
+        xDrag?: boolean;
+        yDrag?: boolean;
+        coordinates?: ICoordinates;
     }
 
     export interface IViewObject extends IModel
     {
-        show: boolean;
-        className?: string;
+        // identifiers
         name: string;
+        className?: string;
+
+        show: boolean;
+        classAndVisibility: () => string;
+
+        // Creation and rendering
+        initGroupFn: (svgType:string, className: string) => any;
         render: (view: View) => View;
         createSubObjects: (view: View) => View;
-        classAndVisibility: () => string;
+
+        // Dragging behavior
+        coordinates: ICoordinates;
+        xDrag:boolean;
+        yDrag:boolean;
+        xDragParam: string;
+        yDragParam: string;
         xDragDelta: number;
         yDragDelta: number;
-
-        initGroupFn: (svgType:string, className: string) => any;
         setDragBehavior: (view: View, obj: D3.Selection) => View;
     }
 
@@ -35,6 +46,9 @@ module KineticGraphs
         public show;
         public className;
         public name;
+        public coordinates;
+        public xDrag;
+        public yDrag;
         public xDragParam;
         public yDragParam;
         public xDragDelta;
@@ -43,10 +57,12 @@ module KineticGraphs
         public viewObjectClass;
 
         constructor(definition:ViewObjectDefinition) {
-            definition = _.defaults(definition, {className: '', show: true});
+            definition = _.defaults(definition, {className: '', show: true, xDrag: false, yDrag: false});
             super(definition);
             this.xDragDelta = 0;
             this.yDragDelta = 0;
+            this.xDragParam = definition.xDrag ? definition.coordinates.x.replace('params.','') : null;
+            this.yDragParam = definition.yDrag ? definition.coordinates.y.replace('params.','') : null;
         }
 
         classAndVisibility() {
@@ -81,19 +97,8 @@ module KineticGraphs
 
         setDragBehavior(view, obj) {
             var viewObj = this;
-            if(!viewObj.hasOwnProperty('xDragParam')) {
-                // allow vertical dragging only
-                obj.style('cursor','ns-resize');
-                obj.call(view.drag(null, viewObj.yDragParam, 0, viewObj.yDragDelta));
-            } else if(!viewObj.hasOwnProperty('yDragParam')){
-                // allow horizontal dragging only
-                obj.style('cursor','ew-resize');
-                obj.call(view.drag(viewObj.xDragParam, null, viewObj.xDragDelta, 0));
-            } else {
-                // allow bidirectional dragging
-                obj.style('cursor','move');
-                obj.call(view.drag(viewObj.xDragParam, viewObj.yDragParam, viewObj.xDragDelta, viewObj.yDragDelta));
-            }
+            obj.style('cursor', viewObj.xDrag ? (viewObj.yDrag ? 'move' : 'ew-resize') : 'ns-resize');
+            obj.call(view.drag(viewObj.xDragParam, viewObj.yDragParam, viewObj.xDragDelta, viewObj.yDragDelta));
             return view;
         }
 

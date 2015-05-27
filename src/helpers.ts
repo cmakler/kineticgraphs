@@ -48,8 +48,8 @@ module KineticGraphs
 
     export interface ICoordinates
     {
-        x: number;
-        y: number;
+        x: any;
+        y: any;
     }
 
     export function translateByPixelCoordinates(coordinates:ICoordinates) {

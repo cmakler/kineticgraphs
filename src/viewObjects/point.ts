@@ -15,7 +15,6 @@ module KineticGraphs
     export interface IPoint extends IViewObject {
 
         // point-specific attributes
-        coordinates: ICoordinates;
         symbol: string;
         size: number;
         label: string;
@@ -26,7 +25,6 @@ module KineticGraphs
     {
 
         // point-specific attributes
-        public coordinates;
         public symbol;
         public size;
         public label;
@@ -57,7 +55,7 @@ module KineticGraphs
         render(view) {
 
             var point = this,
-                draggable = (point.hasOwnProperty('xDragParam') || point.hasOwnProperty('yDragParam'));;
+                draggable = (point.xDrag || point.yDrag);
 
             var group:D3.Selection = view.objectGroup(point.name, point.initGroupFn(), true);
 
@@ -76,8 +74,6 @@ module KineticGraphs
                 });
 
             if(draggable){
-                point.xDragDelta = 0;
-                point.yDragDelta = 0;
                 return point.setDragBehavior(view,pointSymbol);
             } else {
                 return view;

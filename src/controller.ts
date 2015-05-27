@@ -70,7 +70,7 @@ module KineticGraphs
                                 name: 'p1',
                                 x: 'params.x',
                                 y: 5,
-                                xDragParam: 'x'
+                                xDrag: true
                             }
                         },
                         point2: {
@@ -79,8 +79,8 @@ module KineticGraphs
                                 name: 'p2',
                                 x: 'params.x',
                                 y: 'params.y',
-                                xDragParam: 'x',
-                                yDragParam: 'y',
+                                xDrag: true,
+                                yDrag: true,
                                 size: 300,
                                 label: 'A'
                             }
@@ -95,7 +95,7 @@ module KineticGraphs
                             dimensions: {width: 700, height: 700},
                             xAxis: {min: 0, max: 10, title: '"Standard Deviation"'},
                             yAxis: {min: 0, max: 10, title: '"Mean"'},
-                            objects: ['model.point1.point()','model.point2.point()']
+                            objects: ['model.point1.point()','model.point2.point()','model.segment()']
                         }
                     }
                 ]

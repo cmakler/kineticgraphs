@@ -8,14 +8,11 @@ module KineticGraphs
 {
 
     export interface GraphDivDefinition extends ViewObjectDefinition {
-
-        coordinates: ICoordinates; // pixel coordinates, not model coordinates
         dimensions?: IDimensions;
         label?: string;
         math?: boolean;
         align?: string;
         valign?: string;
-
     }
 
     export interface IGraphDiv extends IViewObject {
@@ -63,7 +60,7 @@ module KineticGraphs
                 width = divObj.dimensions.width,
                 height = divObj.dimensions.height,
                 label = divObj.label,
-                draggable = (divObj.hasOwnProperty('xDragParam') || divObj.hasOwnProperty('yDragParam'));
+                draggable = (divObj.xDrag || divObj.yDrag);
 
             var div:D3.Selection = view.getDiv(this.name);
 

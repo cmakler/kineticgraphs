@@ -79,7 +79,7 @@ a {
     stroke: red;
 }
 
-.dataPath {
+.dataPath, .segment {
     stroke: blue;
     stroke-width: 2;
     fill: none;
