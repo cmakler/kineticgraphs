@@ -34,6 +34,25 @@ var KineticGraphs;
         return style;
     }
     KineticGraphs.positionByPixelCoordinates = positionByPixelCoordinates;
+    function getCoordinates(def) {
+        var defaultCoordinates = { x: 0, y: 0 };
+        if (!def || def == undefined) {
+            return defaultCoordinates;
+        }
+        if (def.hasOwnProperty('coordinates')) {
+            return def.coordinates;
+        }
+        else if (def.hasOwnProperty('x') && def.hasOwnProperty('y')) {
+            return def;
+        }
+        else if (def.hasOwnProperty('definition')) {
+            return getCoordinates(def.definition);
+        }
+        else {
+            return defaultCoordinates;
+        }
+    }
+    KineticGraphs.getCoordinates = getCoordinates;
     function createInstance(definition) {
         // from http://stackoverflow.com/questions/1366127/
         function typeSpecificConstructor(typeName) {
@@ -119,7 +138,6 @@ var KineticGraphs;
     })();
     KineticGraphs.Model = Model;
 })(KineticGraphs || (KineticGraphs = {}));
-/// <reference path="../kg.ts"/>
 'use strict';
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -127,6 +145,85 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var KineticGraphs;
+(function (KineticGraphs) {
+    var Restriction = (function (_super) {
+        __extends(Restriction, _super);
+        function Restriction(definition) {
+            _super.call(this, definition);
+        }
+        Restriction.prototype.validate = function (params) {
+            var RANGE_TYPE = "range";
+            var SET_TYPE = "set";
+            var r = this;
+            function isSimpleParam(name) {
+                return name === name.match(/params\.[a-zA-Z0-9]+/)[0];
+            }
+            function paramName(name) {
+                return name.split('params.')[1];
+            }
+            if (r.restrictionType === RANGE_TYPE) {
+                if (r.min > r.max) {
+                    var maxName = r.definition['max'];
+                    if (isSimpleParam(maxName)) {
+                        params[paramName(maxName)] = r.min;
+                        return params;
+                    }
+                    var minName = r.definition['min'];
+                    if (isSimpleParam(minName)) {
+                        params[paramName(minName)] = r.max;
+                        return params;
+                    }
+                    return false;
+                }
+                var e = r.definition['expression'];
+                if (isSimpleParam(e)) {
+                    var param = paramName(e);
+                    var value = this.round();
+                    if (value < r.min) {
+                        params[param] = r.min;
+                    }
+                    else if (value > r.max) {
+                        params[param] = r.max;
+                    }
+                    else {
+                        params[param] = value;
+                    }
+                    return params;
+                }
+                else if (r.min <= r.expression && r.expression <= r.max) {
+                    return params;
+                }
+                else {
+                    return false;
+                }
+            }
+            if (r.restrictionType === SET_TYPE) {
+                if (r.set.indexOf(r.expression) > -1) {
+                    return params;
+                }
+                else {
+                    return false;
+                }
+            }
+        };
+        Restriction.prototype.round = function () {
+            var r = this;
+            if (r.precision > 0) {
+                var delta = r.expression - r.min;
+                var steps = Math.round(delta / r.precision);
+                return r.min + (steps * r.precision);
+            }
+            else {
+                return r.expression;
+            }
+        };
+        return Restriction;
+    })(KineticGraphs.Model);
+    KineticGraphs.Restriction = Restriction;
+})(KineticGraphs || (KineticGraphs = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
 var KineticGraphs;
 (function (KineticGraphs) {
     var ViewObject = (function (_super) {
@@ -232,6 +329,8 @@ var KineticGraphs;
     var Segment = (function (_super) {
         __extends(Segment, _super);
         function Segment(definition) {
+            definition.a = KineticGraphs.getCoordinates(definition.a);
+            definition.b = KineticGraphs.getCoordinates(definition.b);
             _super.call(this, definition);
             if (definition.label) {
                 var labelDefinition = _.clone(definition);
@@ -652,6 +751,9 @@ var KineticGraphs;
             this.$scope = $scope;
             $scope.init = function (definition) {
                 $scope.params = definition.params;
+                $scope.restrictions = definition.restrictions.map(function (restrictionDefinition) {
+                    return new KineticGraphs.Restriction(restrictionDefinition);
+                });
                 $scope.model = KineticGraphs.createInstance(definition.model);
                 $scope.model.update($scope, function () {
                     $scope.views = definition.views.map(function (view) {
@@ -680,14 +782,41 @@ var KineticGraphs;
             $scope.$watchCollection('params', redrawObjects);
             $scope.updateParams = function (params) {
                 console.log(JSON.stringify(params));
+                var oldParams = _.clone($scope.params);
                 $scope.params = _.defaults(params, $scope.params);
                 $scope.$apply();
+                var validChange = true;
+                $scope.restrictions.forEach(function (r) {
+                    r.update($scope, null);
+                    var validParams = r.validate($scope.params);
+                    if (validParams == false) {
+                        validChange = false;
+                    }
+                    else {
+                        $scope.params = validParams;
+                        $scope.$apply();
+                    }
+                });
+                if (!validChange) {
+                    $scope.params = oldParams;
+                    $scope.$apply();
+                }
             };
             $scope.init({
                 params: {
-                    x: 5,
-                    y: 5
+                    x1: 2,
+                    y1: 3,
+                    x2: 5,
+                    y2: 4
                 },
+                restrictions: [
+                    {
+                        expression: 'params.x1',
+                        restrictionType: 'range',
+                        min: 2,
+                        max: 'params.x2'
+                    }
+                ],
                 model: {
                     type: 'Sample.TwoPoints',
                     definition: {
@@ -695,21 +824,24 @@ var KineticGraphs;
                             type: 'Sample.SinglePoint',
                             definition: {
                                 name: 'p1',
-                                x: 'params.x',
-                                y: 5,
-                                xDrag: true
+                                x: 'params.x1',
+                                y: 'params.y1',
+                                xDrag: true,
+                                yDrag: true,
+                                size: 300,
+                                label: 'A'
                             }
                         },
                         point2: {
                             type: 'Sample.SinglePoint',
                             definition: {
                                 name: 'p2',
-                                x: 'params.x',
-                                y: 'params.y',
+                                x: 'params.x2',
+                                y: 'params.y2',
                                 xDrag: true,
                                 yDrag: true,
                                 size: 300,
-                                label: 'A'
+                                label: 'B'
                             }
                         }
                     }
@@ -823,8 +955,8 @@ var Sample;
             _super.call(this, definition);
             this.s = new KineticGraphs.Segment({
                 name: 'twoPointSegment',
-                a: { x: definition.point1.definition.x, y: definition.point1.definition.y },
-                b: { x: definition.point2.definition.x, y: definition.point2.definition.y }
+                a: definition.point1,
+                b: definition.point2
             });
         }
         TwoPoints.prototype.segment = function () {
@@ -841,6 +973,7 @@ var Sample;
 /// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
 /// <reference path="helpers.ts" />
 /// <reference path="model.ts" />
+/// <reference path="restriction.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/segment.ts"/>

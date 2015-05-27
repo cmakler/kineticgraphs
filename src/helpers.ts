@@ -66,6 +66,22 @@ module KineticGraphs
         return style;
     }
 
+    export function getCoordinates(def) {
+        var defaultCoordinates:{} = {x: 0, y: 0};
+        if(!def || def == undefined) {
+            return defaultCoordinates;
+        }
+        if(def.hasOwnProperty('coordinates')){
+            return def.coordinates;
+        } else if(def.hasOwnProperty('x') && def.hasOwnProperty('y')){
+            return def;
+        } else if(def.hasOwnProperty('definition')) {
+            return getCoordinates(def.definition)
+        } else {
+            return defaultCoordinates;
+        }
+    }
+
     export function createInstance(definition) {
 
         // from http://stackoverflow.com/questions/1366127/

@@ -7,6 +7,7 @@
 /// <reference path="helpers.ts" />
 
 /// <reference path="model.ts" />
+/// <reference path="restriction.ts" />
 
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>

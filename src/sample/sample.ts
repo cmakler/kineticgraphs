@@ -70,8 +70,8 @@ module Sample {
             super(definition)
             this.s = new KineticGraphs.Segment({
                 name: 'twoPointSegment',
-                a: {x: definition.point1.definition.x, y: definition.point1.definition.y},
-                b: {x: definition.point2.definition.x, y: definition.point2.definition.y},
+                a: definition.point1,
+                b: definition.point2,
             })
         }
 

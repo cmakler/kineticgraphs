@@ -6,6 +6,7 @@ module KineticGraphs
 {
     export interface ScopeDefinition {
         params: {};
+        restrictions: RestrictionDefinition[];
         model: ModelDefinition;
         views: ViewDefinition[];
     }
@@ -13,6 +14,7 @@ module KineticGraphs
     export interface IScope extends ng.IScope
     {
         params: {}; // parameters of the model (may change through user actions)
+        restrictions: Restriction[]; // restrictions on parameters or any expression
         model: Model; // the base model (constant)
         views: View[]; // array of interactive elements, indexed by element ID
         init: (definition: any) => void;
@@ -27,9 +29,14 @@ module KineticGraphs
 
             $scope.init = function(definition:ScopeDefinition) {
                 $scope.params = definition.params;
+                $scope.restrictions = definition.restrictions.map(function(restrictionDefinition) {
+                    return new Restriction(restrictionDefinition);
+                });
                 $scope.model = createInstance(definition.model);
                 $scope.model.update($scope, function() {
-                    $scope.views = definition.views.map(function(view) { return createInstance(view) });
+                    $scope.views = definition.views.map(function(view) {
+                        return createInstance(view);
+                    });
                 });
 
             };
@@ -52,15 +59,42 @@ module KineticGraphs
 
             $scope.updateParams = function(params) {
                 console.log(JSON.stringify(params));
+                var oldParams = _.clone($scope.params);
                 $scope.params = _.defaults(params,$scope.params);
                 $scope.$apply();
+                var validChange = true;
+                $scope.restrictions.forEach(function(r:Restriction){
+                    r.update($scope,null);
+                    var validParams = r.validate($scope.params);
+                    if(validParams == false){
+                        validChange = false;
+                    } else {
+                        $scope.params = validParams;
+                        $scope.$apply();
+                    }
+                });
+                if(!validChange) {
+                    $scope.params = oldParams;
+                    $scope.$apply();
+                }
+
             };
 
             $scope.init({
                 params: {
-                    x: 5,
-                    y: 5
+                    x1: 2,
+                    y1: 3,
+                    x2: 5,
+                    y2: 4
                 },
+                restrictions: [
+                    {
+                        expression: 'params.x1',
+                        restrictionType: 'range',
+                        min: 2,
+                        max: 'params.x2'
+                    }
+                ],
                 model: {
                     type: 'Sample.TwoPoints',
                     definition: {
@@ -68,21 +102,24 @@ module KineticGraphs
                             type: 'Sample.SinglePoint',
                             definition: {
                                 name: 'p1',
-                                x: 'params.x',
-                                y: 5,
-                                xDrag: true
+                                x: 'params.x1',
+                                y: 'params.y1',
+                                xDrag: true,
+                                yDrag: true,
+                                size: 300,
+                                label: 'A'
                             }
                         },
                         point2: {
                             type: 'Sample.SinglePoint',
                             definition: {
                                 name: 'p2',
-                                x: 'params.x',
-                                y: 'params.y',
+                                x: 'params.x2',
+                                y: 'params.y2',
                                 xDrag: true,
                                 yDrag: true,
                                 size: 300,
-                                label: 'A'
+                                label: 'B'
                             }
                         }
                     }

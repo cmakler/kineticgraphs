@@ -5,8 +5,8 @@
 module KineticGraphs {
 
     export interface SegmentDefinition extends ViewObjectDefinition {
-        a: ICoordinates;
-        b: ICoordinates;
+        a: any;
+        b: any;
         label?: string;
     }
 
@@ -25,6 +25,9 @@ module KineticGraphs {
         public labelDiv;
 
         constructor(definition:SegmentDefinition) {
+
+            definition.a = KineticGraphs.getCoordinates(definition.a);
+            definition.b = KineticGraphs.getCoordinates(definition.b);
 
             super(definition);
 
