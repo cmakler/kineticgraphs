@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs
+module KG
 {
     export interface ViewDefinition extends ModelDefinition
     {
@@ -81,15 +81,12 @@ module KineticGraphs
         redraw(scope) {
             var view = this;
 
-            // Redraw the view if necessary
-            console.log('redrawing view!');
-
             // Establish dimensions of the view
             var element = $('#' + view.element_id)[0];
             view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
             view.dimensions.height = Math.min(view.dimensions.height, window.innerHeight - element.offsetTop);
-            var frameTranslation = KineticGraphs.positionByPixelCoordinates({x:0,y:0});
-            var visTranslation = KineticGraphs.translateByPixelCoordinates({x:view.margins.left, y:view.margins.top});
+            var frameTranslation = KG.positionByPixelCoordinates({x:0,y:0});
+            var visTranslation = KG.translateByPixelCoordinates({x:view.margins.left, y:view.margins.top});
 
             d3.select(element).select('div').remove();
 
@@ -189,7 +186,6 @@ module KineticGraphs
             return d3.behavior.drag()
                 .on('drag', function () {
                     d3.event.sourceEvent.preventDefault();
-                    console.log('dragging');
                     var dragUpdate = {}, newX, newY;
                     if(xParam !== null) {
                         newX = xAxis.scale.invert(d3.event.x + xDelta);

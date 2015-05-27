@@ -2,7 +2,7 @@
 
 module Sample {
 
-    export interface SinglePointDefinition extends KineticGraphs.ModelDefinition
+    export interface SinglePointDefinition extends KG.ModelDefinition
     {
         name: string;
         x: any;
@@ -14,25 +14,25 @@ module Sample {
         label: string;
     }
 
-    export interface ISinglePoint extends KineticGraphs.IModel
+    export interface ISinglePoint extends KG.IModel
     {
         name: string;
         x: any;
         y: any;
-        point: KineticGraphs.Point;
+        point: KG.Point;
     }
 
-    export class SinglePoint extends KineticGraphs.Model implements ISinglePoint
+    export class SinglePoint extends KG.Model implements ISinglePoint
     {
 
         public name;
         public x;
         public y;
-        public point: KineticGraphs.Point;
+        public point: KG.Point;
 
         constructor(definition:SinglePointDefinition) {
             super(definition);
-            this.point = new KineticGraphs.Point({
+            this.point = new KG.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.x, y:definition.y},
                 size: definition.size,
@@ -45,20 +45,20 @@ module Sample {
 
     }
 
-    export interface ITwoPoints extends KineticGraphs.IModel
+    export interface ITwoPoints extends KG.IModel
     {
-        segment:() => KineticGraphs.Segment;
+        segment:() => KG.Segment;
     }
 
-    export class TwoPoints extends KineticGraphs.Model implements ITwoPoints
+    export class TwoPoints extends KG.Model implements ITwoPoints
     {
         public point1:SinglePoint;
         public point2:SinglePoint;
-        private s:KineticGraphs.Segment;
+        private s:KG.Segment;
 
         constructor(definition) {
             super(definition)
-            this.s = new KineticGraphs.Segment({
+            this.s = new KG.Segment({
                 name: 'twoPointSegment',
                 a: definition.point1,
                 b: definition.point2,

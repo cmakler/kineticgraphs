@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs
+module KG
 {
 
     export interface PointDefinition extends ViewObjectDefinition {

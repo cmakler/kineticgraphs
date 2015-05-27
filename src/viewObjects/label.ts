@@ -4,7 +4,7 @@
 
 declare var katex;
 
-module KineticGraphs
+module KG
 {
 
     export interface GraphDivDefinition extends ViewObjectDefinition {

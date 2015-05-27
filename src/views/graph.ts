@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs
+module KG
 {
 
     // Graph definition objects
@@ -50,11 +50,11 @@ module KineticGraphs
 
         // Transform pixel coordinates
         translateByCoordinates(coordinates:ICoordinates) {
-            return KineticGraphs.translateByPixelCoordinates(this.pixelCoordinates(coordinates));
+            return KG.translateByPixelCoordinates(this.pixelCoordinates(coordinates));
         }
 
         positionByCoordinates(coordinates:ICoordinates, dimension?:IDimensions) {
-            return KineticGraphs.positionByPixelCoordinates(this.pixelCoordinates(coordinates), dimension);
+            return KG.positionByPixelCoordinates(this.pixelCoordinates(coordinates), dimension);
         }
 
         // Convert model coordinates to pixel coordinates for an array of points

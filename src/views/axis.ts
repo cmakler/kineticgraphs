@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs
+module KG
 {
 
     export interface AxisDefinition extends ModelDefinition
@@ -45,7 +45,7 @@ module KineticGraphs
             });
 
             super(definition);
-            this.domain = new KineticGraphs.Domain(definition.min, definition.max);
+            this.domain = new KG.Domain(definition.min, definition.max);
         }
 
         draw(vis,graph_definition) {

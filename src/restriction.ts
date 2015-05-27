@@ -1,6 +1,6 @@
 'use strict';
 
-module KineticGraphs
+module KG
 {
     export interface RestrictionDefinition extends ModelDefinition
     {

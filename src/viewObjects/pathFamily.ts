@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs {
+module KG {
 
     export interface IPathFamily extends IViewObject {
 
@@ -23,32 +23,29 @@ module KineticGraphs {
             });
             super(definition);
 
+            this.viewObjectSVGtype = 'g';
+            this.viewObjectClass = 'dataPathFamily';
+
         }
 
-        render(graph) {
+        render(view) {
 
-            // constants TODO should these be defined somewhere else?
-            var DATA_PATH_FAMILY_CLASS = 'dataPathFamily';
+            var pathFamily = this;
 
-            function init(newGroup:D3.Selection) {
-                newGroup.append('g').attr('class', DATA_PATH_FAMILY_CLASS);
-                return newGroup;
-            }
-
-            var group:D3.Selection = graph.objectGroup(this.name, init);
+            var group:D3.Selection = view.objectGroup(pathFamily.name, pathFamily.initGroupFn(), false);
 
             var dataLine = d3.svg.line()
                 .interpolate(this.interpolation)
                 .x(function (d) {
-                    return graph.xAxis.scale(d.x)
+                    return view.xAxis.scale(d.x)
                 })
                 .y(function (d) {
-                    return graph.yAxis.scale(d.y)
+                    return view.yAxis.scale(d.y)
                 });
 
 
             var dataPaths:D3.UpdateSelection = group
-                .select('.' + DATA_PATH_FAMILY_CLASS)
+                .select('.' + pathFamily.viewObjectClass)
                 .selectAll('path')
                 .data(this.data);
 
@@ -62,7 +59,7 @@ module KineticGraphs {
 
 
 
-            return graph;
+            return view;
         }
 
     }

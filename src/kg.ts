@@ -23,8 +23,9 @@
 /// <reference path="controller.ts" />
 
 /// <reference path="sample/sample.ts" />
+/// <reference path="finance/fg.ts" />
 
 'use strict';
 
 angular.module('KineticGraphs', [])
-    .controller('KineticGraphCtrl', KineticGraphs.Controller);
+    .controller('KineticGraphCtrl', KG.Controller);

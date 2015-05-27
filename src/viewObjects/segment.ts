@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs {
+module KG {
 
     export interface SegmentDefinition extends ViewObjectDefinition {
         a: any;
@@ -26,8 +26,8 @@ module KineticGraphs {
 
         constructor(definition:SegmentDefinition) {
 
-            definition.a = KineticGraphs.getCoordinates(definition.a);
-            definition.b = KineticGraphs.getCoordinates(definition.b);
+            definition.a = KG.getCoordinates(definition.a);
+            definition.b = KG.getCoordinates(definition.b);
 
             super(definition);
 

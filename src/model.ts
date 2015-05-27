@@ -1,6 +1,6 @@
 'use strict';
 
-module KineticGraphs
+module KG
 {
     export interface ModelDefinition
     {
@@ -39,7 +39,7 @@ module KineticGraphs
                 obj = obj || {};
                 for(var key in def) {
                     if(def.hasOwnProperty(key)) {
-                        if(obj[key] instanceof KineticGraphs.Model) {
+                        if(obj[key] instanceof KG.Model) {
                             // if the property is itself a model, update the model
                             obj[key].update(scope);
                         } else if(def[key] !== undefined) {

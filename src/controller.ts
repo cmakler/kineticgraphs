@@ -2,7 +2,7 @@
 
 'use strict';
 
-module KineticGraphs
+module KG
 {
     export interface ScopeDefinition {
         params: {};
@@ -58,7 +58,6 @@ module KineticGraphs
             $scope.$watchCollection('params',redrawObjects);
 
             $scope.updateParams = function(params) {
-                console.log(JSON.stringify(params));
                 var oldParams = _.clone($scope.params);
                 $scope.params = _.defaults(params,$scope.params);
                 $scope.$apply();
@@ -82,65 +81,31 @@ module KineticGraphs
 
             $scope.init({
                 params: {
-                    x1: 2,
-                    y1: 3,
-                    x2: 5,
-                    y2: 4
+                    mean1: 0.2,
+                    stDev1: 0.3,
+                    mean2: 0.3,
+                    stDev2: 0.4,
+                    mean3: 0.4,
+                    stDev3: 0.5,
+                    rho12: 0.8,
+                    rho23: 0.5,
+                    rho13: 0,
+                    maxLeverage: 0
                 },
-                restrictions: [
-                    {
-                        expression: 'params.x1',
-                        restrictionType: 'range',
-                        min: 2,
-                        max: 'params.x2',
-                        precision: 0.5
-                    },
-                    {
-                        expression: 'params.x2',
-                        restrictionType: 'range',
-                        min: 0,
-                        max: 10,
-                        precision: 0.5
-                    }
-                ],
+                restrictions: [],
                 model: {
-                    type: 'Sample.TwoPoints',
-                    definition: {
-                        point1: {
-                            type: 'Sample.SinglePoint',
-                            definition: {
-                                name: 'p1',
-                                x: 'params.x1',
-                                y: 'params.y1',
-                                xDrag: true,
-                                yDrag: true,
-                                size: 500,
-                                label: 'A_1'
-                            }
-                        },
-                        point2: {
-                            type: 'Sample.SinglePoint',
-                            definition: {
-                                name: 'p2',
-                                x: 'params.x2',
-                                y: 'params.y2',
-                                xDrag: true,
-                                yDrag: true,
-                                size: 500,
-                                label: 'A_2'
-                            }
-                        }
-                    }
+                    type: 'FinanceGraphs.Portfolio',
+                    definition: {}
                 },
                 views: [
                     {
-                        type: 'KineticGraphs.Graph',
+                        type: 'KG.Graph',
                         definition: {
                             element_id:'graph',
                             dimensions: {width: 700, height: 700},
-                            xAxis: {min: 0, max: 10, title: '"Standard Deviation"'},
-                            yAxis: {min: 0, max: 10, title: '"Mean"'},
-                            objects: ['model.point1.point','model.point2.point','model.segment()']
+                            xAxis: {min: 0, max: 1, title: '"Standard Deviation"'},
+                            yAxis: {min: 0, max: 0.5, title: '"Mean"'},
+                            objects: ['model.asset1.point','model.asset2.point','model.asset3.point','model.twoPortfolios()']
                         }
                     }
                 ]
