@@ -1,5 +1,4 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="../helpers.ts"/>
 
 'use strict';
 
@@ -8,13 +7,13 @@ declare var numeric: any;
 
 module FinanceGraphs.PortfolioAnalysis
 {
-    export interface PortfolioDefinition
+    export interface PortfolioDefinition extends KineticGraphs.ModelDefinition
     {
         assets: Asset[];
         correlations: number[][];
     }
 
-    export interface IPortfolio
+    export interface IPortfolio extends KineticGraphs.IModel
     {
         assets: Asset[];
         data: (maxLeverage: number) => KineticGraphs.ICoordinates[];
@@ -27,18 +26,17 @@ module FinanceGraphs.PortfolioAnalysis
         stdev: (weightArray:number[]) => number;
     }
 
-    export class Portfolio implements IPortfolio {
+    export class Portfolio extends KineticGraphs.Model implements IPortfolio {
 
         public assets;
-        public definition:IPortfolioDefinition;
-        public correlation:number;
-        public correlationMatrix: number[][];
-        public covarianceMatrix: number[][];
-        public meanArray: number[];
-        public stdevArray: number[];
+        public correlation: () =>number;
+        public correlationMatrix: () => number[][];
+        public covarianceMatrix: () => number[][];
+        public meanArray: () => number[];
+        public stdevArray: () => number[];
 
         constructor(definition:PortfolioDefinition) {
-            super(definitionString)
+            super(definition)
 
         }
 

@@ -403,7 +403,7 @@ var KineticGraphs;
                 vAlignDelta = height;
             }
             div.style('top', (y - vAlignDelta) + 'px');
-            katex.render(label, div[0][0]);
+            katex.render(label.toString(), div[0][0]);
             if (draggable) {
                 divObj.xDragDelta = -view.margins.left;
                 divObj.yDragDelta = view.dimensions.height - vAlignDelta;
@@ -814,7 +814,15 @@ var KineticGraphs;
                         expression: 'params.x1',
                         restrictionType: 'range',
                         min: 2,
-                        max: 'params.x2'
+                        max: 'params.x2',
+                        precision: 0.5
+                    },
+                    {
+                        expression: 'params.x2',
+                        restrictionType: 'range',
+                        min: 0,
+                        max: 10,
+                        precision: 0.5
                     }
                 ],
                 model: {
@@ -828,8 +836,8 @@ var KineticGraphs;
                                 y: 'params.y1',
                                 xDrag: true,
                                 yDrag: true,
-                                size: 300,
-                                label: 'A'
+                                size: 500,
+                                label: 'A_1'
                             }
                         },
                         point2: {
@@ -840,8 +848,8 @@ var KineticGraphs;
                                 y: 'params.y2',
                                 xDrag: true,
                                 yDrag: true,
-                                size: 300,
-                                label: 'B'
+                                size: 500,
+                                label: 'A_2'
                             }
                         }
                     }
@@ -854,7 +862,7 @@ var KineticGraphs;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 10, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 10, title: '"Mean"' },
-                            objects: ['model.point1.point()', 'model.point2.point()', 'model.segment()']
+                            objects: ['model.point1.point', 'model.point2.point', 'model.segment()']
                         }
                     }
                 ]
@@ -928,7 +936,7 @@ var Sample;
         __extends(SinglePoint, _super);
         function SinglePoint(definition) {
             _super.call(this, definition);
-            this.p = new KineticGraphs.Point({
+            this.point = new KineticGraphs.Point({
                 name: definition.name + 'point',
                 coordinates: { x: definition.x, y: definition.y },
                 size: definition.size,
@@ -938,14 +946,6 @@ var Sample;
                 label: definition.label
             });
         }
-        SinglePoint.prototype.coordinates = function () {
-            return { x: this.x, y: this.y };
-        };
-        SinglePoint.prototype.point = function () {
-            var p = this.p;
-            p.coordinates = this.coordinates();
-            return p;
-        };
         return SinglePoint;
     })(KineticGraphs.Model);
     Sample.SinglePoint = SinglePoint;

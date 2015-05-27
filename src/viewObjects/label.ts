@@ -93,7 +93,7 @@ module KineticGraphs
             }
             div.style('top',(y - vAlignDelta) + 'px');
 
-            katex.render(label,div[0][0]);
+            katex.render(label.toString(),div[0][0]);
 
             if(draggable){
                 divObj.xDragDelta = -view.margins.left;

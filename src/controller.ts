@@ -92,7 +92,15 @@ module KineticGraphs
                         expression: 'params.x1',
                         restrictionType: 'range',
                         min: 2,
-                        max: 'params.x2'
+                        max: 'params.x2',
+                        precision: 0.5
+                    },
+                    {
+                        expression: 'params.x2',
+                        restrictionType: 'range',
+                        min: 0,
+                        max: 10,
+                        precision: 0.5
                     }
                 ],
                 model: {
@@ -106,8 +114,8 @@ module KineticGraphs
                                 y: 'params.y1',
                                 xDrag: true,
                                 yDrag: true,
-                                size: 300,
-                                label: 'A'
+                                size: 500,
+                                label: 'A_1'
                             }
                         },
                         point2: {
@@ -118,8 +126,8 @@ module KineticGraphs
                                 y: 'params.y2',
                                 xDrag: true,
                                 yDrag: true,
-                                size: 300,
-                                label: 'B'
+                                size: 500,
+                                label: 'A_2'
                             }
                         }
                     }
@@ -132,7 +140,7 @@ module KineticGraphs
                             dimensions: {width: 700, height: 700},
                             xAxis: {min: 0, max: 10, title: '"Standard Deviation"'},
                             yAxis: {min: 0, max: 10, title: '"Mean"'},
-                            objects: ['model.point1.point()','model.point2.point()','model.segment()']
+                            objects: ['model.point1.point','model.point2.point','model.segment()']
                         }
                     }
                 ]

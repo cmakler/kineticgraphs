@@ -19,8 +19,7 @@ module Sample {
         name: string;
         x: any;
         y: any;
-        coordinates: () => KineticGraphs.ICoordinates;
-        point: () => KineticGraphs.Point;
+        point: KineticGraphs.Point;
     }
 
     export class SinglePoint extends KineticGraphs.Model implements ISinglePoint
@@ -29,11 +28,11 @@ module Sample {
         public name;
         public x;
         public y;
-        private p: KineticGraphs.Point;
+        public point: KineticGraphs.Point;
 
         constructor(definition:SinglePointDefinition) {
             super(definition);
-            this.p = new KineticGraphs.Point({
+            this.point = new KineticGraphs.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.x, y:definition.y},
                 size: definition.size,
@@ -44,15 +43,6 @@ module Sample {
             })
         }
 
-        coordinates(){
-            return {x: this.x, y: this.y}
-        }
-
-        point(){
-            var p = this.p;
-            p.coordinates = this.coordinates();
-            return p;
-        }
     }
 
     export interface ITwoPoints extends KineticGraphs.IModel
