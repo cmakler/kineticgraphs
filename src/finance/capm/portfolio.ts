@@ -29,6 +29,8 @@ module FinanceGraphs
         twoAssetPortfolios: KG.PathFamily;
         threeAssetPortfolios: KG.PathFamily;
         riskFreeAsset: KG.Point;
+        optimalPortfolio: KG.Point;
+        riskReturnLine: KG.Segment;
     }
 
     export class Portfolio extends KG.Model implements IPortfolio {
@@ -44,9 +46,14 @@ module FinanceGraphs
         public threeAssetPortfolios;
         public riskFreeAsset;
         public optimalPortfolio;
+        public optimalPortfolioMean;
+        public optimalPortfolioStDev;
+        public riskFreeReturn;
+        public riskReturnSlope;
+        public riskReturnLine;
 
         constructor(definition:PortfolioDefinition) {
-            ['rho12','rho13','rho23','maxLeverage'].forEach(function(name){definition[name] = 'params.' + name;});
+            ['rho12','rho13','rho23','maxLeverage','riskFreeReturn'].forEach(function(name){definition[name] = 'params.' + name;});
             definition.asset1 = {
                 type: 'FinanceGraphs.Asset',
                 definition: {
@@ -92,7 +99,23 @@ module FinanceGraphs
                 xDrag: false,
                 yDrag: true,
                 label: 'RF'
-            })
+            });
+            p.optimalPortfolio = new KG.Point({
+                name: 'optimalPortfolio',
+                coordinates: {x: 'params.optimalPortfolioStDev', y:'params.optimalPortfolioMean'},
+                size: 500,
+                xDrag: false,
+                yDrag: false,
+                label: 'P'
+            });
+            p.riskReturnLine = new KG.Segment({
+                name: 'twoPointSegment',
+                a: p.riskFreeAsset,
+                b: p.optimalPortfolio,
+            });
+            p.optimalPortfolioMean = 0;
+            p.optimalPortfolioStDev = 0.5;
+            p.riskReturnSlope = 0;
         }
 
         _update(scope) {
@@ -124,6 +147,14 @@ module FinanceGraphs
                     return correlationMatrixCell*p.stDevArray()[i]*p.stDevArray()[j];
                 })
             });
+
+            if(p.optimalPortfolio != undefined) {
+                scope.updateParams({
+                    optimalPortfolioMean: p.optimalPortfolioMean,
+                    optimalPortfolioStDev: p.optimalPortfolioStDev
+                });
+            }
+
 
             return p;
         }
@@ -163,6 +194,7 @@ module FinanceGraphs
         // Generate dataset of portfolio means and variances for various weights of all three assets
         data3() {
             var portfolio = this, maxLeverage = portfolio.maxLeverage, d = [], w;
+            portfolio.riskReturnSlope = 0;
             var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 10 + maxLeverage*0.2;
             for(var i=0; i<dataPoints + 1; i++) //w1 is weight of asset 1;
             {
@@ -185,12 +217,22 @@ module FinanceGraphs
                 weightArray[asset1] = min + i*(max - min)/dataPoints;
                 weightArray[asset2] = 1 - weightArray[asset1] - otherAssets;
                 if(weightArray[asset2] >= min) {
+                    var s = portfolio.stDev(weightArray),
+                        m = portfolio.mean(weightArray);
                     d.push({
-                        x: portfolio.stDev(weightArray),
-                        y: portfolio.mean(weightArray),
+                        x: s,
+                        y: m,
                         color: colorScale(weightArray[asset1]),
                         weights: weightArray
-                    })
+                    });
+                    if(s > 0){
+                        var slope = (m - portfolio.riskFreeReturn)/s;
+                        if(slope > portfolio.riskReturnSlope) {
+                            portfolio.optimalPortfolioMean = m;
+                            portfolio.optimalPortfolioStDev = s;
+                            portfolio.riskReturnSlope = slope;
+                        }
+                    }
                 }
             }
             return d;

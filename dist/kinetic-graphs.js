@@ -912,7 +912,7 @@ var KG;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 1, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 0.5, title: '"Mean"' },
-                            objects: ['model.asset1.point', 'model.asset2.point', 'model.asset3.point', 'model.riskFreeAsset', 'model.threeAssetPortfolios', 'model.twoAssetPortfolios']
+                            objects: ['model.asset1.point', 'model.asset2.point', 'model.asset3.point', 'model.riskFreeAsset', 'model.optimalPortfolio', 'model.riskReturnLine', 'model.threeAssetPortfolios', 'model.twoAssetPortfolios']
                         }
                     },
                     {
@@ -1077,7 +1077,7 @@ var FinanceGraphs;
     var Portfolio = (function (_super) {
         __extends(Portfolio, _super);
         function Portfolio(definition) {
-            ['rho12', 'rho13', 'rho23', 'maxLeverage'].forEach(function (name) {
+            ['rho12', 'rho13', 'rho23', 'maxLeverage', 'riskFreeReturn'].forEach(function (name) {
                 definition[name] = 'params.' + name;
             });
             definition.asset1 = {
@@ -1126,6 +1126,22 @@ var FinanceGraphs;
                 yDrag: true,
                 label: 'RF'
             });
+            p.optimalPortfolio = new KG.Point({
+                name: 'optimalPortfolio',
+                coordinates: { x: 'params.optimalPortfolioStDev', y: 'params.optimalPortfolioMean' },
+                size: 500,
+                xDrag: false,
+                yDrag: false,
+                label: 'P'
+            });
+            p.riskReturnLine = new KG.Segment({
+                name: 'twoPointSegment',
+                a: p.riskFreeAsset,
+                b: p.optimalPortfolio
+            });
+            p.optimalPortfolioMean = 0;
+            p.optimalPortfolioStDev = 0.5;
+            p.riskReturnSlope = 0;
         }
         Portfolio.prototype._update = function (scope) {
             var p = this;
@@ -1154,6 +1170,12 @@ var FinanceGraphs;
                     return correlationMatrixCell * p.stDevArray()[i] * p.stDevArray()[j];
                 });
             });
+            if (p.optimalPortfolio != undefined) {
+                scope.updateParams({
+                    optimalPortfolioMean: p.optimalPortfolioMean,
+                    optimalPortfolioStDev: p.optimalPortfolioStDev
+                });
+            }
             return p;
         };
         Portfolio.prototype.meanArray = function () {
@@ -1190,6 +1212,7 @@ var FinanceGraphs;
         // Generate dataset of portfolio means and variances for various weights of all three assets
         Portfolio.prototype.data3 = function () {
             var portfolio = this, maxLeverage = portfolio.maxLeverage, d = [], w;
+            portfolio.riskReturnSlope = 0;
             var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 10 + maxLeverage * 0.2;
             for (var i = 0; i < dataPoints + 1; i++) {
                 w = min + i * (max - min) / dataPoints;
@@ -1211,12 +1234,21 @@ var FinanceGraphs;
                 weightArray[asset1] = min + i * (max - min) / dataPoints;
                 weightArray[asset2] = 1 - weightArray[asset1] - otherAssets;
                 if (weightArray[asset2] >= min) {
+                    var s = portfolio.stDev(weightArray), m = portfolio.mean(weightArray);
                     d.push({
-                        x: portfolio.stDev(weightArray),
-                        y: portfolio.mean(weightArray),
+                        x: s,
+                        y: m,
                         color: colorScale(weightArray[asset1]),
                         weights: weightArray
                     });
+                    if (s > 0) {
+                        var slope = (m - portfolio.riskFreeReturn) / s;
+                        if (slope > portfolio.riskReturnSlope) {
+                            portfolio.optimalPortfolioMean = m;
+                            portfolio.optimalPortfolioStDev = s;
+                            portfolio.riskReturnSlope = slope;
+                        }
+                    }
                 }
             }
             return d;

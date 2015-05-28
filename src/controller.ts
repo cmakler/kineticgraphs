@@ -141,7 +141,7 @@ module KG
                             dimensions: {width: 700, height: 700},
                             xAxis: {min: 0, max: 1, title: '"Standard Deviation"'},
                             yAxis: {min: 0, max: 0.5, title: '"Mean"'},
-                            objects: ['model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.threeAssetPortfolios','model.twoAssetPortfolios']
+                            objects: ['model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.optimalPortfolio','model.riskReturnLine','model.threeAssetPortfolios','model.twoAssetPortfolios']
                         }
                     },
                     {
