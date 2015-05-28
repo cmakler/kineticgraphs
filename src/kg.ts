@@ -2,24 +2,31 @@
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
+/// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
+
+/// <reference path="helpers.ts" />
 
 /// <reference path="model.ts" />
-/// <reference path="helpers.ts" />
-/// <reference path="interactives/interactive.ts" />
-/// <reference path="interactives/axis.ts" />
-/// <reference path="interactives/graph.ts" />
-/// <reference path="interactives/slider.ts" />
-/// <reference path="graphObjects/graphObjects.ts" />
-/// <reference path="graphObjects/graphDiv.ts" />
-/// <reference path="graphObjects/point.ts" />
-/// <reference path="graphObjects/controlDiv.ts" />
-/// <reference path="graphObjects/linePlot.ts" />
-/// <reference path="graphObjects/scatter.ts" />
-/// <reference path="graphObjects/pathFamily.ts" />
+/// <reference path="restriction.ts" />
 
-/// <reference path="finance/asset.ts"/>
-/// <reference path="finance/portfolio.ts"/>
+/// <reference path="viewObjects/viewObject.ts"/>
+/// <reference path="viewObjects/point.ts"/>
+/// <reference path="viewObjects/segment.ts"/>
+/// <reference path="viewObjects/label.ts"/>
+/// <reference path="viewObjects/linePlot.ts"/>
+/// <reference path="viewObjects/pathFamily.ts"/>
 
+/// <reference path="view.ts" />
+/// <reference path="views/axis.ts" />
+/// <reference path="views/graph.ts" />
+/// <reference path="views/slider.ts" />
+
+/// <reference path="controller.ts" />
+
+/// <reference path="sample/sample.ts" />
+/// <reference path="finance/fg.ts" />
+
+'use strict';
 
 angular.module('KineticGraphs', [])
-    .controller('KineticGraphCtrl', KineticGraphs.ModelController);
+    .controller('KineticGraphCtrl', KG.Controller);

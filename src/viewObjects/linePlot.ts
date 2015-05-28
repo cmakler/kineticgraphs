@@ -1,24 +1,24 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="graphObjects.ts"/>
 
-module KineticGraphs {
+'use strict';
 
-    export interface ILinePlot extends IGraphObject {
+module KG {
+
+    export interface ILinePlot extends IViewObject {
 
         data: ICoordinates[];
         interpolation: string;
     }
 
-    export class LinePlot extends GraphObject implements ILinePlot {
+    export class LinePlot extends ViewObject implements ILinePlot {
 
         public data;
         public interpolation;
 
-        constructor() {
+        constructor(definition) {
 
-            super();
-            this.data = [];
-            this.interpolation = 'linear';
+            definition = _.defaults(definition, {data: [], interpolation: 'linear'});
+            super(definition);
 
         }
 

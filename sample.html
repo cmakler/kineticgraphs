@@ -19,40 +19,9 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <div id="graph" style="position:absolute; left:400px; top:0px; width: 100%"></div>
-    <div style="width:400px;background-color:lightblue">
-        <table>
-            <tr>
-                <td>r12:</td><td id="slider12" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>r23:</td><td id="slider23" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>r13:</td><td id="slider13" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>max leverage (%):</td><td id="leverageSlider" style="width:200px"></td>
-            </tr>
-        </table>
-        <hr/>
-        <p>Correlation Matrix</p>
-        <table>
-            <tr ng-repeat="row in model.correlationMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:1}}</td>
-            </tr>
-        </table>
-        <hr/>
-        <p>Covariance Matrix</p>
-        <table>
-            <tr ng-repeat="row in model.covarianceMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:3}}</td>
-            </tr>
-        </table>
-        <hr/>
-    </div>
-
+    <div id="graph"></div>
+    <div id="leverageSlider"></div>
+</div>
 <script src="dist/kinetic-graphs.js"></script>
-    </div>
 </body>
 </html>

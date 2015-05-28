@@ -12,6 +12,7 @@ a {
 
 .axis text {
     font: 18px sans-serif;
+    cursor: default;
 }
 
 .axis path,
@@ -74,19 +75,15 @@ a {
     display: none;
 }
 
-.draw {
-    stroke: red;
-}
-
-.dataPath {
-    stroke: blue;
-    stroke-width: 2;
-    fill: none;
-}
-
 .dataPathFamily {
     stroke: lightgrey;
     stroke-width: 0.5;
+    fill: none;
+}
+
+.draw, .segment {
+    stroke: blue;
+    stroke-width: 2;
     fill: none;
 }
 
