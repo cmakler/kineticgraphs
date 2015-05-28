@@ -71,14 +71,19 @@ module KG
             // Parse the model object
             model = parseObject(model.definition, model);
 
+            // Do any model-specific updating
+            model = model._update(scope);
+
             if(callback){
                 callback();
             }
 
             return model;
 
+        }
 
-
+        _update(scope) {
+            return this; // overridden by child classes
         }
     }
 }

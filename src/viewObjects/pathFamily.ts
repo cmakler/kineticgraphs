@@ -52,7 +52,8 @@ module KG {
             dataPaths.enter().append('path');
 
             dataPaths.attr({
-                'd': function(d) { return dataLine(d) }
+                'd': function(d) { return dataLine(d) },
+                'class': this.classAndVisibility()
             });
 
             dataPaths.exit().remove();

@@ -75,19 +75,15 @@ a {
     display: none;
 }
 
-.draw {
-    stroke: red;
-}
-
-.dataPath, .segment {
-    stroke: blue;
-    stroke-width: 2;
-    fill: none;
-}
-
 .dataPathFamily {
     stroke: lightgrey;
     stroke-width: 0.5;
+    fill: none;
+}
+
+.draw, .segment {
+    stroke: blue;
+    stroke-width: 2;
     fill: none;
 }
 

@@ -129,10 +129,15 @@ var KG;
             }
             // Parse the model object
             model = parseObject(model.definition, model);
+            // Do any model-specific updating
+            model = model._update(scope);
             if (callback) {
                 callback();
             }
             return model;
+        };
+        Model.prototype._update = function (scope) {
+            return this; // overridden by child classes
         };
         return Model;
     })();
@@ -382,7 +387,7 @@ var KG;
             var divObj = this;
             var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x), y = view.margins.top + view.yAxis.scale(divObj.coordinates.y), width = divObj.dimensions.width, height = divObj.dimensions.height, label = divObj.label, draggable = (divObj.xDrag || divObj.yDrag);
             var div = view.getDiv(this.name);
-            div.style('cursor', 'default').style('text-align', 'center').style('color', 'gray').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
+            div.style('cursor', 'default').style('text-align', 'center').style('color', 'white').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
             // Set left pixel margin; default to centered on x coordinate
             var alignDelta = width * 0.5;
             if (divObj.align == 'left') {
@@ -480,7 +485,8 @@ var KG;
             dataPaths.attr({
                 'd': function (d) {
                     return dataLine(d);
-                }
+                },
+                'class': this.classAndVisibility()
             });
             dataPaths.exit().remove();
             return view;
@@ -536,7 +542,6 @@ var KG;
             // Establish SVG groups for visualization area (vis), mask, axes
             view.masked = svg.append('g').attr('transform', visTranslation);
             var mask = svg.append('g').attr('class', 'mask');
-            view.unmasked = svg.append('g').attr('transform', visTranslation);
             // Put mask around vis to clip objects that extend beyond the desired viewable area
             mask.append('rect').attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top });
             mask.append('rect').attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom });
@@ -558,6 +563,8 @@ var KG;
                     view.yAxis.draw(axes, axisDimensions);
                 }
             }
+            // Establish SVG group for objects that lie above the axes (e.g., points and labels)
+            view.unmasked = svg.append('g').attr('transform', visTranslation);
             return view.drawObjects(scope);
         };
         View.prototype.drawObjects = function (scope) {
@@ -736,6 +743,54 @@ var KG;
     })(KG.View);
     KG.Graph = Graph;
 })(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var Slider = (function (_super) {
+        __extends(Slider, _super);
+        function Slider(definition) {
+            definition.dimensions = _.defaults(definition.dimensions || {}, { width: 300, height: 50 });
+            definition.margins = _.defaults(definition.margins || {}, { top: 25, left: 25, bottom: 25, right: 25 });
+            _super.call(this, definition);
+            this.xAxis = new KG.XAxis(definition.axis);
+            this.objects = [
+                new SliderControl({ name: definition.element_id + 'Ctrl', param: 'params.' + definition.param })
+            ];
+        }
+        Slider.prototype._update = function (scope) {
+            this.xAxis.update(scope);
+            return this;
+        };
+        return Slider;
+    })(KG.View);
+    KG.Slider = Slider;
+    var SliderControl = (function (_super) {
+        __extends(SliderControl, _super);
+        function SliderControl(definition) {
+            definition.xDrag = true;
+            definition.yDrag = false;
+            definition.coordinates = { x: definition.param, y: 0 };
+            _super.call(this, definition);
+            this.viewObjectSVGtype = 'circle';
+            this.viewObjectClass = 'sliderControl';
+        }
+        SliderControl.prototype.render = function (view) {
+            var control = this;
+            var group = view.objectGroup(control.name, control.initGroupFn(), true);
+            var controlCircle = group.select('.' + control.viewObjectClass);
+            controlCircle.attr({
+                'class': control.classAndVisibility(),
+                'r': view.dimensions.height / 3,
+                'cx': view.xAxis.scale(control.param),
+                'cy': 0
+            });
+            return control.setDragBehavior(view, controlCircle);
+        };
+        return SliderControl;
+    })(KG.ViewObject);
+    KG.SliderControl = SliderControl;
+})(KG || (KG = {}));
 /// <reference path="kg.ts" />
 'use strict';
 var KG;
@@ -806,9 +861,45 @@ var KG;
                     rho12: 0.8,
                     rho23: 0.5,
                     rho13: 0,
-                    maxLeverage: 0
+                    maxLeverage: 0,
+                    riskFreeReturn: 0.05
                 },
-                restrictions: [],
+                restrictions: [
+                    {
+                        expression: 'params.maxLeverage',
+                        restrictionType: 'range',
+                        max: 100,
+                        min: 0,
+                        precision: 10
+                    },
+                    {
+                        expression: 'params.rho12',
+                        restrictionType: 'range',
+                        max: 1,
+                        min: -1,
+                        precision: 0.1
+                    },
+                    {
+                        expression: 'params.rho23',
+                        restrictionType: 'range',
+                        max: 1,
+                        min: -1,
+                        precision: 0.1
+                    },
+                    {
+                        expression: 'params.rho13',
+                        restrictionType: 'range',
+                        max: 1,
+                        min: -1,
+                        precision: 0.1
+                    },
+                    {
+                        expression: 'params.riskFreeReturn',
+                        restrictionType: 'range',
+                        max: 0.2,
+                        min: 0
+                    }
+                ],
                 model: {
                     type: 'FinanceGraphs.Portfolio',
                     definition: {}
@@ -821,7 +912,40 @@ var KG;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 1, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 0.5, title: '"Mean"' },
-                            objects: ['model.asset1.point', 'model.asset2.point', 'model.asset3.point', 'model.twoPortfolios()']
+                            objects: ['model.asset1.point', 'model.asset2.point', 'model.asset3.point', 'model.riskFreeAsset', 'model.threeAssetPortfolios', 'model.twoAssetPortfolios']
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'leverageSlider',
+                            param: 'maxLeverage',
+                            axis: { min: 0, max: 100, tickValues: [0, 50, 100] }
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'slider12',
+                            param: 'rho12',
+                            precision: '0.1',
+                            axis: { min: -1, max: 1, tickValues: [-1, 0, 1] }
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'slider23',
+                            param: 'rho23',
+                            axis: { min: -1, max: 1, tickValues: [-1, 0, 1] }
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'slider13',
+                            param: 'rho13',
+                            axis: { min: -1, max: 1, tickValues: [-1, 0, 1] }
                         }
                     }
                 ]
@@ -983,15 +1107,28 @@ var FinanceGraphs;
             _super.call(this, definition);
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
-            p.two = new KG.PathFamily({
-                name: 'portfolioData',
-                data: 'model.data()',
+            p.threeAssetPortfolios = new KG.PathFamily({
+                name: 'threePortfolioData',
+                data: 'model.data3()',
                 interpolation: 'basis'
             });
+            p.twoAssetPortfolios = new KG.PathFamily({
+                name: 'twoPortfolioData',
+                className: 'draw',
+                data: 'model.data2()',
+                interpolation: 'basis'
+            });
+            p.riskFreeAsset = new KG.Point({
+                name: 'riskFreeAsset',
+                coordinates: { x: 0, y: 'params.riskFreeReturn' },
+                size: 500,
+                xDrag: false,
+                yDrag: true,
+                label: 'RF'
+            });
         }
-        Portfolio.prototype.correlationMatrix = function () {
+        Portfolio.prototype._update = function (scope) {
             var p = this;
-            var matrix = [];
             function correlation(i, j) {
                 if (i == j) {
                     return 1;
@@ -1003,23 +1140,21 @@ var FinanceGraphs;
                     return p['rho' + (i + 1) + (j + 1)];
                 }
             }
+            p.correlationMatrix = [];
+            p.covarianceMatrix = [];
             for (var i = 0; i < p.assets.length; i++) {
                 var correlationMatrixRow = [];
                 for (var j = 0; j < p.assets.length; j++) {
                     correlationMatrixRow.push(correlation(i, j));
                 }
-                matrix.push(correlationMatrixRow);
+                p.correlationMatrix.push(correlationMatrixRow);
             }
-            return matrix;
-        };
-        Portfolio.prototype.covarianceMatrix = function () {
-            var correlationMatrix = this.correlationMatrix();
-            var stDevArray = this.stDevArray();
-            return correlationMatrix.map(function (correlationMatrixRow, i) {
+            p.covarianceMatrix = p.correlationMatrix.map(function (correlationMatrixRow, i) {
                 return correlationMatrixRow.map(function (correlationMatrixCell, j) {
-                    return correlationMatrixCell * stDevArray[i] * stDevArray[j];
+                    return correlationMatrixCell * p.stDevArray()[i] * p.stDevArray()[j];
                 });
             });
+            return p;
         };
         Portfolio.prototype.meanArray = function () {
             return this.assets.map(function (asset) {
@@ -1035,7 +1170,7 @@ var FinanceGraphs;
             return numeric.dot(this.meanArray(), weightArray);
         };
         Portfolio.prototype.stDev = function (weightArray) {
-            var variance = numeric.dot(weightArray, numeric.dot(this.covarianceMatrix(), weightArray));
+            var variance = numeric.dot(weightArray, numeric.dot(this.covarianceMatrix, weightArray));
             if (variance >= 0) {
                 return Math.sqrt(variance);
             }
@@ -1044,10 +1179,18 @@ var FinanceGraphs;
                 return 0;
             }
         };
-        // Generate dataset of portfolio means and variances for various weights
-        Portfolio.prototype.data = function () {
+        // Generate dataset of portfolio means and variances for various weights of two assets
+        Portfolio.prototype.data2 = function () {
+            var portfolio = this, maxLeverage = portfolio.maxLeverage, d = [];
+            d.push(portfolio.twoAssetPortfolio(1, 2, [0, 0, 0]));
+            d.push(portfolio.twoAssetPortfolio(0, 2, [0, 0, 0]));
+            d.push(portfolio.twoAssetPortfolio(0, 1, [0, 0, 0]));
+            return d;
+        };
+        // Generate dataset of portfolio means and variances for various weights of all three assets
+        Portfolio.prototype.data3 = function () {
             var portfolio = this, maxLeverage = portfolio.maxLeverage, d = [], w;
-            var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 2 * (10 + maxLeverage * 0.2);
+            var min = -maxLeverage * 0.01, max = 1 + maxLeverage * 0.01, dataPoints = 10 + maxLeverage * 0.2;
             for (var i = 0; i < dataPoints + 1; i++) {
                 w = min + i * (max - min) / dataPoints;
                 d.push(portfolio.twoAssetPortfolio(1, 2, [w, 0, 0]));
@@ -1078,11 +1221,6 @@ var FinanceGraphs;
             }
             return d;
         };
-        Portfolio.prototype.twoPortfolios = function () {
-            var p = this;
-            p.two.data = p.data();
-            return p.two;
-        };
         return Portfolio;
     })(KG.Model);
     FinanceGraphs.Portfolio = Portfolio;
@@ -1107,6 +1245,7 @@ var FinanceGraphs;
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />
+/// <reference path="views/slider.ts" />
 /// <reference path="controller.ts" />
 /// <reference path="sample/sample.ts" />
 /// <reference path="finance/fg.ts" />

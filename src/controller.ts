@@ -90,9 +90,45 @@ module KG
                     rho12: 0.8,
                     rho23: 0.5,
                     rho13: 0,
-                    maxLeverage: 0
+                    maxLeverage: 0,
+                    riskFreeReturn: 0.05
                 },
-                restrictions: [],
+                restrictions: [
+                    {
+                        expression: 'params.maxLeverage',
+                        restrictionType: 'range',
+                        max: 100,
+                        min: 0,
+                        precision: 10
+                    },
+                    {
+                        expression: 'params.rho12',
+                        restrictionType: 'range',
+                        max: 1,
+                        min: -1,
+                        precision: 0.1
+                    },
+                    {
+                        expression: 'params.rho23',
+                        restrictionType: 'range',
+                        max: 1,
+                        min: -1,
+                        precision: 0.1
+                    },
+                    {
+                        expression: 'params.rho13',
+                        restrictionType: 'range',
+                        max: 1,
+                        min: -1,
+                        precision: 0.1
+                    },
+                    {
+                        expression: 'params.riskFreeReturn',
+                        restrictionType: 'range',
+                        max: 0.2,
+                        min: 0
+                    }
+                ],
                 model: {
                     type: 'FinanceGraphs.Portfolio',
                     definition: {}
@@ -105,7 +141,40 @@ module KG
                             dimensions: {width: 700, height: 700},
                             xAxis: {min: 0, max: 1, title: '"Standard Deviation"'},
                             yAxis: {min: 0, max: 0.5, title: '"Mean"'},
-                            objects: ['model.asset1.point','model.asset2.point','model.asset3.point','model.twoPortfolios()']
+                            objects: ['model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.threeAssetPortfolios','model.twoAssetPortfolios']
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id:'leverageSlider',
+                            param: 'maxLeverage',
+                            axis: {min: 0, max: 100, tickValues:[0,50,100]}
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'slider12',
+                            param: 'rho12',
+                            precision: '0.1',
+                            axis: {min: -1, max: 1, tickValues: [-1,0,1]}
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'slider23',
+                            param: 'rho23',
+                            axis: {min: -1, max: 1, tickValues: [-1,0,1]}
+                        }
+                    },
+                    {
+                        type: 'KG.Slider',
+                        definition: {
+                            element_id: 'slider13',
+                            param: 'rho13',
+                            axis: {min: -1, max: 1, tickValues: [-1,0,1]}
                         }
                     }
                 ]

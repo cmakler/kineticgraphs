@@ -12,6 +12,7 @@ module FinanceGraphs
         asset1: any;
         asset2: any;
         asset3: any;
+        riskFree: any;
         rho12: number;
         rho23: number;
         rho13: number;
@@ -23,15 +24,11 @@ module FinanceGraphs
         asset1: Asset;
         asset2: Asset;
         asset3: Asset;
-        data: () => any[][];
-        twoAssetPortfolio: (asset1:number,asset2:number,weightArray:any,domain:KG.IDomain,dataPoints:number) => any[];
-        correlationMatrix: () => number[][];
-        covarianceMatrix: () => number[][];
-        meanArray: () => number[];
-        stDevArray: () =>number[];
-        mean: (weightArray:number[]) => number;
-        stDev: (weightArray:number[]) => number;
-        twoPortfolios: () => KG.PathFamily;
+        correlationMatrix: number[][];
+        covarianceMatrix: number[][];
+        twoAssetPortfolios: KG.PathFamily;
+        threeAssetPortfolios: KG.PathFamily;
+        riskFreeAsset: KG.Point;
     }
 
     export class Portfolio extends KG.Model implements IPortfolio {
@@ -41,7 +38,12 @@ module FinanceGraphs
         public asset3;
         private assets;
         private maxLeverage;
-        private two;
+        public correlationMatrix;
+        public covarianceMatrix;
+        public twoAssetPortfolios;
+        public threeAssetPortfolios;
+        public riskFreeAsset;
+        public optimalPortfolio;
 
         constructor(definition:PortfolioDefinition) {
             ['rho12','rho13','rho23','maxLeverage'].forEach(function(name){definition[name] = 'params.' + name;});
@@ -68,21 +70,33 @@ module FinanceGraphs
                     mean: 'params.mean3',
                     stDev: 'params.stDev3'
                 }
-            }
+            };
             super(definition);
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
-            p.two = new KG.PathFamily({
-                name: 'portfolioData',
-                data: 'model.data()',
+            p.threeAssetPortfolios = new KG.PathFamily({
+                name: 'threePortfolioData',
+                data: 'model.data3()',
                 interpolation: 'basis'
+            });
+            p.twoAssetPortfolios = new KG.PathFamily({
+                name: 'twoPortfolioData',
+                className: 'draw',
+                data: 'model.data2()',
+                interpolation: 'basis'
+            });
+            p.riskFreeAsset = new KG.Point({
+                name: 'riskFreeAsset',
+                coordinates: {x: 0, y:'params.riskFreeReturn'},
+                size: 500,
+                xDrag: false,
+                yDrag: true,
+                label: 'RF'
             })
         }
 
-        correlationMatrix() {
-
+        _update(scope) {
             var p = this;
-            var matrix = [];
 
             function correlation(i,j) {
                 if(i==j) {
@@ -94,27 +108,24 @@ module FinanceGraphs
                 }
             }
 
+            p.correlationMatrix = [];
+            p.covarianceMatrix = [];
+
             for(var i=0;i<p.assets.length;i++) {
                 var correlationMatrixRow = [];
                 for(var j=0;j<p.assets.length;j++) {
                     correlationMatrixRow.push(correlation(i,j));
                 }
-                matrix.push(correlationMatrixRow);
+                p.correlationMatrix.push(correlationMatrixRow);
             }
 
-            return matrix;
-        }
-
-        covarianceMatrix() {
-
-            var correlationMatrix = this.correlationMatrix();
-            var stDevArray = this.stDevArray();
-            return correlationMatrix.map(function(correlationMatrixRow, i) {
+            p.covarianceMatrix = p.correlationMatrix.map(function(correlationMatrixRow, i) {
                 return correlationMatrixRow.map(function(correlationMatrixCell,j){
-                    return correlationMatrixCell*stDevArray[i]*stDevArray[j];
+                    return correlationMatrixCell*p.stDevArray()[i]*p.stDevArray()[j];
                 })
             });
 
+            return p;
         }
 
         meanArray() {
@@ -130,7 +141,7 @@ module FinanceGraphs
         }
 
         stDev(weightArray) {
-            var variance = numeric.dot(weightArray,numeric.dot(this.covarianceMatrix(),weightArray));
+            var variance = numeric.dot(weightArray,numeric.dot(this.covarianceMatrix,weightArray));
             if(variance >= 0) {
                 return Math.sqrt(variance);
             } else {
@@ -139,10 +150,20 @@ module FinanceGraphs
             }
         }
 
-        // Generate dataset of portfolio means and variances for various weights
-        data() {
+        // Generate dataset of portfolio means and variances for various weights of two assets
+        data2() {
+            var portfolio = this, maxLeverage = portfolio.maxLeverage, d = [];
+            d.push(portfolio.twoAssetPortfolio(1,2,[0,0,0]));
+            d.push(portfolio.twoAssetPortfolio(0,2,[0,0,0]));
+            d.push(portfolio.twoAssetPortfolio(0,1,[0,0,0]));
+            return d;
+        }
+
+
+        // Generate dataset of portfolio means and variances for various weights of all three assets
+        data3() {
             var portfolio = this, maxLeverage = portfolio.maxLeverage, d = [], w;
-            var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 2*(10 + maxLeverage*0.2);
+            var min = -maxLeverage*0.01, max = 1 + maxLeverage*0.01, dataPoints = 10 + maxLeverage*0.2;
             for(var i=0; i<dataPoints + 1; i++) //w1 is weight of asset 1;
             {
                 w = min + i*(max - min)/dataPoints;
@@ -175,10 +196,5 @@ module FinanceGraphs
             return d;
         }
 
-        twoPortfolios() {
-            var p = this;
-            p.two.data = p.data();
-            return p.two;
-        }
     }
 }

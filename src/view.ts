@@ -104,7 +104,6 @@ module KG
             // Establish SVG groups for visualization area (vis), mask, axes
             view.masked = svg.append('g').attr('transform', visTranslation);
             var mask = svg.append('g').attr('class','mask');
-            view.unmasked = svg.append('g').attr('transform', visTranslation);
 
             // Put mask around vis to clip objects that extend beyond the desired viewable area
             mask.append('rect').attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top});
@@ -132,6 +131,9 @@ module KG
                 }
 
             }
+
+            // Establish SVG group for objects that lie above the axes (e.g., points and labels)
+            view.unmasked = svg.append('g').attr('transform', visTranslation);
 
             return view.drawObjects(scope);
         }

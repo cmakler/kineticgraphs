@@ -15,10 +15,12 @@
     <script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
     <script type="text/javascript" src="bower_components/numericjs/src/numeric.js"></script>
     <script type="text/javascript" src="bower_components/katex/build/katex/katex.min.js"></script>
+    <script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <div style="position:absolute;left:800px">
+    <div id="graph" style="position:absolute; left:400px; top:0px; width: 100%"></div>
+    <div style="width:400px;background-color:lightblue">
         <table>
             <tr>
                 <td>r12:</td><td id="slider12" style="width:200px"></td>
@@ -36,25 +38,21 @@
         <hr/>
         <p>Correlation Matrix</p>
         <table>
-            <tr ng-repeat="row in functions.portfolio.correlationMatrix">
+            <tr ng-repeat="row in model.correlationMatrix">
                 <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:1}}</td>
             </tr>
         </table>
         <hr/>
         <p>Covariance Matrix</p>
         <table>
-            <tr ng-repeat="row in functions.portfolio.covarianceMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:4}}</td>
+            <tr ng-repeat="row in model.covarianceMatrix">
+                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:3}}</td>
             </tr>
         </table>
         <hr/>
-        <p>Porfolio:</p>
-        <p>{{ selectedWeights[0]*100 | number:0 }}% asset 1</p>
-        <p>{{ selectedWeights[1]*100 | number:0 }}% asset 2</p>
-        <p>{{ selectedWeights[2]*100 | number:0 }}% asset 3</p>
     </div>
-    <div id="graph"></div>
 
 <script src="dist/kinetic-graphs.js"></script>
+    </div>
 </body>
 </html>

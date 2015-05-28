@@ -67,7 +67,7 @@ module KG
             div
                 .style('cursor','default')
                 .style('text-align','center')
-                .style('color','gray')
+                .style('color','white')
                 .style('position','absolute')
                 .style('width',width + 'px')
                 .style('height',height + 'px')
