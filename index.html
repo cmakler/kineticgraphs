@@ -19,37 +19,71 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <div id="graph" style="position:absolute; left:400px; top:0px; width: 100%"></div>
+    <div id="graph" style="position:absolute; left:420px; top:10px; width: 100%"></div>
     <div style="width:400px;background-color:lightblue">
+        <h3>Parameters</h3>
         <table>
             <tr>
-                <td>r12:</td><td id="slider12" style="width:200px"></td>
+                <td align="right" class="math">\rho_{12}:</td><td id="slider12" style="width:200px"></td>
             </tr>
             <tr>
-                <td>r23:</td><td id="slider23" style="width:200px"></td>
+                <td align="right" class="math">\rho_{23}:</td><td id="slider23" style="width:200px"></td>
             </tr>
             <tr>
-                <td>r13:</td><td id="slider13" style="width:200px"></td>
+                <td align="right" class="math">\rho_{13}:</td><td id="slider13" style="width:200px"></td>
             </tr>
             <tr>
                 <td>max leverage (%):</td><td id="leverageSlider" style="width:200px"></td>
             </tr>
         </table>
         <hr/>
-        <p>Correlation Matrix</p>
-        <table>
+        <h3> Correlation Matrix</h3>
+        <table align="center">
             <tr ng-repeat="row in model.correlationMatrix">
                 <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:1}}</td>
             </tr>
         </table>
         <hr/>
-        <p>Covariance Matrix</p>
-        <table>
+        <h3> Covariance Matrix</h3>
+        <table align="center">
             <tr ng-repeat="row in model.covarianceMatrix">
                 <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:3}}</td>
             </tr>
         </table>
         <hr/>
+        <h3> Optimal Portfolio <span class="math">(P)</span></h3>
+        <table align="center">
+            <tr>
+                <td/>
+                <td width="80px" align="center">Weight</td>
+                <td width="80px" align="center">Mean</td>
+                <td width="80px" align="center">Std Dev.</td>
+            </tr>
+            <tr>
+                <td align="right">Asset <span class="math">(A_1)</span>:</td>
+                <td align="center">{{model.optimalPortfolioWeightArray[0]*100 | number:0}}%</td>
+                <td align="center">{{params.mean1 | number:2}}</td>
+                <td align="center">{{params.stDev1 | number:2}}</td>
+            </tr>
+            <tr>
+                <td align="right">Asset <span class="math">(A_2)</span>:</td>
+                <td align="center">{{model.optimalPortfolioWeightArray[1]*100 | number:0}}%</td>
+                <td align="center">{{params.mean2 | number:2}}</td>
+                <td align="center">{{params.stDev2 | number:2}}</td>
+            </tr>
+            <tr>
+                <td align="right">Asset <span class="math">(A_3)</span>:</td>
+                <td align="center">{{model.optimalPortfolioWeightArray[2]*100 | number:0}}%</td>
+                <td align="center">{{params.mean3 | number:2}}</td>
+                <td align="center">{{params.stDev3 | number:2}}</td>
+            </tr>
+            <tr>
+                <td align="right">Portfolio<span class="math">(P)</span>:</td>
+                <td/>
+                <td align="center">{{model.optimalPortfolioMean | number:2}}</td>
+                <td align="center">{{model.optimalPortfolioStDev | number:2}}</td>
+            </tr>
+        </table>
     </div>
 
 <script src="dist/kinetic-graphs.js"></script>

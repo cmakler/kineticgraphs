@@ -19,6 +19,7 @@ module KG
         views: View[]; // array of interactive elements, indexed by element ID
         init: (definition: any) => void;
         updateParams: (params) => void;
+        renderMath: () => void;
     }
 
     export class Controller
@@ -41,11 +42,24 @@ module KG
 
             };
 
+            $scope.renderMath = function() {
+                var mathElements = $('.math');
+                for(var i=0; i<mathElements.length; i++){
+                    var element:HTMLElement = mathElements[i];
+                    if(!element.hasAttribute('raw')){
+                        element.setAttribute('raw',element.textContent)
+                    }
+                    katex.render(element.getAttribute('raw'),element);
+                }
+            };
+
             // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
             function render(redraw) {
                 $scope.model.update($scope, function(){
                     $scope.views.forEach(function(view) {view.render($scope, redraw)});
+                    $scope.renderMath();
                 });
+
             }
 
             // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
@@ -87,8 +101,8 @@ module KG
                     stDev2: 0.4,
                     mean3: 0.4,
                     stDev3: 0.5,
-                    rho12: 0.8,
-                    rho23: 0.5,
+                    rho12: 0,
+                    rho23: 0,
                     rho13: 0,
                     maxLeverage: 0,
                     riskFreeReturn: 0.05
@@ -141,7 +155,7 @@ module KG
                             dimensions: {width: 700, height: 700},
                             xAxis: {min: 0, max: 1, title: '"Standard Deviation"'},
                             yAxis: {min: 0, max: 0.5, title: '"Mean"'},
-                            objects: ['model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.optimalPortfolio','model.riskReturnLine','model.threeAssetPortfolios','model.twoAssetPortfolios']
+                            objects: ['model.optimalPortfolio','model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.riskReturnLine','model.threeAssetPortfolios','model.twoAssetPortfolios']
                         }
                     },
                     {

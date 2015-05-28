@@ -12,6 +12,7 @@ module KG
         xAxis?: AxisDefinition;
         yAxis?: AxisDefinition;
         objects?: ViewObjectDefinition[];
+        background: string;
     }
 
     export interface IView extends IModel
@@ -53,8 +54,10 @@ module KG
         public xAxis;
         public yAxis;
         public objects;
+        public background;
 
         constructor(definition:ViewDefinition) {
+            definition = _.defaults(definition,{background:'white'});
             super(definition);
             if(definition.hasOwnProperty('xAxis')){
                 this.xAxis = new XAxis(definition.xAxis);
@@ -106,10 +109,10 @@ module KG
             var mask = svg.append('g').attr('class','mask');
 
             // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append('rect').attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top});
-            mask.append('rect').attr({x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom});
-            mask.append('rect').attr({x: 0, y: 0, width: view.margins.left, height: view.dimensions.height});
-            mask.append('rect').attr({x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height});
+            mask.append('rect').attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top, fill:view.background});
+            mask.append('rect').attr({x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom, fill:view.background});
+            mask.append('rect').attr({x: 0, y: 0, width: view.margins.left, height: view.dimensions.height, fill:view.background});
+            mask.append('rect').attr({x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height, fill:view.background});
 
             if(view.xAxis || view.yAxis) {
 

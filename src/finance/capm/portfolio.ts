@@ -43,11 +43,14 @@ module FinanceGraphs
         public correlationMatrix;
         public covarianceMatrix;
         public twoAssetPortfolios;
+        public twoAssetData;
         public threeAssetPortfolios;
+        public threeAssetData;
         public riskFreeAsset;
         public optimalPortfolio;
         public optimalPortfolioMean;
         public optimalPortfolioStDev;
+        public optimalPortfolioWeightArray;
         public riskFreeReturn;
         public riskReturnSlope;
         public riskReturnLine;
@@ -82,14 +85,14 @@ module FinanceGraphs
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
             p.threeAssetPortfolios = new KG.PathFamily({
-                name: 'threePortfolioData',
-                data: 'model.data3()',
+                name: 'threeAssetData',
+                data: 'model.threeAssetData',
                 interpolation: 'basis'
             });
             p.twoAssetPortfolios = new KG.PathFamily({
-                name: 'twoPortfolioData',
+                name: 'twoAssetData',
                 className: 'draw',
-                data: 'model.data2()',
+                data: 'model.twoAssetData',
                 interpolation: 'basis'
             });
             p.riskFreeAsset = new KG.Point({
@@ -148,11 +151,12 @@ module FinanceGraphs
                 })
             });
 
+            p.twoAssetData = p.data2();
+            p.threeAssetData = p.data3();
+
             if(p.optimalPortfolio != undefined) {
-                scope.updateParams({
-                    optimalPortfolioMean: p.optimalPortfolioMean,
-                    optimalPortfolioStDev: p.optimalPortfolioStDev
-                });
+                scope.params.optimalPortfolioMean = p.optimalPortfolioMean;
+                scope.params.optimalPortfolioStDev = p.optimalPortfolioStDev;
             }
 
 
@@ -231,6 +235,7 @@ module FinanceGraphs
                             portfolio.optimalPortfolioMean = m;
                             portfolio.optimalPortfolioStDev = s;
                             portfolio.riskReturnSlope = slope;
+                            portfolio.optimalPortfolioWeightArray = _.clone(weightArray);
                         }
                     }
                 }

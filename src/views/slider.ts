@@ -25,6 +25,7 @@ module KG
 
             definition.dimensions = _.defaults(definition.dimensions || {}, { width: 300, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, {top: 25, left: 25, bottom: 25, right: 25});
+            definition.background = 'lightblue';
 
             super(definition);
             this.xAxis = new XAxis(definition.axis);

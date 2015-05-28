@@ -502,6 +502,7 @@ var KG;
     var View = (function (_super) {
         __extends(View, _super);
         function View(definition) {
+            definition = _.defaults(definition, { background: 'white' });
             _super.call(this, definition);
             if (definition.hasOwnProperty('xAxis')) {
                 this.xAxis = new KG.XAxis(definition.xAxis);
@@ -543,10 +544,10 @@ var KG;
             view.masked = svg.append('g').attr('transform', visTranslation);
             var mask = svg.append('g').attr('class', 'mask');
             // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append('rect').attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top });
-            mask.append('rect').attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom });
-            mask.append('rect').attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height });
-            mask.append('rect').attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height });
+            mask.append('rect').attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top, fill: view.background });
+            mask.append('rect').attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom, fill: view.background });
+            mask.append('rect').attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height, fill: view.background });
+            mask.append('rect').attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height, fill: view.background });
             if (view.xAxis || view.yAxis) {
                 // Establish SVG group for axes
                 var axes = svg.append('g').attr('class', 'axes').attr('transform', visTranslation);
@@ -752,6 +753,7 @@ var KG;
         function Slider(definition) {
             definition.dimensions = _.defaults(definition.dimensions || {}, { width: 300, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, { top: 25, left: 25, bottom: 25, right: 25 });
+            definition.background = 'lightblue';
             _super.call(this, definition);
             this.xAxis = new KG.XAxis(definition.axis);
             this.objects = [
@@ -810,12 +812,23 @@ var KG;
                     });
                 });
             };
+            $scope.renderMath = function () {
+                var mathElements = $('.math');
+                for (var i = 0; i < mathElements.length; i++) {
+                    var element = mathElements[i];
+                    if (!element.hasAttribute('raw')) {
+                        element.setAttribute('raw', element.textContent);
+                    }
+                    katex.render(element.getAttribute('raw'), element);
+                }
+            };
             // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
             function render(redraw) {
                 $scope.model.update($scope, function () {
                     $scope.views.forEach(function (view) {
                         view.render($scope, redraw);
                     });
+                    $scope.renderMath();
                 });
             }
             // Erase and redraw all graphs; do this when graph parameters change, or the window is resized
@@ -858,8 +871,8 @@ var KG;
                     stDev2: 0.4,
                     mean3: 0.4,
                     stDev3: 0.5,
-                    rho12: 0.8,
-                    rho23: 0.5,
+                    rho12: 0,
+                    rho23: 0,
                     rho13: 0,
                     maxLeverage: 0,
                     riskFreeReturn: 0.05
@@ -912,7 +925,7 @@ var KG;
                             dimensions: { width: 700, height: 700 },
                             xAxis: { min: 0, max: 1, title: '"Standard Deviation"' },
                             yAxis: { min: 0, max: 0.5, title: '"Mean"' },
-                            objects: ['model.asset1.point', 'model.asset2.point', 'model.asset3.point', 'model.riskFreeAsset', 'model.optimalPortfolio', 'model.riskReturnLine', 'model.threeAssetPortfolios', 'model.twoAssetPortfolios']
+                            objects: ['model.optimalPortfolio', 'model.asset1.point', 'model.asset2.point', 'model.asset3.point', 'model.riskFreeAsset', 'model.riskReturnLine', 'model.threeAssetPortfolios', 'model.twoAssetPortfolios']
                         }
                     },
                     {
@@ -1108,14 +1121,14 @@ var FinanceGraphs;
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
             p.threeAssetPortfolios = new KG.PathFamily({
-                name: 'threePortfolioData',
-                data: 'model.data3()',
+                name: 'threeAssetData',
+                data: 'model.threeAssetData',
                 interpolation: 'basis'
             });
             p.twoAssetPortfolios = new KG.PathFamily({
-                name: 'twoPortfolioData',
+                name: 'twoAssetData',
                 className: 'draw',
-                data: 'model.data2()',
+                data: 'model.twoAssetData',
                 interpolation: 'basis'
             });
             p.riskFreeAsset = new KG.Point({
@@ -1170,11 +1183,11 @@ var FinanceGraphs;
                     return correlationMatrixCell * p.stDevArray()[i] * p.stDevArray()[j];
                 });
             });
+            p.twoAssetData = p.data2();
+            p.threeAssetData = p.data3();
             if (p.optimalPortfolio != undefined) {
-                scope.updateParams({
-                    optimalPortfolioMean: p.optimalPortfolioMean,
-                    optimalPortfolioStDev: p.optimalPortfolioStDev
-                });
+                scope.params.optimalPortfolioMean = p.optimalPortfolioMean;
+                scope.params.optimalPortfolioStDev = p.optimalPortfolioStDev;
             }
             return p;
         };
@@ -1247,6 +1260,7 @@ var FinanceGraphs;
                             portfolio.optimalPortfolioMean = m;
                             portfolio.optimalPortfolioStDev = s;
                             portfolio.riskReturnSlope = slope;
+                            portfolio.optimalPortfolioWeightArray = _.clone(weightArray);
                         }
                     }
                 }
