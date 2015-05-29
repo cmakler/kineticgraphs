@@ -502,7 +502,7 @@ var KG;
     var View = (function (_super) {
         __extends(View, _super);
         function View(definition) {
-            definition = _.defaults(definition, { background: 'white' });
+            definition = _.defaults(definition, { background: 'white', mask: true });
             _super.call(this, definition);
             if (definition.hasOwnProperty('xAxis')) {
                 this.xAxis = new KG.XAxis(definition.xAxis);
@@ -531,7 +531,7 @@ var KG;
             var element = $('#' + view.element_id)[0];
             view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
             view.dimensions.height = Math.min(view.dimensions.height, window.innerHeight - element.offsetTop);
-            var frameTranslation = KG.positionByPixelCoordinates({ x: 0, y: 0 });
+            var frameTranslation = KG.positionByPixelCoordinates({ x: (element.clientWidth - view.dimensions.width) / 2, y: 0 });
             var visTranslation = KG.translateByPixelCoordinates({ x: view.margins.left, y: view.margins.top });
             d3.select(element).select('div').remove();
             // Create new div element to contain SVG
@@ -540,14 +540,16 @@ var KG;
             var svg = frame.append('svg').attr('width', view.dimensions.width).attr('height', view.dimensions.height);
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({ style: visTranslation });
-            // Establish SVG groups for visualization area (vis), mask, axes
-            view.masked = svg.append('g').attr('transform', visTranslation);
-            var mask = svg.append('g').attr('class', 'mask');
-            // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append('rect').attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top, fill: view.background });
-            mask.append('rect').attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom, fill: view.background });
-            mask.append('rect').attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height, fill: view.background });
-            mask.append('rect').attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height, fill: view.background });
+            if (view.mask) {
+                // Establish SVG groups for visualization area (vis), mask, axes
+                view.masked = svg.append('g').attr('transform', visTranslation);
+                var mask = svg.append('g').attr('class', 'mask');
+                // Put mask around vis to clip objects that extend beyond the desired viewable area
+                mask.append('rect').attr({ x: 0, y: 0, width: view.dimensions.width, height: view.margins.top, fill: view.background });
+                mask.append('rect').attr({ x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom, fill: view.background });
+                mask.append('rect').attr({ x: 0, y: 0, width: view.margins.left, height: view.dimensions.height, fill: view.background });
+                mask.append('rect').attr({ x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height, fill: view.background });
+            }
             if (view.xAxis || view.yAxis) {
                 // Establish SVG group for axes
                 var axes = svg.append('g').attr('class', 'axes').attr('transform', visTranslation);
@@ -753,7 +755,7 @@ var KG;
         function Slider(definition) {
             definition.dimensions = _.defaults(definition.dimensions || {}, { width: 300, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, { top: 25, left: 25, bottom: 25, right: 25 });
-            definition.background = 'lightblue';
+            definition.mask = false;
             _super.call(this, definition);
             this.xAxis = new KG.XAxis(definition.axis);
             this.objects = [

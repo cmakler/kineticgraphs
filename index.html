@@ -3,6 +3,7 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>CAPM Visualization</title>
+    <link rel="stylesheet" href="bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="bower_components/katex/build/katex.min.css">
     <!--<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.1.min.js"></script>
@@ -19,74 +20,139 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <div id="graph" style="position:absolute; left:420px; top:10px; width: 100%"></div>
-    <div style="width:400px;background-color:lightblue">
-        <h3>Parameters</h3>
-        <table>
-            <tr>
-                <td align="right" class="math">\rho_{12}:</td><td id="slider12" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td align="right" class="math">\rho_{23}:</td><td id="slider23" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td align="right" class="math">\rho_{13}:</td><td id="slider13" style="width:200px"></td>
-            </tr>
-            <tr>
-                <td>max leverage (%):</td><td id="leverageSlider" style="width:200px"></td>
-            </tr>
-        </table>
-        <hr/>
-        <h3> Correlation Matrix</h3>
-        <table align="center">
-            <tr ng-repeat="row in model.correlationMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:1}}</td>
-            </tr>
-        </table>
-        <hr/>
-        <h3> Covariance Matrix</h3>
-        <table align="center">
-            <tr ng-repeat="row in model.covarianceMatrix">
-                <td ng-repeat="c in row track by $index" style="width:50px;text-align:center">{{c | number:3}}</td>
-            </tr>
-        </table>
-        <hr/>
-        <h3> Optimal Portfolio <span class="math">(P)</span></h3>
-        <table align="center">
-            <tr>
-                <td/>
-                <td width="80px" align="center">Weight</td>
-                <td width="80px" align="center">Mean</td>
-                <td width="80px" align="center">Std Dev.</td>
-            </tr>
-            <tr>
-                <td align="right">Asset <span class="math">(A_1)</span>:</td>
-                <td align="center">{{model.optimalPortfolioWeightArray[0]*100 | number:0}}%</td>
-                <td align="center">{{params.mean1 | number:2}}</td>
-                <td align="center">{{params.stDev1 | number:2}}</td>
-            </tr>
-            <tr>
-                <td align="right">Asset <span class="math">(A_2)</span>:</td>
-                <td align="center">{{model.optimalPortfolioWeightArray[1]*100 | number:0}}%</td>
-                <td align="center">{{params.mean2 | number:2}}</td>
-                <td align="center">{{params.stDev2 | number:2}}</td>
-            </tr>
-            <tr>
-                <td align="right">Asset <span class="math">(A_3)</span>:</td>
-                <td align="center">{{model.optimalPortfolioWeightArray[2]*100 | number:0}}%</td>
-                <td align="center">{{params.mean3 | number:2}}</td>
-                <td align="center">{{params.stDev3 | number:2}}</td>
-            </tr>
-            <tr>
-                <td align="right">Portfolio<span class="math">(P)</span>:</td>
-                <td/>
-                <td align="center">{{model.optimalPortfolioMean | number:2}}</td>
-                <td align="center">{{model.optimalPortfolioStDev | number:2}}</td>
-            </tr>
-        </table>
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Mean-variance Portfolio Analysis</h2>
+            <hr/>
+            <div class="row">
+                <div class="col-md-12" id="graph"></div>
+            </div>
+        </div>
+        <div class="col-md-4 well">
+            <h4>Parameters</h4>
+            <div class="row">
+                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\rho_{12}:</div>
+                <div class="col-xs-8" id="slider12"></div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\rho_{13}:</div>
+                <div class="col-xs-8" id="slider13"></div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\rho_{23}:</div>
+                <div class="col-xs-8" id="slider23"></div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4" style="text-align:right;font-size:12pt;padding-top:10px">Max Leverage:</div>
+                <div class="col-xs-8" id="leverageSlider"></div>
+            </div>
+            <hr/>
+            <h4> Correlation Matrix</h4>
+            <div class="row">
+                <div class="col-xs-5">
+                    <table align="right" class="matrix">
+                        <tr>
+                            <td style="width:50px; text-align:center" class="math">1</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{12}</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{13}</td>
+                        </tr>
+                        <tr>
+                            <td style="width:50px; text-align:center" class="math">\rho_{12}</td>
+                            <td style="width:50px; text-align:center" class="math">1</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{23}</td>
+                        </tr>
+                        <tr>
+                            <td style="width:50px; text-align:center" class="math">\rho_{13}</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{23}</td>
+                            <td style="width:50px; text-align:center" class="math">1</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-xs-1">
+                    <br/><br/><p align="center">=</p>
+                </div>
+                <div class="col-xs-5">
+                    <table class="matrix">
+                        <tr ng-repeat="row in model.correlationMatrix">
+                            <td ng-repeat="c in row track by $index" style="width:50px;text-align:center" class="math">{{c | number:1}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <hr/>
+            <h4> Covariance Matrix</h4>
+            <div class="row">
+                <div class="col-xs-5">
+                    <table align="right" class="matrix">
+                        <tr>
+                            <td style="width:50px; text-align:center" class="math">\sigma_1^2</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{12}\sigma_1\sigma_2</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{13}\sigma_1\sigma_3</td>
+                        </tr>
+                        <tr>
+                            <td style="width:50px; text-align:center" class="math">\rho_{12}\sigma_1\sigma_2</td>
+                            <td style="width:50px; text-align:center" class="math">\sigma_2^2</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{23}\sigma_2\sigma_3</td>
+                        </tr>
+                        <tr>
+                            <td style="width:50px; text-align:center" class="math">\rho_{13}\sigma_1\sigma_3</td>
+                            <td style="width:50px; text-align:center" class="math">\rho_{23}\sigma_2\sigma_3</td>
+                            <td style="width:50px; text-align:center" class="math">\sigma_3^2</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-xs-1">
+                    <br/><br/><p align="center">=</p>
+                </div>
+                <div class="col-xs-5">
+                    <table class="matrix">
+                        <tr ng-repeat="row in model.covarianceMatrix">
+                            <td ng-repeat="c in row track by $index" style="width:50px;text-align:center" class="math">{{c | number:3}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <hr/>
+            <h4> Optimal Portfolio</h4>
+            <table align="center">
+                <tr>
+                    <td/>
+                    <td width="80px" align="center">Weight</td>
+                    <td width="80px" align="center">Mean <span class="math">(\mu_i)</span></td>
+                    <td width="80px" align="center">Std Dev. <span class="math">(\sigma_i)</span></td>
+                </tr>
+                <tr>
+                    <td align="right">Asset <span class="math">A_1</span>:</td>
+                    <td align="center">{{model.optimalPortfolioWeightArray[0]*100 | number:0}}%</td>
+                    <td align="center">{{params.mean1 | number:2}}</td>
+                    <td align="center">{{params.stDev1 | number:2}}</td>
+                </tr>
+                <tr>
+                    <td align="right">Asset <span class="math">A_2</span>:</td>
+                    <td align="center">{{model.optimalPortfolioWeightArray[1]*100 | number:0}}%</td>
+                    <td align="center">{{params.mean2 | number:2}}</td>
+                    <td align="center">{{params.stDev2 | number:2}}</td>
+                </tr>
+                <tr>
+                    <td align="right">Asset <span class="math">A_3</span>:</td>
+                    <td align="center">{{model.optimalPortfolioWeightArray[2]*100 | number:0}}%</td>
+                    <td align="center">{{params.mean3 | number:2}}</td>
+                    <td align="center">{{params.stDev3 | number:2}}</td>
+                </tr>
+                <tr>
+                    <td align="right">Portfolio<span class="math">(P)</span>:</td>
+                    <td/>
+                    <td align="center">{{model.optimalPortfolioMean | number:2}}</td>
+                    <td align="center">{{model.optimalPortfolioStDev | number:2}}</td>
+                </tr>
+            </table>
+        </div>
     </div>
 
+
+</div>
+
 <script src="dist/kinetic-graphs.js"></script>
-    </div>
 </body>
 </html>

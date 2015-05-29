@@ -13,6 +13,7 @@ module KG
         yAxis?: AxisDefinition;
         objects?: ViewObjectDefinition[];
         background: string;
+        mask?: boolean;
     }
 
     export interface IView extends IModel
@@ -55,9 +56,10 @@ module KG
         public yAxis;
         public objects;
         public background;
+        private mask;
 
         constructor(definition:ViewDefinition) {
-            definition = _.defaults(definition,{background:'white'});
+            definition = _.defaults(definition,{background:'white',mask:true});
             super(definition);
             if(definition.hasOwnProperty('xAxis')){
                 this.xAxis = new XAxis(definition.xAxis);
@@ -88,7 +90,7 @@ module KG
             var element = $('#' + view.element_id)[0];
             view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
             view.dimensions.height = Math.min(view.dimensions.height, window.innerHeight - element.offsetTop);
-            var frameTranslation = KG.positionByPixelCoordinates({x:0,y:0});
+            var frameTranslation = KG.positionByPixelCoordinates({x:(element.clientWidth - view.dimensions.width)/2,y:0});
             var visTranslation = KG.translateByPixelCoordinates({x:view.margins.left, y:view.margins.top});
 
             d3.select(element).select('div').remove();
@@ -104,15 +106,19 @@ module KG
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({style: visTranslation});
 
-            // Establish SVG groups for visualization area (vis), mask, axes
-            view.masked = svg.append('g').attr('transform', visTranslation);
-            var mask = svg.append('g').attr('class','mask');
+            if(view.mask){
 
-            // Put mask around vis to clip objects that extend beyond the desired viewable area
-            mask.append('rect').attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top, fill:view.background});
-            mask.append('rect').attr({x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom, fill:view.background});
-            mask.append('rect').attr({x: 0, y: 0, width: view.margins.left, height: view.dimensions.height, fill:view.background});
-            mask.append('rect').attr({x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height, fill:view.background});
+                // Establish SVG groups for visualization area (vis), mask, axes
+                view.masked = svg.append('g').attr('transform', visTranslation);
+                var mask = svg.append('g').attr('class','mask');
+
+                // Put mask around vis to clip objects that extend beyond the desired viewable area
+                mask.append('rect').attr({x: 0, y: 0, width: view.dimensions.width, height: view.margins.top, fill:view.background});
+                mask.append('rect').attr({x: 0, y: view.dimensions.height - view.margins.bottom, width: view.dimensions.width, height: view.margins.bottom, fill:view.background});
+                mask.append('rect').attr({x: 0, y: 0, width: view.margins.left, height: view.dimensions.height, fill:view.background});
+                mask.append('rect').attr({x: view.dimensions.width - view.margins.right, y: 0, width: view.margins.right, height: view.dimensions.height, fill:view.background});
+
+            }
 
             if(view.xAxis || view.yAxis) {
 

@@ -1,5 +1,8 @@
+@import url("//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,700");
+
 body {
     font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding:20px;
 }
 
 a {
@@ -11,7 +14,8 @@ a {
 }
 
 .axis text {
-    font: 18px sans-serif;
+    font-size: 18px;
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
     cursor: default;
 }
 
@@ -94,4 +98,31 @@ a {
 
 .mask {
     fill: white;
+}
+
+/* matrix notation - from http://stackoverflow.com/questions/11561137 */
+.matrix {
+    position: relative;
+    padding: 20px;
+}
+
+.matrix:before, .matrix:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    border: 1px solid #000;
+    width: 6px;
+    height: 100%;
+}
+.matrix:before {
+    left: -6px;
+    border-right: 0px;
+}
+.matrix:after {
+    right: -6px;
+    border-left: 0px;
+}
+.matrix td {
+    padding: 5px;
+    text-align: center;
 }
