@@ -20,6 +20,7 @@ module KG
         init: (definition: any) => void;
         updateParams: (params) => void;
         renderMath: () => void;
+        error: string;
     }
 
     export class Controller
@@ -81,9 +82,11 @@ module KG
                     var validParams = r.validate($scope.params);
                     if(validParams == false){
                         validChange = false;
+                        $scope.error = r.error;
                     } else {
                         $scope.params = validParams;
                         $scope.$apply();
+                        $scope.error = '';
                     }
                 });
                 if(!validChange) {
@@ -140,7 +143,13 @@ module KG
                         expression: 'params.riskFreeReturn',
                         restrictionType: 'range',
                         max: 0.2,
-                        min: 0
+                        min: 0,
+                        error: "'risk free return should be between 0 and 0.2'"
+                    },
+                    {
+                        expression: 'model.positiveDefinite',
+                        restrictionType: 'boolean',
+                        error: "'would make matrix not positive definite'"
                     }
                 ],
                 model: {

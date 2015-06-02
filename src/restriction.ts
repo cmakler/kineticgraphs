@@ -10,11 +10,13 @@ module KG
         max?: number;
         precision: number;
         set: any[];
+        error: string;
     }
 
     export interface IRestriction extends IModel
     {
         validate: (params:{}) => any;
+        error: string;
     }
 
     export class Restriction extends Model
@@ -26,6 +28,7 @@ module KG
         private max;
         private set;
         private precision;
+        public error;
 
         constructor(definition:RestrictionDefinition) {
             super(definition);
@@ -35,6 +38,7 @@ module KG
 
             var RANGE_TYPE = "range";
             var SET_TYPE = "set";
+            var BOOLEAN_TYPE = "boolean";
 
             var r = this;
 
@@ -81,6 +85,14 @@ module KG
 
             if(r.restrictionType === SET_TYPE){
                 if(r.set.indexOf(r.expression) > -1) {
+                    return params;
+                } else {
+                    return false;
+                }
+            }
+
+            if(r.restrictionType === BOOLEAN_TYPE){
+                if(r.expression){
                     return params;
                 } else {
                     return false;

@@ -160,6 +160,7 @@ var KG;
         Restriction.prototype.validate = function (params) {
             var RANGE_TYPE = "range";
             var SET_TYPE = "set";
+            var BOOLEAN_TYPE = "boolean";
             var r = this;
             function isSimpleParam(name) {
                 return name === name.match(/params\.[a-zA-Z0-9]+/)[0];
@@ -205,6 +206,14 @@ var KG;
             }
             if (r.restrictionType === SET_TYPE) {
                 if (r.set.indexOf(r.expression) > -1) {
+                    return params;
+                }
+                else {
+                    return false;
+                }
+            }
+            if (r.restrictionType === BOOLEAN_TYPE) {
+                if (r.expression) {
                     return params;
                 }
                 else {
@@ -854,10 +863,12 @@ var KG;
                     var validParams = r.validate($scope.params);
                     if (validParams == false) {
                         validChange = false;
+                        $scope.error = r.error;
                     }
                     else {
                         $scope.params = validParams;
                         $scope.$apply();
+                        $scope.error = '';
                     }
                 });
                 if (!validChange) {
@@ -912,7 +923,13 @@ var KG;
                         expression: 'params.riskFreeReturn',
                         restrictionType: 'range',
                         max: 0.2,
-                        min: 0
+                        min: 0,
+                        error: "'risk free return should be between 0 and 0.2'"
+                    },
+                    {
+                        expression: 'model.positiveDefinite',
+                        restrictionType: 'boolean',
+                        error: "'would make matrix not positive definite'"
                     }
                 ],
                 model: {
@@ -1171,25 +1188,44 @@ var FinanceGraphs;
                     return p['rho' + (i + 1) + (j + 1)];
                 }
             }
-            p.correlationMatrix = [];
-            p.covarianceMatrix = [];
-            for (var i = 0; i < p.assets.length; i++) {
-                var correlationMatrixRow = [];
-                for (var j = 0; j < p.assets.length; j++) {
-                    correlationMatrixRow.push(correlation(i, j));
+            function calculateCorrelationMatrix() {
+                var matrix = [];
+                for (var i = 0; i < p.assets.length; i++) {
+                    var matrixRow = [];
+                    for (var j = 0; j < p.assets.length; j++) {
+                        matrixRow.push(correlation(i, j));
+                    }
+                    matrix.push(matrixRow);
                 }
-                p.correlationMatrix.push(correlationMatrixRow);
+                p.correlationMatrix = matrix;
+                return matrix;
             }
-            p.covarianceMatrix = p.correlationMatrix.map(function (correlationMatrixRow, i) {
-                return correlationMatrixRow.map(function (correlationMatrixCell, j) {
-                    return correlationMatrixCell * p.stDevArray()[i] * p.stDevArray()[j];
+            function calculateCovarianceMatrix() {
+                var matrix = calculateCorrelationMatrix().map(function (correlationMatrixRow, i) {
+                    return correlationMatrixRow.map(function (correlationMatrixCell, j) {
+                        return correlationMatrixCell * p.stDevArray()[i] * p.stDevArray()[j];
+                    });
                 });
-            });
-            p.twoAssetData = p.data2();
-            p.threeAssetData = p.data3();
-            if (p.optimalPortfolio != undefined) {
-                scope.params.optimalPortfolioMean = p.optimalPortfolioMean;
-                scope.params.optimalPortfolioStDev = p.optimalPortfolioStDev;
+                p.covarianceMatrix = matrix;
+                return matrix;
+            }
+            function checkPositiveDefinite() {
+                p.positiveDefinite = true;
+                var eigenvalues = numeric.eig(calculateCovarianceMatrix()).lambda.x;
+                eigenvalues.forEach(function (e) {
+                    if (e < 0) {
+                        p.positiveDefinite = false;
+                    }
+                });
+                return p.positiveDefinite;
+            }
+            if (checkPositiveDefinite()) {
+                p.twoAssetData = p.data2();
+                p.threeAssetData = p.data3();
+                if (p.optimalPortfolio != undefined) {
+                    scope.params.optimalPortfolioMean = p.optimalPortfolioMean;
+                    scope.params.optimalPortfolioStDev = p.optimalPortfolioStDev;
+                }
             }
             return p;
         };

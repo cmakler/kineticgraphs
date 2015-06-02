@@ -31,6 +31,7 @@ module FinanceGraphs
         riskFreeAsset: KG.Point;
         optimalPortfolio: KG.Point;
         riskReturnLine: KG.Segment;
+        positiveDefinite: boolean;
     }
 
     export class Portfolio extends KG.Model implements IPortfolio {
@@ -54,6 +55,7 @@ module FinanceGraphs
         public riskFreeReturn;
         public riskReturnSlope;
         public riskReturnLine;
+        public positiveDefinite;
 
         constructor(definition:PortfolioDefinition) {
             ['rho12','rho13','rho23','maxLeverage','riskFreeReturn'].forEach(function(name){definition[name] = 'params.' + name;});
@@ -134,31 +136,47 @@ module FinanceGraphs
                 }
             }
 
-            p.correlationMatrix = [];
-            p.covarianceMatrix = [];
 
-            for(var i=0;i<p.assets.length;i++) {
-                var correlationMatrixRow = [];
-                for(var j=0;j<p.assets.length;j++) {
-                    correlationMatrixRow.push(correlation(i,j));
+
+            function calculateCorrelationMatrix() {
+                var matrix = [];
+                for(var i=0;i<p.assets.length;i++) {
+                    var matrixRow = [];
+                    for(var j=0;j<p.assets.length;j++) {
+                        matrixRow.push(correlation(i,j));
+                    }
+                    matrix.push(matrixRow);
                 }
-                p.correlationMatrix.push(correlationMatrixRow);
+                p.correlationMatrix = matrix;
+                return matrix;
             }
 
-            p.covarianceMatrix = p.correlationMatrix.map(function(correlationMatrixRow, i) {
-                return correlationMatrixRow.map(function(correlationMatrixCell,j){
-                    return correlationMatrixCell*p.stDevArray()[i]*p.stDevArray()[j];
-                })
-            });
-
-            p.twoAssetData = p.data2();
-            p.threeAssetData = p.data3();
-
-            if(p.optimalPortfolio != undefined) {
-                scope.params.optimalPortfolioMean = p.optimalPortfolioMean;
-                scope.params.optimalPortfolioStDev = p.optimalPortfolioStDev;
+            function calculateCovarianceMatrix() {
+                var matrix = calculateCorrelationMatrix().map(function(correlationMatrixRow, i) {
+                    return correlationMatrixRow.map(function(correlationMatrixCell,j){
+                        return correlationMatrixCell*p.stDevArray()[i]*p.stDevArray()[j];
+                    })
+                });
+                p.covarianceMatrix = matrix;
+                return matrix;
             }
 
+            function checkPositiveDefinite() {
+                p.positiveDefinite = true;
+                var eigenvalues = numeric.eig(calculateCovarianceMatrix()).lambda.x;
+                eigenvalues.forEach(function(e){if(e<0) { p.positiveDefinite = false;}})
+                return p.positiveDefinite;
+            }
+
+            if(checkPositiveDefinite()){
+                p.twoAssetData = p.data2();
+                p.threeAssetData = p.data3();
+
+                if(p.optimalPortfolio != undefined) {
+                    scope.params.optimalPortfolioMean = p.optimalPortfolioMean;
+                    scope.params.optimalPortfolioStDev = p.optimalPortfolioStDev;
+                }
+            }
 
             return p;
         }
