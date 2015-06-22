@@ -9,10 +9,10 @@ module KG
 
     export interface GraphDivDefinition extends ViewObjectDefinition {
         dimensions?: IDimensions;
-        label?: string;
+        text?: any;
         math?: boolean;
-        align?: string;
-        valign?: string;
+        align?: any;
+        valign?: any;
     }
 
     export interface IGraphDiv extends IViewObject {
@@ -20,10 +20,11 @@ module KG
         // GraphDiv-specific attributes
         coordinates: ICoordinates; // pixel coordinates, not model coordinates
         dimensions: IDimensions;
-        label: string;
+        text: string;
         math: boolean;
         align: string;
         valign: string;
+        color: string;
     }
 
     export class GraphDiv extends ViewObject implements IGraphDiv
@@ -32,10 +33,11 @@ module KG
         // GraphDiv-specific attributes
         public coordinates;
         public dimensions;
-        public label;
+        public text;
         public math;
         public align;
         public valign;
+        public color;
 
         constructor(definition:GraphDivDefinition) {
 
@@ -44,7 +46,8 @@ module KG
                 dimensions: {width: 100, height: 20},
                 math: false,
                 align: 'center',
-                label: ''
+                label: '',
+                color: 'red'
             });
 
             super(definition);
@@ -59,7 +62,7 @@ module KG
                 y = view.margins.top + view.yAxis.scale(divObj.coordinates.y),
                 width = divObj.dimensions.width,
                 height = divObj.dimensions.height,
-                label = divObj.label,
+                text = divObj.text,
                 draggable = (divObj.xDrag || divObj.yDrag);
 
             var div:D3.Selection = view.getDiv(this.name);
@@ -67,7 +70,7 @@ module KG
             div
                 .style('cursor','default')
                 .style('text-align','center')
-                .style('color','white')
+                .style('color',divObj.color)
                 .style('position','absolute')
                 .style('width',width + 'px')
                 .style('height',height + 'px')
@@ -93,7 +96,7 @@ module KG
             }
             div.style('top',(y - vAlignDelta) + 'px');
 
-            katex.render(label.toString(),div[0][0]);
+            katex.render(text.toString(),div[0][0]);
 
             if(draggable){
                 divObj.xDragDelta = -view.margins.left;

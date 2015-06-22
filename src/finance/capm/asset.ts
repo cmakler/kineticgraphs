@@ -12,6 +12,7 @@ module FinanceGraphs
         name: string;
         mean: any;
         stDev: any;
+        label: string;
     }
 
     export interface IAsset extends KG.IModel
@@ -35,7 +36,9 @@ module FinanceGraphs
                 size: 500,
                 xDrag: true,
                 yDrag: true,
-                label: definition.name
+                label: {
+                    text: definition.label
+                }
             })
         }
     }

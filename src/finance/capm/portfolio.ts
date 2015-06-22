@@ -103,15 +103,19 @@ module FinanceGraphs
                 size: 500,
                 xDrag: false,
                 yDrag: true,
-                label: 'RF'
+                label: {
+                    text: 'RF'
+                }
             });
             p.optimalPortfolio = new KG.Point({
                 name: 'optimalPortfolio',
                 coordinates: {x: 'params.optimalPortfolioStDev', y:'params.optimalPortfolioMean'},
-                size: 500,
+                symbol: 'cross',
+                size: 100,
                 xDrag: false,
                 yDrag: false,
-                label: 'P'
+                label: 'P',
+                color: 'black'
             });
             p.riskReturnLine = new KG.Segment({
                 name: 'twoPointSegment',
