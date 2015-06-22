@@ -29,7 +29,7 @@ module FinanceGraphs
         public point;
 
         constructor(definition:AssetDefinition) {
-            super(definition)
+            super(definition);
             this.point = new KG.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.stDev, y:definition.mean},
@@ -37,7 +37,7 @@ module FinanceGraphs
                 xDrag: true,
                 yDrag: true,
                 label: {
-                    text: definition.label
+                    text: definition.name
                 }
             })
         }

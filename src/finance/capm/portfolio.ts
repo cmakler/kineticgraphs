@@ -114,7 +114,12 @@ module FinanceGraphs
                 size: 100,
                 xDrag: false,
                 yDrag: false,
-                label: 'P',
+                label: {
+                    text: 'P',
+                    color: 'blue',
+                    align: 'right',
+                    valign: 'bottom'
+                },
                 color: 'black'
             });
             p.riskReturnLine = new KG.Segment({

@@ -42,6 +42,7 @@ module KG
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag
                 });
+                console.log(labelDef.coordinates);
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
