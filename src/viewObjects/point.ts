@@ -6,10 +6,11 @@ module KG
 {
 
     export interface PointDefinition extends ViewObjectDefinition {
-        coordinates: ICoordinates;
         symbol?: string;
         size?: number;
-        label?: string;
+        label?: GraphDivDefinition;
+        align?: string;
+        valign?: string;
     }
 
     export interface IPoint extends IViewObject {
@@ -17,7 +18,6 @@ module KG
         // point-specific attributes
         symbol: string;
         size: number;
-        label: string;
         labelDiv: IGraphDiv;
     }
 
@@ -27,7 +27,6 @@ module KG
         // point-specific attributes
         public symbol;
         public size;
-        public label;
         public labelDiv;
 
         constructor(definition:PointDefinition) {
@@ -36,7 +35,15 @@ module KG
             super(definition);
 
             if(definition.label) {
-                this.labelDiv = new GraphDiv(definition);
+                var labelDef = _.defaults(definition.label, {
+                    name: definition.name + '_label',
+                    coordinates:definition.coordinates,
+                    color:'white',
+                    xDrag: definition.xDrag,
+                    yDrag: definition.yDrag
+                });
+                console.log(labelDef.coordinates);
+                this.labelDiv = new GraphDiv(labelDef);
             }
 
             this.viewObjectSVGtype = 'path';

@@ -7,11 +7,12 @@ module KG
 
     export interface ViewObjectDefinition extends ModelDefinition
     {
-        name: string;
+        name?: string;
         show?: boolean;
         className?: string;
         xDrag?: boolean;
         yDrag?: boolean;
+        color?: string;
         coordinates?: ICoordinates;
     }
 

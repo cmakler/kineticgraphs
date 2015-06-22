@@ -296,7 +296,15 @@ var KG;
             definition = _.defaults(definition, { coordinates: { x: 0, y: 0 }, size: 100, symbol: 'circle' });
             _super.call(this, definition);
             if (definition.label) {
-                this.labelDiv = new KG.GraphDiv(definition);
+                var labelDef = _.defaults(definition.label, {
+                    name: definition.name + '_label',
+                    coordinates: definition.coordinates,
+                    color: 'white',
+                    xDrag: definition.xDrag,
+                    yDrag: definition.yDrag
+                });
+                console.log(labelDef.coordinates);
+                this.labelDiv = new KG.GraphDiv(labelDef);
             }
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'pointSymbol';
@@ -388,23 +396,27 @@ var KG;
                 dimensions: { width: 100, height: 20 },
                 math: false,
                 align: 'center',
-                label: ''
+                valign: 'middle',
+                text: '',
+                color: 'red'
             });
             _super.call(this, definition);
         }
         GraphDiv.prototype.render = function (view) {
             var divObj = this;
-            var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x), y = view.margins.top + view.yAxis.scale(divObj.coordinates.y), width = divObj.dimensions.width, height = divObj.dimensions.height, label = divObj.label, draggable = (divObj.xDrag || divObj.yDrag);
+            var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x), y = view.margins.top + view.yAxis.scale(divObj.coordinates.y), width = divObj.dimensions.width, height = divObj.dimensions.height, text = divObj.text, draggable = (divObj.xDrag || divObj.yDrag);
             var div = view.getDiv(this.name);
-            div.style('cursor', 'default').style('text-align', 'center').style('color', 'white').style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
+            div.style('cursor', 'default').style('text-align', 'center').style('color', divObj.color).style('position', 'absolute').style('width', width + 'px').style('height', height + 'px').style('line-height', height + 'px');
             // Set left pixel margin; default to centered on x coordinate
             var alignDelta = width * 0.5;
             if (divObj.align == 'left') {
                 alignDelta = 0;
+                div.style('text-align', 'left');
             }
             else if (this.align == 'right') {
                 // move left by half the width of the div if right aligned
                 alignDelta = width;
+                div.style('text-align', 'right');
             }
             div.style('left', (x - alignDelta) + 'px');
             // Set top pixel margin; default to centered on y coordinate
@@ -413,11 +425,11 @@ var KG;
             if (this.valign == 'top') {
                 vAlignDelta = 0;
             }
-            else if (this.align == 'bottom') {
+            else if (this.valign == 'bottom') {
                 vAlignDelta = height;
             }
             div.style('top', (y - vAlignDelta) + 'px');
-            katex.render(label.toString(), div[0][0]);
+            katex.render(text.toString(), div[0][0]);
             if (draggable) {
                 divObj.xDragDelta = -view.margins.left;
                 divObj.yDragDelta = view.dimensions.height - vAlignDelta;
@@ -1095,7 +1107,9 @@ var FinanceGraphs;
                 size: 500,
                 xDrag: true,
                 yDrag: true,
-                label: definition.name
+                label: {
+                    text: definition.name
+                }
             });
         }
         return Asset;
@@ -1156,15 +1170,24 @@ var FinanceGraphs;
                 size: 500,
                 xDrag: false,
                 yDrag: true,
-                label: 'RF'
+                label: {
+                    text: 'RF'
+                }
             });
             p.optimalPortfolio = new KG.Point({
                 name: 'optimalPortfolio',
                 coordinates: { x: 'params.optimalPortfolioStDev', y: 'params.optimalPortfolioMean' },
-                size: 500,
+                symbol: 'cross',
+                size: 100,
                 xDrag: false,
                 yDrag: false,
-                label: 'P'
+                label: {
+                    text: 'P',
+                    color: 'blue',
+                    align: 'right',
+                    valign: 'bottom'
+                },
+                color: 'black'
             });
             p.riskReturnLine = new KG.Segment({
                 name: 'twoPointSegment',
@@ -1323,7 +1346,7 @@ var FinanceGraphs;
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/segment.ts"/>
-/// <reference path="viewObjects/label.ts"/>
+/// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="view.ts" />

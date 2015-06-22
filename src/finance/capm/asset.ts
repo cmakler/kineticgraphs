@@ -12,6 +12,7 @@ module FinanceGraphs
         name: string;
         mean: any;
         stDev: any;
+        label: string;
     }
 
     export interface IAsset extends KG.IModel
@@ -28,14 +29,16 @@ module FinanceGraphs
         public point;
 
         constructor(definition:AssetDefinition) {
-            super(definition)
+            super(definition);
             this.point = new KG.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.stDev, y:definition.mean},
                 size: 500,
                 xDrag: true,
                 yDrag: true,
-                label: definition.name
+                label: {
+                    text: definition.name
+                }
             })
         }
     }
