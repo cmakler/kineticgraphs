@@ -154,6 +154,144 @@
 
 
 </div>
+<script>
+    var scopeDefinition = {
+        params: {
+            mean1: 0.2,
+                    stDev1: 0.3,
+                    mean2: 0.3,
+                    stDev2: 0.4,
+                    mean3: 0.4,
+                    stDev3: 0.5,
+                    rho12: 0,
+                    rho23: 0,
+                    rho13: 0,
+                    maxLeverage: 0,
+                    riskFreeReturn: 0.05
+        },
+        restrictions: [
+            {
+                expression: 'params.maxLeverage',
+                restrictionType: 'range',
+                max: 100,
+                min: 0,
+                precision: 10
+            },
+            {
+                expression: 'params.rho12',
+                restrictionType: 'range',
+                max: 1,
+                min: -1,
+                precision: 0.1
+            },
+            {
+                expression: 'params.rho23',
+                restrictionType: 'range',
+                max: 1,
+                min: -1,
+                precision: 0.1
+            },
+            {
+                expression: 'params.rho13',
+                restrictionType: 'range',
+                max: 1,
+                min: -1,
+                precision: 0.1
+            },
+            {
+                expression: 'params.riskFreeReturn',
+                restrictionType: 'range',
+                max: 0.2,
+                min: 0,
+                error: "'risk free return should be between 0 and 0.2'"
+            },
+            {
+                expression: 'model.positiveDefinite',
+                restrictionType: 'boolean',
+                error: "'would make matrix not positive definite'"
+            }
+        ],
+                model: {
+        type: 'FinanceGraphs.Portfolio',
+                definition: {
+            rho12: 'params.rho12',
+                    rho23: 'params.rho23',
+                    rho13: 'params.rho13',
+                    maxLeverage: 'params.maxLeverage',
+                    riskFreeReturn: 'params.riskFreeReturn',
+                    asset1: {
+                type: 'FinanceGraphs.Asset',
+                        definition: {
+                    name: 'A_1',
+                            mean: 'params.mean1',
+                            stDev: 'params.stDev1'
+                }
+            },
+            asset2: {
+                type: 'FinanceGraphs.Asset',
+                        definition: {
+                    name: 'A_2',
+                            mean: 'params.mean2',
+                            stDev: 'params.stDev2'
+                }
+            },
+            asset3: {
+                type: 'FinanceGraphs.Asset',
+                        definition: {
+                    name: 'A_3',
+                            mean: 'params.mean3',
+                            stDev: 'params.stDev3'
+                }
+            }
+        }
+    },
+        views: [
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id:'graph',
+                    dimensions: {width: 700, height: 700},
+                    xAxis: {min: 0, max: 1, title: '"Standard Deviation"'},
+                    yAxis: {min: 0, max: 0.5, title: '"Mean"'},
+                    objects: ['model.optimalPortfolio','model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.riskReturnLine','model.threeAssetPortfolios','model.twoAssetPortfolios']
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id:'leverageSlider',
+                    param: 'maxLeverage',
+                    axis: {min: 0, max: 100, tickValues:[0,50,100]}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'slider12',
+                    param: 'rho12',
+                    precision: '0.1',
+                    axis: {min: -1, max: 1, tickValues: [-1,0,1]}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'slider23',
+                    param: 'rho23',
+                    axis: {min: -1, max: 1, tickValues: [-1,0,1]}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'slider13',
+                    param: 'rho13',
+                    axis: {min: -1, max: 1, tickValues: [-1,0,1]}
+                }
+            }
+        ]
+    }
+</script>
 <script src="dist/kinetic-graphs.js"></script>
 </body>
 </html>

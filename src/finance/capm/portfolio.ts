@@ -58,31 +58,6 @@ module FinanceGraphs
         public positiveDefinite;
 
         constructor(definition:PortfolioDefinition) {
-            ['rho12','rho13','rho23','maxLeverage','riskFreeReturn'].forEach(function(name){definition[name] = 'params.' + name;});
-            definition.asset1 = {
-                type: 'FinanceGraphs.Asset',
-                definition: {
-                    name: 'A_1',
-                    mean: 'params.mean1',
-                    stDev: 'params.stDev1'
-                }
-            };
-            definition.asset2 = {
-                type: 'FinanceGraphs.Asset',
-                definition: {
-                    name: 'A_2',
-                    mean: 'params.mean2',
-                    stDev: 'params.stDev2'
-                }
-            };
-            definition.asset3 = {
-                type: 'FinanceGraphs.Asset',
-                definition: {
-                    name: 'A_3',
-                    mean: 'params.mean3',
-                    stDev: 'params.stDev3'
-                }
-            };
             super(definition);
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
