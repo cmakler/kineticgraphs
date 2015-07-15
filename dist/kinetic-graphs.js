@@ -484,6 +484,7 @@ var KG;
         Segment.prototype.render = function (view) {
             var segment = this;
             var group = view.objectGroup(segment.name, segment.initGroupFn(), false);
+            group.attr("marker-end", "url(#arrow-end-" + segment.color + ")").attr("marker-start", "url(#arrow-start-" + segment.color + ")");
             var dataLine = d3.svg.line().x(function (d) {
                 return view.xAxis.scale(d.x);
             }).y(function (d) {
@@ -492,7 +493,8 @@ var KG;
             var segmentSelection = group.select('.' + segment.viewObjectClass);
             segmentSelection.attr({
                 'class': segment.classAndVisibility(),
-                'd': dataLine([segment.a, segment.b])
+                'd': dataLine([segment.a, segment.b]),
+                'stroke': segment.color
             });
             segment.labelDiv.coordinates = {
                 x: 0.5 * (segment.a.x + segment.b.x),
@@ -697,6 +699,18 @@ var KG;
             var frame = d3.select(element).append('div').attr({ style: frameTranslation });
             // Create new SVG element for the view visualization
             var svg = frame.append('svg').attr('width', view.dimensions.width).attr('height', view.dimensions.height);
+            // Establish marker style for arrow
+            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue"]).enter().append("marker").attr("id", function (d) {
+                return "arrow-end-" + d;
+            }).attr("refX", 11).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse").append("svg:path").attr("d", "M2,2 L2,11 L10,6 L2,2").attr("fill", function (d) {
+                return d;
+            });
+            // Establish marker style for arrow
+            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue"]).enter().append("svg:marker").attr("id", function (d) {
+                return "arrow-start-" + d;
+            }).attr("refX", 2).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse").append("svg:path").attr("d", "M11,2 L11,11 L2,6 L11,2").attr("fill", function (d) {
+                return d;
+            });
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({ style: visTranslation });
             if (view.mask) {
@@ -1395,7 +1409,7 @@ var EconGraphs;
                     y: 'model.yAvg'
                 },
                 symbol: 'cross',
-                color: 'blue',
+                color: 'grey',
                 size: 100,
                 xDrag: false,
                 yDrag: false,
@@ -1403,11 +1417,12 @@ var EconGraphs;
                     text: 'M',
                     align: 'right',
                     valign: 'top',
-                    color: 'blue'
+                    color: 'grey'
                 }
             });
             this.xDiffSegment = new KG.Segment({
                 name: 'xDiffSegment',
+                color: 'blue',
                 a: {
                     x: definition.point1.x,
                     y: 5
@@ -1420,28 +1435,31 @@ var EconGraphs;
                     text: 'model.xPercentDiff | percentage:0',
                     coordinates: {
                         x: 'model.xAvg',
-                        y: 5
+                        y: 4
                     },
-                    valign: 'top'
+                    valign: 'top',
+                    color: 'blue'
                 }
             });
             this.yDiffSegment = new KG.Segment({
                 name: 'yDiffSegment',
+                color: 'red',
                 a: {
-                    x: 10,
+                    x: 15,
                     y: definition.point1.y
                 },
                 b: {
-                    x: 10,
+                    x: 15,
                     y: definition.point2.y
                 },
                 label: {
                     text: 'model.yPercentDiff | percentage:0',
                     coordinates: {
-                        x: 10,
+                        x: 14,
                         y: 'model.yAvg'
                     },
-                    align: 'right'
+                    align: 'right',
+                    color: 'red'
                 }
             });
         }

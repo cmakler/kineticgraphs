@@ -21,6 +21,7 @@ module KG
         // identifiers
         name: string;
         className?: string;
+        color: string;
 
         show: boolean;
         classAndVisibility: () => string;

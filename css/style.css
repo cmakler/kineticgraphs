@@ -87,7 +87,6 @@ a {
 }
 
 .draw, .segment {
-    stroke: blue;
     stroke-width: 2;
     fill: none;
 }

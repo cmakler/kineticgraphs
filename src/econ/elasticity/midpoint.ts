@@ -76,7 +76,7 @@ module EconGraphs {
                     x: 'model.xAvg',
                     y: 'model.yAvg'},
                 symbol: 'cross',
-                color: 'blue',
+                color: 'grey',
                 size: 100,
                 xDrag: false,
                 yDrag: false,
@@ -84,11 +84,12 @@ module EconGraphs {
                     text: 'M',
                     align: 'right',
                     valign: 'top',
-                    color: 'blue'
+                    color: 'grey'
                 }
             });
             this.xDiffSegment = new KG.Segment({
                 name: 'xDiffSegment',
+                color: 'blue',
                 a: {
                     x: definition.point1.x,
                     y: 5
@@ -101,28 +102,31 @@ module EconGraphs {
                     text: 'model.xPercentDiff | percentage:0',
                     coordinates: {
                         x: 'model.xAvg',
-                        y: 5
+                        y: 4
                     },
-                    valign: 'top'
+                    valign: 'top',
+                    color: 'blue'
                 }
             });
             this.yDiffSegment = new KG.Segment({
                 name: 'yDiffSegment',
+                color: 'red',
                 a: {
-                    x: 10,
+                    x: 15,
                     y: definition.point1.y
                 },
                 b: {
-                    x: 10,
+                    x: 15,
                     y: definition.point2.y
                 },
                 label: {
                     text: 'model.yPercentDiff | percentage:0',
                     coordinates: {
-                        x: 10,
+                        x: 14,
                         y: 'model.yAvg'
                     },
-                    align: 'right'
+                    align: 'right',
+                    color: 'red'
                 }
             });
         }

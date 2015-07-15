@@ -58,6 +58,10 @@ module KG {
 
             var group:D3.Selection = view.objectGroup(segment.name, segment.initGroupFn(), false);
 
+            group
+                .attr("marker-end", "url(#arrow-end-" + segment.color + ")")
+                .attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+
             var dataLine = d3.svg.line()
                 .x(function (d) { return view.xAxis.scale(d.x) })
                 .y(function (d) { return view.yAxis.scale(d.y) });
@@ -67,8 +71,9 @@ module KG {
             segmentSelection
                 .attr({
                     'class': segment.classAndVisibility(),
-                    'd': dataLine([segment.a, segment.b])
-                });
+                    'd': dataLine([segment.a, segment.b]),
+                    'stroke': segment.color,
+                })
 
             segment.labelDiv.coordinates = {
                 x: 0.5*(segment.a.x + segment.b.x),
