@@ -33,6 +33,7 @@ a {
 .dropline {
     stroke-dasharray: 10, 10;
     stroke-width: 2px;
+    stroke: grey;
 }
 
 .budgetline {
@@ -125,4 +126,8 @@ a {
 .matrix td {
     padding: 5px;
     text-align: center;
+}
+
+.big {
+    font-size: 20pt;
 }

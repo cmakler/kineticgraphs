@@ -7,13 +7,12 @@ module KG {
     export interface SegmentDefinition extends ViewObjectDefinition {
         a: any;
         b: any;
-        label?: string;
+        label?: GraphDivDefinition;
     }
 
     export interface ISegment extends IViewObject {
         a: ICoordinates;
         b: ICoordinates;
-        label: string;
         labelDiv: IGraphDiv;
     }
 
@@ -32,16 +31,25 @@ module KG {
             super(definition);
 
             if(definition.label) {
-                var labelDefinition = _.clone(definition);
-                labelDefinition.coordinates = {
-                    x: 0.5*(definition.a.x + definition.b.x),
-                    y: 0.5*(definition.a.y + definition.b.y)
-                };
-                this.labelDiv = new GraphDiv(labelDefinition);
+                var labelDef = _.defaults(definition.label, {
+                    name: definition.name + '_label',
+                    xDrag: definition.xDrag,
+                    yDrag: definition.yDrag
+                });
+                this.labelDiv = new GraphDiv(labelDef);
             }
 
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'segment';
+        }
+
+        createSubObjects(view) {
+            var labelDiv = this.labelDiv;
+            if(labelDiv) {
+                return view.addObject(labelDiv);
+            } else {
+                return view;
+            }
         }
 
         render(view) {
@@ -61,6 +69,13 @@ module KG {
                     'class': segment.classAndVisibility(),
                     'd': dataLine([segment.a, segment.b])
                 });
+
+            segment.labelDiv.coordinates = {
+                x: 0.5*(segment.a.x + segment.b.x),
+                y: 0.5*(segment.a.y + segment.b.y)
+            };
+
+            //segment.labelDiv.render(view);
 
             return view;
         }

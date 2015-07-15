@@ -23,13 +23,16 @@ module KG
         updateParams: (params) => void;
         renderMath: () => void;
         error: string;
+        interpolate: any;
     }
 
     export class Controller
     {
 
-        constructor(public $scope:IScope, $window:ng.IWindowService)
+        constructor(public $scope:IScope, public $interpolate, $window:ng.IWindowService)
         {
+
+            $scope.interpolate = $interpolate;
 
             $scope.init = function(definition:ScopeDefinition) {
                 $scope.params = definition.params;
@@ -52,7 +55,9 @@ module KG
                     if(!element.hasAttribute('raw')){
                         element.setAttribute('raw',element.textContent)
                     }
-                    katex.render(element.getAttribute('raw'),element);
+                    var textToRender = $scope.interpolate(element.getAttribute('raw'))($scope);
+                    var displayMode = element.classList.contains('displayMath');
+                    katex.render(textToRender,element,{displayMode:displayMode});
                 }
             };
 

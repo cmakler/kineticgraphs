@@ -11,6 +11,7 @@
 
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
+/// <reference path="viewObjects/dropline.ts"/>
 /// <reference path="viewObjects/segment.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
@@ -25,8 +26,14 @@
 
 /// <reference path="sample/sample.ts" />
 /// <reference path="finance/fg.ts" />
+/// <reference path="econ/eg.ts" />
 
 'use strict';
 
 angular.module('KineticGraphs', [])
-    .controller('KineticGraphCtrl', KG.Controller);
+    .controller('KineticGraphCtrl', ['$scope','$interpolate','$window',KG.Controller])
+    .filter('percentage', ['$filter', function ($filter) {
+        return function (input, decimals) {
+            return $filter('number')(input * 100, decimals) + '\\%';
+        };
+    }]);

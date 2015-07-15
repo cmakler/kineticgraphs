@@ -23,6 +23,7 @@ module KG
         title: string;
         ticks: number;
         tickValues: number[];
+        textMargin: number;
     }
 
     export class Axis extends Model implements IAxis
@@ -35,16 +36,22 @@ module KG
         public ticks: number;
         public tickValues: number[];
 
+        public textMargin;
+
         constructor(definition : AxisDefinition) {
 
             definition = _.defaults(definition, {
                 min: 0,
                 max: 10,
                 title: '',
-                ticks: 5
+                ticks: 5,
+                textMargin: 7
             });
 
             super(definition);
+            if(this.ticks == 0) {
+                this.textMargin = 7;
+            }
             this.domain = new KG.Domain(definition.min, definition.max);
         }
 
