@@ -13,7 +13,7 @@ module KG
         math?: boolean;
         align?: any;
         valign?: any;
-        backgroundColor: string;
+        backgroundColor?: string;
     }
 
     export interface IGraphDiv extends IViewObject {
@@ -49,7 +49,6 @@ module KG
         constructor(definition:GraphDivDefinition) {
 
             definition = _.defaults(definition,{
-                coordinates: {x: 0, y: 0},
                 dimensions: {width: 100, height: 20},
                 math: false,
                 align: 'center',

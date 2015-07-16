@@ -90,43 +90,35 @@ module EconGraphs {
             this.xDiffSegment = new KG.Segment({
                 name: 'xDiffSegment',
                 color: 'blue',
+                arrows: 'END',
                 a: {
-                    x: definition.point1.x,
+                    x: definition.point2.x,
                     y: 5
                 },
                 b: {
-                    x: definition.point2.x,
+                    x: definition.point1.x,
                     y: 5
                 },
                 label: {
                     text: 'model.xPercentDiff | percentage:0',
-                    coordinates: {
-                        x: 'model.xAvg',
-                        y: 4
-                    },
-                    valign: 'top',
-                    color: 'blue'
+                    valign: 'top'
                 }
             });
             this.yDiffSegment = new KG.Segment({
                 name: 'yDiffSegment',
                 color: 'red',
+                arrows: 'END',
                 a: {
-                    x: 15,
-                    y: definition.point1.y
-                },
-                b: {
                     x: 15,
                     y: definition.point2.y
                 },
+                b: {
+                    x: 15,
+                    y: definition.point1.y
+                },
                 label: {
                     text: 'model.yPercentDiff | percentage:0',
-                    coordinates: {
-                        x: 14,
-                        y: 'model.yAvg'
-                    },
-                    align: 'right',
-                    color: 'red'
+                    align: 'right'
                 }
             });
         }

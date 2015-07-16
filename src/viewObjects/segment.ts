@@ -8,12 +8,21 @@ module KG {
         a: any;
         b: any;
         label?: GraphDivDefinition;
+        arrows?: string;
     }
 
     export interface ISegment extends IViewObject {
         a: ICoordinates;
         b: ICoordinates;
+        midpoint: ICoordinates;
         labelDiv: IGraphDiv;
+        startArrow: boolean;
+        endArrow: boolean;
+        length: number;
+
+        START_ARROW_STRING: string;
+        END_ARROW_STRING: string;
+        BOTH_ARROW_STRING: string;
     }
 
     export class Segment extends ViewObject implements ISegment {
@@ -22,11 +31,25 @@ module KG {
         public b;
         public label;
         public labelDiv;
+        public startArrow;
+        public endArrow;
+        public midpoint;
+        public length;
+
+        public START_ARROW_STRING;
+        public END_ARROW_STRING;
+        public BOTH_ARROW_STRING;
+
+        static START_ARROW_STRING = 'START';
+        static END_ARROW_STRING = 'END';
+        static BOTH_ARROW_STRING = 'BOTH';
+
 
         constructor(definition:SegmentDefinition) {
 
             definition.a = KG.getCoordinates(definition.a);
             definition.b = KG.getCoordinates(definition.b);
+            definition.color = definition.color || 'gray';
 
             super(definition);
 
@@ -34,13 +57,35 @@ module KG {
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
                     xDrag: definition.xDrag,
-                    yDrag: definition.yDrag
+                    yDrag: definition.yDrag,
+                    color: definition.color
                 });
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
+            this.startArrow = (definition.arrows == Segment.START_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
+            this.endArrow = (definition.arrows == Segment.END_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
+
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'segment';
+        }
+
+        _update(scope) {
+
+            var segment = this;
+
+            segment.midpoint = {
+                x: 0.5*(segment.a.x + segment.b.x),
+                y: 0.5*(segment.a.y + segment.b.y)
+            };
+
+            if(segment.hasOwnProperty('labelDiv')){
+                segment.labelDiv.coordinates = segment.midpoint;
+            }
+
+            segment.length = KG.distanceBetweenCoordinates(segment.a,segment.b);
+
+            return segment;
         }
 
         createSubObjects(view) {
@@ -58,9 +103,19 @@ module KG {
 
             var group:D3.Selection = view.objectGroup(segment.name, segment.initGroupFn(), false);
 
-            group
-                .attr("marker-end", "url(#arrow-end-" + segment.color + ")")
-                .attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+            if(segment.endArrow && segment.length > 0) {
+                group.attr("marker-end", "url(#arrow-end-" + segment.color + ")")
+            } else {
+                group.attr("marker-end",null)
+            }
+
+            if(segment.startArrow && segment.length > 0) {
+                group.attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+            } else {
+                group.attr("market-start",null)
+            }
+
+
 
             var dataLine = d3.svg.line()
                 .x(function (d) { return view.xAxis.scale(d.x) })
@@ -74,13 +129,6 @@ module KG {
                     'd': dataLine([segment.a, segment.b]),
                     'stroke': segment.color,
                 })
-
-            segment.labelDiv.coordinates = {
-                x: 0.5*(segment.a.x + segment.b.x),
-                y: 0.5*(segment.a.y + segment.b.y)
-            };
-
-            //segment.labelDiv.render(view);
 
             return view;
         }

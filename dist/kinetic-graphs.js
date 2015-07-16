@@ -34,6 +34,10 @@ var KG;
         return style;
     }
     KG.positionByPixelCoordinates = positionByPixelCoordinates;
+    function distanceBetweenCoordinates(a, b) {
+        return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
+    }
+    KG.distanceBetweenCoordinates = distanceBetweenCoordinates;
     function getCoordinates(def) {
         var defaultCoordinates = { x: 0, y: 0 };
         if (!def || def == undefined) {
@@ -460,18 +464,34 @@ var KG;
         function Segment(definition) {
             definition.a = KG.getCoordinates(definition.a);
             definition.b = KG.getCoordinates(definition.b);
+            definition.color = definition.color || 'gray';
             _super.call(this, definition);
             if (definition.label) {
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
                     xDrag: definition.xDrag,
-                    yDrag: definition.yDrag
+                    yDrag: definition.yDrag,
+                    color: definition.color
                 });
                 this.labelDiv = new KG.GraphDiv(labelDef);
             }
+            this.startArrow = (definition.arrows == Segment.START_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
+            this.endArrow = (definition.arrows == Segment.END_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'segment';
         }
+        Segment.prototype._update = function (scope) {
+            var segment = this;
+            segment.midpoint = {
+                x: 0.5 * (segment.a.x + segment.b.x),
+                y: 0.5 * (segment.a.y + segment.b.y)
+            };
+            if (segment.hasOwnProperty('labelDiv')) {
+                segment.labelDiv.coordinates = segment.midpoint;
+            }
+            segment.length = KG.distanceBetweenCoordinates(segment.a, segment.b);
+            return segment;
+        };
         Segment.prototype.createSubObjects = function (view) {
             var labelDiv = this.labelDiv;
             if (labelDiv) {
@@ -484,7 +504,18 @@ var KG;
         Segment.prototype.render = function (view) {
             var segment = this;
             var group = view.objectGroup(segment.name, segment.initGroupFn(), false);
-            group.attr("marker-end", "url(#arrow-end-" + segment.color + ")").attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+            if (segment.endArrow && segment.length > 0) {
+                group.attr("marker-end", "url(#arrow-end-" + segment.color + ")");
+            }
+            else {
+                group.attr("marker-end", null);
+            }
+            if (segment.startArrow && segment.length > 0) {
+                group.attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+            }
+            else {
+                group.attr("market-start", null);
+            }
             var dataLine = d3.svg.line().x(function (d) {
                 return view.xAxis.scale(d.x);
             }).y(function (d) {
@@ -496,13 +527,11 @@ var KG;
                 'd': dataLine([segment.a, segment.b]),
                 'stroke': segment.color
             });
-            segment.labelDiv.coordinates = {
-                x: 0.5 * (segment.a.x + segment.b.x),
-                y: 0.5 * (segment.a.y + segment.b.y)
-            };
-            //segment.labelDiv.render(view);
             return view;
         };
+        Segment.START_ARROW_STRING = 'START';
+        Segment.END_ARROW_STRING = 'END';
+        Segment.BOTH_ARROW_STRING = 'BOTH';
         return Segment;
     })(KG.ViewObject);
     KG.Segment = Segment;
@@ -515,7 +544,6 @@ var KG;
         __extends(GraphDiv, _super);
         function GraphDiv(definition) {
             definition = _.defaults(definition, {
-                coordinates: { x: 0, y: 0 },
                 dimensions: { width: 100, height: 20 },
                 math: false,
                 align: 'center',
@@ -1423,43 +1451,35 @@ var EconGraphs;
             this.xDiffSegment = new KG.Segment({
                 name: 'xDiffSegment',
                 color: 'blue',
+                arrows: 'END',
                 a: {
-                    x: definition.point1.x,
+                    x: definition.point2.x,
                     y: 5
                 },
                 b: {
-                    x: definition.point2.x,
+                    x: definition.point1.x,
                     y: 5
                 },
                 label: {
                     text: 'model.xPercentDiff | percentage:0',
-                    coordinates: {
-                        x: 'model.xAvg',
-                        y: 4
-                    },
-                    valign: 'top',
-                    color: 'blue'
+                    valign: 'top'
                 }
             });
             this.yDiffSegment = new KG.Segment({
                 name: 'yDiffSegment',
                 color: 'red',
+                arrows: 'END',
                 a: {
-                    x: 15,
-                    y: definition.point1.y
-                },
-                b: {
                     x: 15,
                     y: definition.point2.y
                 },
+                b: {
+                    x: 15,
+                    y: definition.point1.y
+                },
                 label: {
                     text: 'model.yPercentDiff | percentage:0',
-                    coordinates: {
-                        x: 14,
-                        y: 'model.yAvg'
-                    },
-                    align: 'right',
-                    color: 'red'
+                    align: 'right'
                 }
             });
         }

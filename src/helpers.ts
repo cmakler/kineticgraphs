@@ -66,6 +66,10 @@ module KG
         return style;
     }
 
+    export function distanceBetweenCoordinates(a:ICoordinates, b:ICoordinates){
+        return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
+    }
+
     export function getCoordinates(def) {
         var defaultCoordinates:{} = {x: 0, y: 0};
         if(!def || def == undefined) {

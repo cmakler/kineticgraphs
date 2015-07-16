@@ -47,6 +47,7 @@ module KG
 
         public show;
         public className;
+        public color;
         public name;
         public coordinates;
         public xDrag;
