@@ -22,6 +22,7 @@ module EconGraphs {
         yAvg: number;
         xPercentDiff: number;
         yPercentDiff: number;
+        line: KG.Line;
     }
 
     export class MidpointElasticity extends Elasticity implements IMidpointElasticity
@@ -39,6 +40,7 @@ module EconGraphs {
         public yPercentDiff;
         public xDiffSegment;
         public yDiffSegment;
+        public line;
 
         constructor(definition:MidpointElasticityDefinition) {
             super(definition);
@@ -85,6 +87,19 @@ module EconGraphs {
                     align: 'right',
                     valign: 'top',
                     color: 'grey'
+                }
+            });
+            this.line = new KG.Line({
+                name: 'demand',
+                color: 'purple',
+                arrows: 'NONE',
+                a: {
+                    x: 'params.x1',
+                    y: 'params.y1'
+                },
+                b: {
+                    x: 'params.x2',
+                    y: 'params.y2'
                 }
             });
             this.xDiffSegment = new KG.Segment({

@@ -20,6 +20,9 @@ module KG {
         endArrow: boolean;
         length: number;
 
+        startPoint: (view:IView) => ICoordinates;
+        endPoint: (view:IView) => ICoordinates;
+
         START_ARROW_STRING: string;
         END_ARROW_STRING: string;
         BOTH_ARROW_STRING: string;
@@ -115,8 +118,6 @@ module KG {
                 group.attr("market-start",null)
             }
 
-
-
             var dataLine = d3.svg.line()
                 .x(function (d) { return view.xAxis.scale(d.x) })
                 .y(function (d) { return view.yAxis.scale(d.y) });
@@ -126,13 +127,44 @@ module KG {
             segmentSelection
                 .attr({
                     'class': segment.classAndVisibility(),
-                    'd': dataLine([segment.a, segment.b]),
+                    'd': dataLine([segment.startPoint(view), segment.endPoint(view)]),
                     'stroke': segment.color,
-                })
+                });
 
             return view;
         }
 
+        startPoint(view) {
+            return this.a;
+        }
+
+        endPoint(view) {
+            return this.b;
+        }
+
+    }
+
+    export class Line extends Segment {
+
+        public linear:KGMath.Functions.TwoPointLine;
+
+        constructor(definition) {
+            super(definition);
+            this.linear = new KGMath.Functions.TwoPointLine({p1:definition.a, p2:definition.b})
+        }
+
+        _update(scope) {
+            this.linear.update(scope);
+            return this;
+        }
+
+        startPoint(view) {
+            return this.linear.viewBoundaryPoints(view)[0];
+        }
+
+        endPoint(view) {
+            return this.linear.viewBoundaryPoints(view)[1];
+        }
     }
 
 }

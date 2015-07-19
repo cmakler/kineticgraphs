@@ -12,14 +12,23 @@ var KG;
         Domain.prototype.toArray = function () {
             return [this.min, this.max];
         };
-        Domain.prototype.contains = function (x) {
-            var lowEnough = (this.max >= x);
-            var highEnough = (this.min <= x);
+        Domain.prototype.contains = function (x, strict) {
+            strict = strict || false;
+            var lowEnough = strict ? (this.max > x) : (this.max >= x);
+            var highEnough = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
         };
         return Domain;
     })();
     KG.Domain = Domain;
+    function areTheSamePoint(a, b) {
+        return (a.x === b.x && a.y === b.y);
+    }
+    KG.areTheSamePoint = areTheSamePoint;
+    function areNotTheSamePoint(a, b) {
+        return !areTheSamePoint(a, b);
+    }
+    KG.areNotTheSamePoint = areNotTheSamePoint;
     function translateByPixelCoordinates(coordinates) {
         return 'translate(' + coordinates.x + ',' + coordinates.y + ')';
     }
@@ -240,6 +249,238 @@ var KG;
     })(KG.Model);
     KG.Restriction = Restriction;
 })(KG || (KG = {}));
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Base = (function (_super) {
+            __extends(Base, _super);
+            function Base(definition) {
+                _super.call(this, definition);
+            }
+            // Returns y value for given x, for a two-dimensional function
+            Base.prototype.yValue = function (x) {
+                return 0;
+            };
+            // Returns x value for given y, for a two-dimensional function
+            Base.prototype.xValue = function (y) {
+                return 0;
+            };
+            // Returns the slope between (a,f(a)) and (b,f(b)).
+            // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
+            // Assumes that a and b are both scalars (for now).
+            Base.prototype.slopeBetweenPoints = function (a, b, inverse) {
+                var f = this;
+                b = b || 0;
+                inverse = inverse || false;
+                var s = (f.yValue(a) - f.yValue(b)) / (a - b);
+                return inverse ? 1 / s : s;
+            };
+            return Base;
+        })(KG.Model);
+        Functions.Base = Base;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+/*
+ A linear function is a special polynomial defined either with two points or a point and a slope.
+ This function takes either of those and returns a polynomial of the form ax + by + c.
+ The params object is of the form: { definitionType: '', param1: foo, param2: bar }
+ */
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Linear = (function (_super) {
+            __extends(Linear, _super);
+            function Linear() {
+                _super.apply(this, arguments);
+                this.linearIntersection = function (otherLine, delta) {
+                    var thisLine = this;
+                    delta = delta || 0;
+                    var a = thisLine.coefficients.a, b = thisLine.coefficients.b, c = thisLine.coefficients.c, oa = otherLine.coefficients.a, ob = otherLine.coefficients.b, oc = otherLine.coefficients.c;
+                    var diffLine = new Linear({
+                        coefficients: {
+                            a: a * ob - b * oa,
+                            b: b * ob,
+                            c: ob * c - oc * b - delta
+                        }
+                    }), x = diffLine.xIntercept, y = thisLine.yValue(x);
+                    return { x: x, y: y };
+                };
+            }
+            Linear.prototype._update = function (scope) {
+                return this.updateLine();
+            };
+            Linear.prototype.updateLine = function () {
+                var l = this;
+                var a = l.coefficients.a, b = l.coefficients.b, c = l.coefficients.c;
+                l.slope = -a / b;
+                l.inverseSlope = -b / a;
+                l.isVertical = (b === 0);
+                l.isHorizontal = (a === 0);
+                l.xIntercept = l.isHorizontal ? null : -c / a;
+                l.yIntercept = l.isVertical ? null : -c / b;
+                return l;
+            };
+            Linear.prototype.yValue = function (x) {
+                var l = this;
+                return l.isVertical ? undefined : l.yIntercept + l.slope * x;
+            };
+            Linear.prototype.xValue = function (y) {
+                var l = this;
+                return l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
+            };
+            Linear.prototype.viewBoundaryPoints = function (view) {
+                var l = this;
+                var xDomain = view.xAxis.domain, yDomain = view.yAxis.domain;
+                var points = [];
+                if (l.isVertical) {
+                    points = [{ x: l.xIntercept, y: yDomain.min }, { x: l.xIntercept, y: yDomain.max }];
+                }
+                else if (l.isHorizontal) {
+                    points = [{ x: xDomain.min, y: l.yIntercept }, { x: xDomain.max, y: l.yIntercept }];
+                }
+                else {
+                    var xTop = l.xValue(yDomain.max), xBottom = l.xValue(yDomain.min), yLeft = l.yValue(xDomain.min), yRight = l.yValue(xDomain.max);
+                    // add endpoints on the left or right sides, including the corners
+                    if (yDomain.contains(yLeft)) {
+                        points.push({ x: xDomain.min, y: yLeft });
+                    }
+                    if (yDomain.contains(yRight)) {
+                        points.push({ x: xDomain.max, y: yRight });
+                    }
+                    // add endpoints on the top or bottom, not including the corners
+                    if (xDomain.contains(xBottom, true)) {
+                        points.push({ x: xBottom, y: yDomain.min });
+                    }
+                    if (xDomain.contains(xTop, true)) {
+                        points.push({ x: xTop, y: yDomain.max });
+                    }
+                    // A maximimum of two points should have been added. If not, something is wrong.
+                    if (points.length > 2) {
+                        console.log('Oh noes! More than two points! Investigate!');
+                    }
+                }
+                return points;
+            };
+            return Linear;
+        })(Functions.Base);
+        Functions.Linear = Linear;
+        var StandardLine = (function (_super) {
+            __extends(StandardLine, _super);
+            function StandardLine(definition) {
+                _super.call(this, definition);
+            }
+            return StandardLine;
+        })(Linear);
+        Functions.StandardLine = StandardLine;
+        var SlopeInterceptLine = (function (_super) {
+            __extends(SlopeInterceptLine, _super);
+            function SlopeInterceptLine(definition) {
+                _super.call(this, definition);
+            }
+            // Given y = m*x + b => m*x + (-1)y + b = 0
+            SlopeInterceptLine.prototype._update = function (scope) {
+                var l = this;
+                l.coefficients = {
+                    a: l.m,
+                    b: -1,
+                    c: l.b
+                };
+                return l.updateLine();
+            };
+            return SlopeInterceptLine;
+        })(Linear);
+        Functions.SlopeInterceptLine = SlopeInterceptLine;
+        var PointSlopeLine = (function (_super) {
+            __extends(PointSlopeLine, _super);
+            function PointSlopeLine(definition) {
+                _super.call(this, definition);
+            }
+            // Given Y - y = slope(X - x) => slope*X - Y + (y - slope*x)
+            PointSlopeLine.prototype._update = function (scope) {
+                var l = this;
+                l.coefficients = {
+                    a: l.m,
+                    b: -1,
+                    c: l.p.y - l.m * l.p.x
+                };
+                return l.updateLine();
+            };
+            return PointSlopeLine;
+        })(Linear);
+        Functions.PointSlopeLine = PointSlopeLine;
+        var TwoPointLine = (function (_super) {
+            __extends(TwoPointLine, _super);
+            function TwoPointLine(definition) {
+                _super.call(this, definition);
+            }
+            //
+            TwoPointLine.prototype._update = function (scope) {
+                var l = this;
+                var x1 = l.p1.x, x2 = l.p2.x, y1 = l.p1.y, y2 = l.p2.y, rise = y2 - y1, run = x2 - x1;
+                // If x2 = x1, then it's a vertical line
+                if (run == 0) {
+                    l.coefficients = {
+                        a: 1,
+                        b: 0,
+                        c: -x1
+                    };
+                }
+                else {
+                    var slope = rise / run;
+                    l.coefficients = {
+                        a: slope,
+                        b: -1,
+                        c: y1 - slope * x1
+                    };
+                }
+                return l.updateLine();
+            };
+            return TwoPointLine;
+        })(Linear);
+        Functions.TwoPointLine = TwoPointLine;
+        var HorizontalLine = (function (_super) {
+            __extends(HorizontalLine, _super);
+            function HorizontalLine(definition) {
+                _super.call(this, definition);
+            }
+            // A horizontal line at y = Y may be written 0x - y + Y = 0
+            HorizontalLine.prototype._update = function (scope) {
+                var l = this;
+                l.coefficients = {
+                    a: 0,
+                    b: -1,
+                    c: l.y
+                };
+                return l.updateLine();
+            };
+            return HorizontalLine;
+        })(Linear);
+        Functions.HorizontalLine = HorizontalLine;
+        var VerticalLine = (function (_super) {
+            __extends(VerticalLine, _super);
+            function VerticalLine(definition) {
+                _super.call(this, definition);
+            }
+            // A vertical line at x = X may be written -x + 0y + X = 0
+            VerticalLine.prototype._update = function (scope) {
+                var l = this;
+                l.coefficients = {
+                    a: -1,
+                    b: 0,
+                    c: l.x
+                };
+                return l.updateLine();
+            };
+            return VerticalLine;
+        })(Linear);
+        Functions.VerticalLine = VerticalLine;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="functions/base.ts"/>
+/// <reference path="functions/linear.ts"/>
 /// <reference path="../kg.ts"/>
 'use strict';
 var KG;
@@ -524,10 +765,16 @@ var KG;
             var segmentSelection = group.select('.' + segment.viewObjectClass);
             segmentSelection.attr({
                 'class': segment.classAndVisibility(),
-                'd': dataLine([segment.a, segment.b]),
+                'd': dataLine([segment.startPoint(view), segment.endPoint(view)]),
                 'stroke': segment.color
             });
             return view;
+        };
+        Segment.prototype.startPoint = function (view) {
+            return this.a;
+        };
+        Segment.prototype.endPoint = function (view) {
+            return this.b;
         };
         Segment.START_ARROW_STRING = 'START';
         Segment.END_ARROW_STRING = 'END';
@@ -535,6 +782,25 @@ var KG;
         return Segment;
     })(KG.ViewObject);
     KG.Segment = Segment;
+    var Line = (function (_super) {
+        __extends(Line, _super);
+        function Line(definition) {
+            _super.call(this, definition);
+            this.linear = new KGMath.Functions.TwoPointLine({ p1: definition.a, p2: definition.b });
+        }
+        Line.prototype._update = function (scope) {
+            this.linear.update(scope);
+            return this;
+        };
+        Line.prototype.startPoint = function (view) {
+            return this.linear.viewBoundaryPoints(view)[0];
+        };
+        Line.prototype.endPoint = function (view) {
+            return this.linear.viewBoundaryPoints(view)[1];
+        };
+        return Line;
+    })(Segment);
+    KG.Line = Line;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -1448,6 +1714,19 @@ var EconGraphs;
                     color: 'grey'
                 }
             });
+            this.line = new KG.Line({
+                name: 'demand',
+                color: 'purple',
+                arrows: 'NONE',
+                a: {
+                    x: 'params.x1',
+                    y: 'params.y1'
+                },
+                b: {
+                    x: 'params.x2',
+                    y: 'params.y2'
+                }
+            });
             this.xDiffSegment = new KG.Segment({
                 name: 'xDiffSegment',
                 color: 'blue',
@@ -1513,6 +1792,7 @@ var EconGraphs;
 /// <reference path="helpers.ts" />
 /// <reference path="model.ts" />
 /// <reference path="restriction.ts" />
+/// <reference path="math/math.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/dropline.ts"/>

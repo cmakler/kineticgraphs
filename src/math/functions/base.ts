@@ -1,8 +1,9 @@
 module KGMath.Functions {
 
     export interface IBase extends KG.IModel {
-        value: (any) => number;
-        slope: (a: number, b?: number, inverse?: boolean) => number;
+        xValue: (x:number) => number;
+        yValue: (y:number) => number;
+        slopeBetweenPoints: (a: number, b?: number, inverse?: boolean) => number;
     }
 
     export class Base extends KG.Model {
@@ -11,19 +12,27 @@ module KGMath.Functions {
             super(definition);
         }
 
-        value(input) {
+        // Returns y value for given x, for a two-dimensional function
+        yValue(x) {
             return 0;
         }
 
-        slope(a,b,inverse) {
+        // Returns x value for given y, for a two-dimensional function
+        xValue(y) {
+            return 0;
+        }
+
+        // Returns the slope between (a,f(a)) and (b,f(b)).
+        // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
+        // Assumes that a and b are both scalars (for now).
+        slopeBetweenPoints(a,b,inverse) {
+
+            var f = this;
 
             b = b || 0;
             inverse = inverse || false;
 
-            var fa = this.value(a),
-                fb = this.value(b);
-
-            var s = (fa - fb)/(a - b);
+            var s = (f.yValue(a) - f.yValue(b))/(a - b);
 
             return inverse ? 1/s : s;
         }

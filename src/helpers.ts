@@ -9,7 +9,7 @@ module KG
         min: number;
         max: number;
         toArray: () => number[];
-        contains: (x:number) => boolean;
+        contains: (x:number, strict?:boolean) => boolean;
     }
 
     export class Domain implements IDomain
@@ -24,9 +24,10 @@ module KG
             return [this.min, this.max]
         }
 
-        contains(x) {
-            var lowEnough:boolean = (this.max >= x);
-            var highEnough:boolean = (this.min <= x);
+        contains(x, strict?) {
+            strict = strict || false;
+            var lowEnough:boolean = strict ? (this.max > x) : (this.max >= x);
+            var highEnough:boolean = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
         }
 
@@ -50,6 +51,14 @@ module KG
     {
         x: any;
         y: any;
+    }
+
+    export function areTheSamePoint(a:ICoordinates, b:ICoordinates) {
+        return (a.x === b.x && a.y === b.y);
+    }
+
+    export function areNotTheSamePoint(a:ICoordinates, b:ICoordinates) {
+        return !areTheSamePoint(a,b);
     }
 
     export function translateByPixelCoordinates(coordinates:ICoordinates) {
