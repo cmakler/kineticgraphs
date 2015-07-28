@@ -98,12 +98,13 @@ module FinanceGraphs
                 color: 'blue'
             });
             p.riskReturnLine = new KG.Line({
+                name: 'twoPointSegment',
+                color: 'blue',
+                arrows: 'OPEN',
                 type: 'TwoPointLine',
                 def: {
-                    name: 'twoPointSegment',
-                    a: p.riskFreeAsset,
-                    b: p.optimalPortfolio,
-                    color: 'blue'
+                    p1: p.riskFreeAsset,
+                    p2: p.optimalPortfolio,
                 }
             });
             p.optimalPortfolioMean = 0;

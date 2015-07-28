@@ -203,6 +203,7 @@ module KGMath.Functions {
         private m: number;
 
         constructor(definition:PointSlopeLineDefinition) {
+            definition.p = KG.getCoordinates(definition.p);
             super(definition)
         }
 
@@ -235,10 +236,11 @@ module KGMath.Functions {
         private p2: KG.ICoordinates;
 
         constructor(definition:TwoPointLineDefinition) {
+            definition.p1 = KG.getCoordinates(definition.p1);
+            definition.p2 = KG.getCoordinates(definition.p2);
             super(definition)
         }
 
-        //
         _update(scope) {
 
             var l = this;

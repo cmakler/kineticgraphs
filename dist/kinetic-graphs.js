@@ -395,6 +395,7 @@ var KGMath;
         var PointSlopeLine = (function (_super) {
             __extends(PointSlopeLine, _super);
             function PointSlopeLine(definition) {
+                definition.p = KG.getCoordinates(definition.p);
                 _super.call(this, definition);
             }
             // Given Y - y = slope(X - x) => slope*X - Y + (y - slope*x)
@@ -413,9 +414,10 @@ var KGMath;
         var TwoPointLine = (function (_super) {
             __extends(TwoPointLine, _super);
             function TwoPointLine(definition) {
+                definition.p1 = KG.getCoordinates(definition.p1);
+                definition.p2 = KG.getCoordinates(definition.p2);
                 _super.call(this, definition);
             }
-            //
             TwoPointLine.prototype._update = function (scope) {
                 var l = this;
                 var x1 = l.p1.x, x2 = l.p2.x, y1 = l.p1.y, y2 = l.p2.y, rise = y2 - y1, run = x2 - x1;
@@ -1504,12 +1506,13 @@ var FinanceGraphs;
                 color: 'blue'
             });
             p.riskReturnLine = new KG.Line({
+                name: 'twoPointSegment',
+                color: 'blue',
+                arrows: 'OPEN',
                 type: 'TwoPointLine',
                 def: {
-                    name: 'twoPointSegment',
-                    a: p.riskFreeAsset,
-                    b: p.optimalPortfolio,
-                    color: 'blue'
+                    p1: p.riskFreeAsset,
+                    p2: p.optimalPortfolio
                 }
             });
             p.optimalPortfolioMean = 0;
