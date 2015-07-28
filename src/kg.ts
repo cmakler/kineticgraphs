@@ -15,6 +15,7 @@
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/dropline.ts"/>
 /// <reference path="viewObjects/segment.ts"/>
+/// <reference path="viewObjects/line.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>

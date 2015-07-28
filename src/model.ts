@@ -30,7 +30,7 @@ module KG
         }
 
         // Update the model
-        update(scope, callback) {
+        update(scope, callback?) {
 
             var model = this;
 

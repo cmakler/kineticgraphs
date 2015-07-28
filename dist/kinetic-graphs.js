@@ -782,24 +782,78 @@ var KG;
         return Segment;
     })(KG.ViewObject);
     KG.Segment = Segment;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
     var Line = (function (_super) {
         __extends(Line, _super);
         function Line(definition) {
+            definition.color = definition.color || 'gray';
             _super.call(this, definition);
-            this.linear = new KGMath.Functions.TwoPointLine({ p1: definition.a, p2: definition.b });
+            this.linear = new KGMath.Functions[definition.type](definition.def);
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'line';
         }
         Line.prototype._update = function (scope) {
             this.linear.update(scope);
             return this;
         };
-        Line.prototype.startPoint = function (view) {
-            return this.linear.viewBoundaryPoints(view)[0];
-        };
-        Line.prototype.endPoint = function (view) {
-            return this.linear.viewBoundaryPoints(view)[1];
+        Line.prototype.render = function (view) {
+            var NO_ARROW_STRING = 'NONE', BOTH_ARROW_STRING = 'BOTH', OPEN_ARROW_STRING = 'OPEN';
+            var line = this, linear = this.linear;
+            var group = view.objectGroup(line.name, line.initGroupFn(), false);
+            var startPoint = linear.viewBoundaryPoints(view)[0], endPoint = linear.viewBoundaryPoints(view)[1];
+            function addEndArrow() {
+                group.attr("marker-end", "url(#arrow-end-" + line.color + ")");
+            }
+            function addStartArrow() {
+                group.attr("marker-start", "url(#arrow-start-" + line.color + ")");
+            }
+            function removeEndArrow() {
+                group.attr("marker-end", null);
+            }
+            function removeStartArrow() {
+                group.attr("marker-start", null);
+            }
+            if (line.arrows == BOTH_ARROW_STRING) {
+                addEndArrow();
+                addStartArrow();
+            }
+            else if (line.arrows == OPEN_ARROW_STRING) {
+                if (startPoint.x == view.xAxis.max || startPoint.y == view.yAxis.max) {
+                    addStartArrow();
+                }
+                else {
+                    removeStartArrow();
+                }
+                if (endPoint.x == view.xAxis.max || endPoint.y == view.yAxis.max) {
+                    addEndArrow();
+                }
+                else {
+                    removeEndArrow();
+                }
+            }
+            else if (line.arrows == NO_ARROW_STRING) {
+                removeEndArrow();
+                removeStartArrow();
+            }
+            var dataLine = d3.svg.line().x(function (d) {
+                return view.xAxis.scale(d.x);
+            }).y(function (d) {
+                return view.yAxis.scale(d.y);
+            });
+            var lineSelection = group.select('.' + line.viewObjectClass);
+            lineSelection.attr({
+                'class': line.classAndVisibility(),
+                'd': dataLine(linear.viewBoundaryPoints(view)),
+                'stroke': line.color
+            });
+            return view;
         };
         return Line;
-    })(Segment);
+    })(KG.ViewObject);
     KG.Line = Line;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
@@ -994,13 +1048,13 @@ var KG;
             // Create new SVG element for the view visualization
             var svg = frame.append('svg').attr('width', view.dimensions.width).attr('height', view.dimensions.height);
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue"]).enter().append("marker").attr("id", function (d) {
+            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue", "purple"]).enter().append("marker").attr("id", function (d) {
                 return "arrow-end-" + d;
             }).attr("refX", 11).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse").append("svg:path").attr("d", "M2,2 L2,11 L10,6 L2,2").attr("fill", function (d) {
                 return d;
             });
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue"]).enter().append("svg:marker").attr("id", function (d) {
+            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue", "purple"]).enter().append("svg:marker").attr("id", function (d) {
                 return "arrow-start-" + d;
             }).attr("refX", 2).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse").append("svg:path").attr("d", "M11,2 L11,11 L2,6 L11,2").attr("fill", function (d) {
                 return d;
@@ -1453,12 +1507,16 @@ var FinanceGraphs;
                     align: 'right',
                     valign: 'bottom'
                 },
-                color: 'black'
+                color: 'blue'
             });
-            p.riskReturnLine = new KG.Segment({
-                name: 'twoPointSegment',
-                a: p.riskFreeAsset,
-                b: p.optimalPortfolio
+            p.riskReturnLine = new KG.Line({
+                type: 'TwoPointLine',
+                def: {
+                    name: 'twoPointSegment',
+                    a: p.riskFreeAsset,
+                    b: p.optimalPortfolio,
+                    color: 'blue'
+                }
             });
             p.optimalPortfolioMean = 0;
             p.optimalPortfolioStDev = 0.5;
@@ -1717,14 +1775,17 @@ var EconGraphs;
             this.line = new KG.Line({
                 name: 'demand',
                 color: 'purple',
-                arrows: 'NONE',
-                a: {
-                    x: 'params.x1',
-                    y: 'params.y1'
-                },
-                b: {
-                    x: 'params.x2',
-                    y: 'params.y2'
+                arrows: 'OPEN',
+                type: 'TwoPointLine',
+                def: {
+                    p1: {
+                        x: 'params.x1',
+                        y: 'params.y1'
+                    },
+                    p2: {
+                        x: 'params.x2',
+                        y: 'params.y2'
+                    }
                 }
             });
             this.xDiffSegment = new KG.Segment({
@@ -1777,9 +1838,39 @@ var EconGraphs;
     })(EconGraphs.Elasticity);
     EconGraphs.MidpointElasticity = MidpointElasticity;
 })(EconGraphs || (EconGraphs = {}));
-/**
- * Created by cmakler on 7/7/15.
- */
+/// <reference path="../eg.ts"/>
+'use strict';
+var EconGraphs;
+(function (EconGraphs) {
+    var PointElasticity = (function (_super) {
+        __extends(PointElasticity, _super);
+        function PointElasticity(definition) {
+            _super.call(this, definition);
+            this.pointView = new KG.Point({
+                name: 'point',
+                coordinates: definition.point,
+                size: 500,
+                xDrag: true,
+                yDrag: true,
+                droplines: {
+                    horizontal: 'P',
+                    vertical: 'Q'
+                }
+            });
+            this.line = new KGMath.Functions.PointSlopeLine({
+                p: definition.point,
+                m: definition.slope
+            });
+        }
+        PointElasticity.prototype._update = function (scope) {
+            var e = this;
+            e.elasticity = (e.point.x / e.point.y) * e.slope;
+            return e.calculateElasticity();
+        };
+        return PointElasticity;
+    })(EconGraphs.Elasticity);
+    EconGraphs.PointElasticity = PointElasticity;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="elasticity/elasticity.ts"/>
 /// <reference path="elasticity/midpoint.ts"/>
@@ -1797,6 +1888,7 @@ var EconGraphs;
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/dropline.ts"/>
 /// <reference path="viewObjects/segment.ts"/>
+/// <reference path="viewObjects/line.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>

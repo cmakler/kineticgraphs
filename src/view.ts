@@ -104,7 +104,7 @@ module KG
                 .attr('height', view.dimensions.height);
 
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue"]).enter()
+            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue","purple"]).enter()
                 .append("marker")
                 .attr("id", function(d){return "arrow-end-" + d})
                 .attr("refX", 11)
@@ -118,7 +118,7 @@ module KG
                 .attr("fill",function(d) {return d});
 
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue"]).enter()
+            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue","purple"]).enter()
                 .append("svg:marker")
                 .attr("id", function(d){return "arrow-start-" + d})
                 .attr("refX", 2)

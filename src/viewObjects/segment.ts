@@ -144,27 +144,4 @@ module KG {
 
     }
 
-    export class Line extends Segment {
-
-        public linear:KGMath.Functions.TwoPointLine;
-
-        constructor(definition) {
-            super(definition);
-            this.linear = new KGMath.Functions.TwoPointLine({p1:definition.a, p2:definition.b})
-        }
-
-        _update(scope) {
-            this.linear.update(scope);
-            return this;
-        }
-
-        startPoint(view) {
-            return this.linear.viewBoundaryPoints(view)[0];
-        }
-
-        endPoint(view) {
-            return this.linear.viewBoundaryPoints(view)[1];
-        }
-    }
-
 }

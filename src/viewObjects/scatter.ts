@@ -37,8 +37,6 @@ module KG
             var DATA_PATH_CLASS = 'scatter',
                 scope = graph.scope;
 
-
-
             function init(newGroup:D3.Selection) {
                 return newGroup;
             }
@@ -47,12 +45,12 @@ module KG
 
             var dataPoints = group.selectAll('.' + DATA_PATH_CLASS).data(this.data);
 
-            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS + ' asset')
+            dataPoints.enter().append('path').attr('class', this.classAndVisibility() + ' ' + DATA_PATH_CLASS)
                 .on('mouseover', function(d){
-                    scope.$apply(function(){scope.selectedWeights = d.weights;});
+                    scope.$apply(function(){scope.selectedScatterPoint = d;});
                 })
                 .on('mouseout', function(d){
-                    scope.$apply(function(){scope.selectedWeights = [];});
+                    scope.$apply(function(){scope.selectedScatterPoint = null;});
                 });
 
             dataPoints.attr({

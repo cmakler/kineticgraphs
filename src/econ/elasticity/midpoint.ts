@@ -92,14 +92,17 @@ module EconGraphs {
             this.line = new KG.Line({
                 name: 'demand',
                 color: 'purple',
-                arrows: 'NONE',
-                a: {
-                    x: 'params.x1',
-                    y: 'params.y1'
-                },
-                b: {
-                    x: 'params.x2',
-                    y: 'params.y2'
+                arrows: 'OPEN',
+                type: 'TwoPointLine',
+                def: {
+                    p1: {
+                        x: 'params.x1',
+                        y: 'params.y1'
+                    },
+                    p2: {
+                        x: 'params.x2',
+                        y: 'params.y2'
+                    }
                 }
             });
             this.xDiffSegment = new KG.Segment({
