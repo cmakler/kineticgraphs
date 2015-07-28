@@ -52,36 +52,23 @@ module KG {
             var startPoint = linear.viewBoundaryPoints(view)[0],
                 endPoint = linear.viewBoundaryPoints(view)[1];
 
-            function addEndArrow() {
-                group.attr("marker-end", "url(#arrow-end-" + line.color + ")")
-            }
-            function addStartArrow() {
-                group.attr("marker-start", "url(#arrow-start-" + line.color + ")")
-            }
-            function removeEndArrow() {
-                group.attr("marker-end",null);
-            }
-            function removeStartArrow() {
-                group.attr("marker-start",null);
-            }
-
             if(line.arrows == BOTH_ARROW_STRING) {
-                addEndArrow();
-                addStartArrow();
+                line.addArrow(group,'start');
+                line.addArrow(group,'end');
             } else if(line.arrows == OPEN_ARROW_STRING) {
                 if(startPoint.x == view.xAxis.max || startPoint.y == view.yAxis.max) {
-                    addStartArrow();
+                    line.addArrow(group,'start');
                 } else {
-                    removeStartArrow();
+                    line.removeArrow(group,'start');
                 }
                 if(endPoint.x == view.xAxis.max || endPoint.y == view.yAxis.max) {
-                    addEndArrow();
+                    line.addArrow(group,'end');
                 } else {
-                    removeEndArrow();
+                    line.removeArrow(group,'end');
                 }
             } else if(line.arrows == NO_ARROW_STRING) {
-                removeEndArrow();
-                removeStartArrow();
+                line.removeArrow(group,'start');
+                line.removeArrow(group,'end');
             }
 
 

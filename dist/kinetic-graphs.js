@@ -508,6 +508,12 @@ var KG;
             }
             return classString;
         };
+        ViewObject.prototype.addArrow = function (group, startOrEnd) {
+            group.attr("marker-" + startOrEnd, "url(#arrow-" + startOrEnd + "-" + this.color + ")");
+        };
+        ViewObject.prototype.removeArrow = function (group, startOrEnd) {
+            group.attr("marker-" + startOrEnd, null);
+        };
         ViewObject.prototype.render = function (view) {
             return view; // overridden by child class
         };
@@ -746,16 +752,16 @@ var KG;
             var segment = this;
             var group = view.objectGroup(segment.name, segment.initGroupFn(), false);
             if (segment.endArrow && segment.length > 0) {
-                group.attr("marker-end", "url(#arrow-end-" + segment.color + ")");
+                segment.addArrow(group, 'end');
             }
             else {
-                group.attr("marker-end", null);
+                segment.removeArrow(group, 'end');
             }
             if (segment.startArrow && segment.length > 0) {
-                group.attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+                segment.addArrow(group, 'start');
             }
             else {
-                group.attr("market-start", null);
+                segment.removeArrow(group, 'start');
             }
             var dataLine = d3.svg.line().x(function (d) {
                 return view.xAxis.scale(d.x);
@@ -805,39 +811,27 @@ var KG;
             var line = this, linear = this.linear;
             var group = view.objectGroup(line.name, line.initGroupFn(), false);
             var startPoint = linear.viewBoundaryPoints(view)[0], endPoint = linear.viewBoundaryPoints(view)[1];
-            function addEndArrow() {
-                group.attr("marker-end", "url(#arrow-end-" + line.color + ")");
-            }
-            function addStartArrow() {
-                group.attr("marker-start", "url(#arrow-start-" + line.color + ")");
-            }
-            function removeEndArrow() {
-                group.attr("marker-end", null);
-            }
-            function removeStartArrow() {
-                group.attr("marker-start", null);
-            }
             if (line.arrows == BOTH_ARROW_STRING) {
-                addEndArrow();
-                addStartArrow();
+                line.addArrow(group, 'start');
+                line.addArrow(group, 'end');
             }
             else if (line.arrows == OPEN_ARROW_STRING) {
                 if (startPoint.x == view.xAxis.max || startPoint.y == view.yAxis.max) {
-                    addStartArrow();
+                    line.addArrow(group, 'start');
                 }
                 else {
-                    removeStartArrow();
+                    line.removeArrow(group, 'start');
                 }
                 if (endPoint.x == view.xAxis.max || endPoint.y == view.yAxis.max) {
-                    addEndArrow();
+                    line.addArrow(group, 'end');
                 }
                 else {
-                    removeEndArrow();
+                    line.removeArrow(group, 'end');
                 }
             }
             else if (line.arrows == NO_ARROW_STRING) {
-                removeEndArrow();
-                removeStartArrow();
+                line.removeArrow(group, 'start');
+                line.removeArrow(group, 'end');
             }
             var dataLine = d3.svg.line().x(function (d) {
                 return view.xAxis.scale(d.x);

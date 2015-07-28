@@ -107,15 +107,15 @@ module KG {
             var group:D3.Selection = view.objectGroup(segment.name, segment.initGroupFn(), false);
 
             if(segment.endArrow && segment.length > 0) {
-                group.attr("marker-end", "url(#arrow-end-" + segment.color + ")")
+                segment.addArrow(group,'end');
             } else {
-                group.attr("marker-end",null)
+                segment.removeArrow(group,'end');
             }
 
             if(segment.startArrow && segment.length > 0) {
-                group.attr("marker-start", "url(#arrow-start-" + segment.color + ")");
+                segment.addArrow(group,'start');
             } else {
-                group.attr("market-start",null)
+                segment.removeArrow(group,'start');
             }
 
             var dataLine = d3.svg.line()

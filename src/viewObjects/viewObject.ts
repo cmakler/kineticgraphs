@@ -29,6 +29,8 @@ module KG
         // Creation and rendering
         initGroupFn: (svgType:string, className: string) => any;
         render: (view: View) => View;
+        addArrow: (group:D3.Selection, startOrEnd: string) => void;
+        removeArrow: (group:D3.Selection, startOrEnd: string) => void;
         createSubObjects: (view: View) => View;
 
         // Dragging behavior
@@ -79,6 +81,14 @@ module KG
                 classString += ' invisible';
             }
             return classString;
+        }
+
+        addArrow(group: D3.Selection, startOrEnd: string) {
+            group.attr("marker-" + startOrEnd, "url(#arrow-" + startOrEnd + "-" + this.color + ")")
+        }
+
+        removeArrow(group: D3.Selection, startOrEnd: string) {
+            group.attr("marker-" + startOrEnd, null);
         }
 
         render(view) {
