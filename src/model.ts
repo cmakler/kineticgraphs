@@ -7,10 +7,22 @@ module KG
 
     }
 
+    export interface IPropertySetter
+    {
+
+        name: string;
+        value: any;
+        defaultValue: any;
+    }
+
     export interface IModel
     {
+        setNumericProperty: (propertySetter:IPropertySetter) => Model;
+        setArrayProperty: (propertySetter:IPropertySetter) => Model;
         update: (scope:IScope, callback?: (any)=>any) => void;
     }
+
+
 
     export class Model
     {
@@ -27,6 +39,28 @@ module KG
                     }
                 }
             }
+        }
+
+        setNumericProperty(propertySetter) {
+            var model = this;
+            if(!isNaN(propertySetter.value)) {
+                model[propertySetter.name] = propertySetter.value;
+            } else if(!model.hasOwnProperty(propertySetter.name)) {
+                model[propertySetter.name] = propertySetter.defaultValue || 0;
+            }
+            return model;
+        }
+
+        setArrayProperty(propertySetter) {
+            var model = this;
+            if(propertySetter.value instanceof Array) {
+                model[propertySetter.name] = propertySetter.value;
+            } else if(propertySetter.value) {
+                model[propertySetter.name] = [propertySetter.value];
+            } else if(!model.hasOwnProperty(propertySetter.name)) {
+                model[propertySetter.name] = propertySetter.defaultValue;
+            }
+            return model;
         }
 
         // Update the model

@@ -92,7 +92,7 @@ module EconGraphs {
             this.line = new KG.Line({
                 name: 'demand',
                 color: 'purple',
-                arrows: 'OPEN',
+                arrows: 'NONE',
                 type: 'TwoPointLine',
                 def: {
                     p1: {
@@ -141,9 +141,15 @@ module EconGraphs {
             });
         }
 
-        _update(scope) {
-
+        _calculateElasticity(inputs) {
             var e = this;
+
+            if(inputs) {
+                if(inputs.hasOwnProperty('point1') && inputs.hasOwnProperty('point2')) {
+                    e.point1 = inputs.point1;
+                    e.point2 = inputs.point2;
+                }
+            }
 
             e.xDiff = e.point1.x - e.point2.x;
             e.yDiff = e.point1.y - e.point2.y;
@@ -153,8 +159,9 @@ module EconGraphs {
             e.yPercentDiff = e.yDiff / e.yAvg;
             e.elasticity = e.xPercentDiff / e.yPercentDiff;
 
-            return e.calculateElasticity();
+            return e;
         }
+
     }
 
 }

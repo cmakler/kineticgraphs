@@ -49,8 +49,8 @@ module KG {
 
             var group:D3.Selection = view.objectGroup(line.name, line.initGroupFn(), false);
 
-            var startPoint = linear.viewBoundaryPoints(view)[0],
-                endPoint = linear.viewBoundaryPoints(view)[1];
+            var startPoint = linear.points(view)[0],
+                endPoint = linear.points(view)[1];
 
             if(line.arrows == BOTH_ARROW_STRING) {
                 line.addArrow(group,'start');
@@ -81,7 +81,7 @@ module KG {
             lineSelection
                 .attr({
                     'class': line.classAndVisibility(),
-                    'd': dataLine(linear.viewBoundaryPoints(view)),
+                    'd': dataLine([startPoint,endPoint]),
                     'stroke': line.color,
                 });
 

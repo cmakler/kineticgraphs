@@ -26,7 +26,6 @@ module KGMath.Functions {
         yIntercept: number;
         isVertical: boolean;
         isHorizontal: boolean;
-        viewBoundaryPoints: (view:KG.IView) => KG.ICoordinates[];
     }
 
     export class Linear extends Base implements ILinear {
@@ -73,7 +72,7 @@ module KGMath.Functions {
             return l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
         }
 
-        viewBoundaryPoints(view:KG.IView) {
+        points(view:KG.IView) {
 
             var l = this;
 

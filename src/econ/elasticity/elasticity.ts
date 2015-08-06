@@ -6,11 +6,13 @@ module EconGraphs {
     {
         inverse? : boolean;
         terms?: {};
+        fn? : KGMath.Functions.Base;
     }
 
     export interface IElasticity extends KG.IModel
     {
-        calculateElasticity: (Elasticity) => Elasticity;
+        calculateElasticity: (inputs? : any) => Elasticity;
+        _calculateElasticity: (inputs : any) => Elasticity;
         elasticity: number;
         absoluteElasticity: number;
         elasticityWord: string;
@@ -39,13 +41,15 @@ module EconGraphs {
             super(definition);
         }
 
-        calculateElasticity() {
+        calculateElasticity(inputs? : any) {
 
             var e = this;
 
+            e = e._calculateElasticity(inputs);
+
             e.absoluteElasticity = Math.abs(e.elasticity);
             if(isNaN(e.absoluteElasticity)) {
-                e.absoluteElasticity == '\\emptyset'
+                e.absoluteElasticity == '\\emptyset';
             }
             e.elasticityComparator = e.elasticityNumber(true);
 
@@ -68,6 +72,10 @@ module EconGraphs {
             return e;
         }
 
+        _calculateElasticity(inputs) {
+            return this; // overridden by subclass
+        }
+
         elasticityNumber(absoluteValue:boolean) {
             var e = this;
             absoluteValue = absoluteValue || false;
@@ -83,7 +91,9 @@ module EconGraphs {
             return returnString;
         }
 
-
+        _update(scope) {
+            return this.calculateElasticity();
+        }
 
     }
 

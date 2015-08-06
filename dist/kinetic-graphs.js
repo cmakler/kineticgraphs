@@ -101,6 +101,29 @@ var KG;
                 }
             }
         }
+        Model.prototype.setNumericProperty = function (propertySetter) {
+            var model = this;
+            if (!isNaN(propertySetter.value)) {
+                model[propertySetter.name] = propertySetter.value;
+            }
+            else if (!model.hasOwnProperty(propertySetter.name)) {
+                model[propertySetter.name] = propertySetter.defaultValue || 0;
+            }
+            return model;
+        };
+        Model.prototype.setArrayProperty = function (propertySetter) {
+            var model = this;
+            if (propertySetter.value instanceof Array) {
+                model[propertySetter.name] = propertySetter.value;
+            }
+            else if (propertySetter.value) {
+                model[propertySetter.name] = [propertySetter.value];
+            }
+            else if (!model.hasOwnProperty(propertySetter.name)) {
+                model[propertySetter.name] = propertySetter.defaultValue;
+            }
+            return model;
+        };
         // Update the model
         Model.prototype.update = function (scope, callback) {
             var model = this;
@@ -256,16 +279,9 @@ var KGMath;
         var Base = (function (_super) {
             __extends(Base, _super);
             function Base(definition) {
+                definition.level = definition.level || 0;
                 _super.call(this, definition);
             }
-            // Returns y value for given x, for a two-dimensional function
-            Base.prototype.yValue = function (x) {
-                return 0;
-            };
-            // Returns x value for given y, for a two-dimensional function
-            Base.prototype.xValue = function (y) {
-                return 0;
-            };
             // Returns the slope between (a,f(a)) and (b,f(b)).
             // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
             // Assumes that a and b are both scalars (for now).
@@ -276,9 +292,89 @@ var KGMath;
                 var s = (f.yValue(a) - f.yValue(b)) / (a - b);
                 return inverse ? 1 / s : s;
             };
+            // set bases for evaluating a polynomial or monomial
+            Base.prototype.setBases = function (bases) {
+                return this.setArrayProperty({
+                    name: 'bases',
+                    value: bases,
+                    defaultValue: []
+                });
+            };
+            // set level of function (for generating level sets)
+            Base.prototype.setLevel = function (level) {
+                return this.setNumericProperty({
+                    name: 'level',
+                    value: level,
+                    defaultValue: 0
+                });
+            };
+            Base.prototype.value = function (bases) {
+                return 0; // overridden by subclass
+            };
+            // Returns y value for given x, for a two-dimensional function
+            Base.prototype.yValue = function (x) {
+                return 0;
+            };
+            // Returns x value for given y, for a two-dimensional function
+            Base.prototype.xValue = function (y) {
+                return 0;
+            };
+            Base.prototype.points = function (view) {
+                return [{ x: 0, y: 0 }]; // overridden by subclass
+            };
             return Base;
         })(KG.Model);
         Functions.Base = Base;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+/*
+ A monomial function is a term of the form c(b1^p1)(b2^p2)...(bn^pn)
+ where 'c' is the coefficient, 'bi' is the i'th base, and 'pi' is the i'th power.
+
+ The initializing object, params, should be of the form
+
+ params = {coefficient: (number), bases: (number or array), powers: (number or array)}
+
+ Any of these parameters may be null initially and set later with the setters.
+ */
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Monomial = (function (_super) {
+            __extends(Monomial, _super);
+            function Monomial(definition) {
+                _super.call(this, definition);
+            }
+            // Establish setters
+            Monomial.prototype.setCoefficient = function (coefficient) {
+                return this.setNumericProperty({
+                    name: 'coefficient',
+                    value: coefficient,
+                    defaultValue: 1
+                });
+            };
+            Monomial.prototype.setPowers = function (powers) {
+                return this.setArrayProperty({
+                    name: 'powers',
+                    value: powers,
+                    defaultValue: []
+                });
+            };
+            // Evaluate monomial for a given set of bases. If none are set, use m.bases.
+            Monomial.prototype.value = function (bases) {
+                var m = this;
+                m.setBases(bases);
+                var basePowerPairs = Math.min(m.bases.length, m.powers.length);
+                var result = m.coefficient;
+                for (var t = 0; t < basePowerPairs; t++) {
+                    result *= Math.pow(m.bases[t], m.powers[t]);
+                }
+                return result;
+            };
+            return Monomial;
+        })(Functions.Base);
+        Functions.Monomial = Monomial;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
 /*
@@ -330,7 +426,7 @@ var KGMath;
                 var l = this;
                 return l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
             };
-            Linear.prototype.viewBoundaryPoints = function (view) {
+            Linear.prototype.points = function (view) {
                 var l = this;
                 var xDomain = view.xAxis.domain, yDomain = view.yAxis.domain;
                 var points = [];
@@ -482,6 +578,7 @@ var KGMath;
 })(KGMath || (KGMath = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
+/// <reference path="functions/monomial.ts"/>
 /// <reference path="functions/linear.ts"/>
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -812,7 +909,7 @@ var KG;
             var NO_ARROW_STRING = 'NONE', BOTH_ARROW_STRING = 'BOTH', OPEN_ARROW_STRING = 'OPEN';
             var line = this, linear = this.linear;
             var group = view.objectGroup(line.name, line.initGroupFn(), false);
-            var startPoint = linear.viewBoundaryPoints(view)[0], endPoint = linear.viewBoundaryPoints(view)[1];
+            var startPoint = linear.points(view)[0], endPoint = linear.points(view)[1];
             if (line.arrows == BOTH_ARROW_STRING) {
                 line.addArrow(group, 'start');
                 line.addArrow(group, 'end');
@@ -843,7 +940,7 @@ var KG;
             var lineSelection = group.select('.' + line.viewObjectClass);
             lineSelection.attr({
                 'class': line.classAndVisibility(),
-                'd': dataLine(linear.viewBoundaryPoints(view)),
+                'd': dataLine([startPoint, endPoint]),
                 'stroke': line.color
             });
             return view;
@@ -1672,8 +1769,9 @@ var EconGraphs;
             }, definition.terms);
             _super.call(this, definition);
         }
-        Elasticity.prototype.calculateElasticity = function () {
+        Elasticity.prototype.calculateElasticity = function (inputs) {
             var e = this;
+            e = e._calculateElasticity(inputs);
             e.absoluteElasticity = Math.abs(e.elasticity);
             if (isNaN(e.absoluteElasticity)) {
                 e.absoluteElasticity == '\\emptyset';
@@ -1701,6 +1799,9 @@ var EconGraphs;
             }
             return e;
         };
+        Elasticity.prototype._calculateElasticity = function (inputs) {
+            return this; // overridden by subclass
+        };
         Elasticity.prototype.elasticityNumber = function (absoluteValue) {
             var e = this;
             absoluteValue = absoluteValue || false;
@@ -1710,6 +1811,9 @@ var EconGraphs;
             var returnString = (!absoluteValue && e.elasticity < 0) ? '-' : '';
             returnString += (e.absoluteElasticity == Infinity) ? "\\infty" : (e.absoluteElasticity == 0) ? "0" : (e.absoluteElasticity == 1) ? "1" : e.absoluteElasticity.toFixed(2);
             return returnString;
+        };
+        Elasticity.prototype._update = function (scope) {
+            return this.calculateElasticity();
         };
         return Elasticity;
     })(KG.Model);
@@ -1772,7 +1876,7 @@ var EconGraphs;
             this.line = new KG.Line({
                 name: 'demand',
                 color: 'purple',
-                arrows: 'OPEN',
+                arrows: 'NONE',
                 type: 'TwoPointLine',
                 def: {
                     p1: {
@@ -1820,8 +1924,14 @@ var EconGraphs;
                 }
             });
         }
-        MidpointElasticity.prototype._update = function (scope) {
+        MidpointElasticity.prototype._calculateElasticity = function (inputs) {
             var e = this;
+            if (inputs) {
+                if (inputs.hasOwnProperty('point1') && inputs.hasOwnProperty('point2')) {
+                    e.point1 = inputs.point1;
+                    e.point2 = inputs.point2;
+                }
+            }
             e.xDiff = e.point1.x - e.point2.x;
             e.yDiff = e.point1.y - e.point2.y;
             e.xAvg = 0.5 * (e.point1.x + e.point2.x);
@@ -1829,7 +1939,7 @@ var EconGraphs;
             e.xPercentDiff = e.xDiff / e.xAvg;
             e.yPercentDiff = e.yDiff / e.yAvg;
             e.elasticity = e.xPercentDiff / e.yPercentDiff;
-            return e.calculateElasticity();
+            return e;
         };
         return MidpointElasticity;
     })(EconGraphs.Elasticity);
@@ -1868,10 +1978,73 @@ var EconGraphs;
     })(EconGraphs.Elasticity);
     EconGraphs.PointElasticity = PointElasticity;
 })(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var Demand = (function (_super) {
+        __extends(Demand, _super);
+        function Demand(definition) {
+            _super.call(this, definition);
+            this.demandFunction = new KGMath.Functions[definition.type](definition.def);
+            this.elasticity = new EconGraphs.MidpointElasticity({ point1: { x: 0, y: 0 }, point2: { x: 0, y: 0 } });
+        }
+        Demand.prototype.quantityAtPrice = function (price) {
+            price = (price > 0) ? price : 0;
+            var qd = this.demandFunction.xValue(price);
+            return Math.max(0, qd);
+        };
+        Demand.prototype.priceAtQuantity = function (quantity) {
+            quantity = (quantity > 0) ? quantity : 0;
+            var pd = this.demandFunction.yValue(quantity);
+            return Math.max(0, pd);
+        };
+        Demand.prototype.priceElasticity = function (price) {
+            var d = this;
+            if (d.elasticity instanceof EconGraphs.MidpointElasticity) {
+                d.elasticity = d.elasticity.calculateElasticity({
+                    point1: {
+                        x: d.quantityAtPrice(price * 0.99),
+                        y: price * 0.99
+                    },
+                    point2: {
+                        x: d.quantityAtPrice(price * 1.01),
+                        y: price * 1.01
+                    }
+                });
+            }
+            return d.elasticity;
+        };
+        return Demand;
+    })(KG.Model);
+    EconGraphs.Demand = Demand;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var LinearDemand = (function (_super) {
+        __extends(LinearDemand, _super);
+        function LinearDemand(definition) {
+            _super.call(this, definition);
+            this.marginalRevenue = new KGMath.Functions.TwoPointLine({ p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 } });
+        }
+        LinearDemand.prototype._update = function (scope) {
+            var d = this;
+            d.priceIntercept = d.demandFunction.yValue(0);
+            d.quantityIntercept = d.demandFunction.xValue(0);
+            d.marginalRevenue.p1 = { x: 0, y: d.priceIntercept };
+            d.marginalRevenue.p2 = { x: d.quantityIntercept / 2, y: 0 };
+            return d;
+        };
+        return LinearDemand;
+    })(EconGraphs.Demand);
+    EconGraphs.LinearDemand = LinearDemand;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="elasticity/elasticity.ts"/>
 /// <reference path="elasticity/midpoint.ts"/>
 /// <reference path="elasticity/point.ts"/>
+/// <reference path="market/demand.ts"/>
+/// <reference path="market/linearDemand.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
