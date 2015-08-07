@@ -18,6 +18,13 @@ var KG;
             var highEnough = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
         };
+        Domain.prototype.samplePoints = function (numSamples) {
+            var min = this.min, max = this.max, sp = [];
+            for (var i = 0; i < numSamples; i++) {
+                sp.push(min + (i / (numSamples - 1)) * (max - min));
+            }
+            return sp;
+        };
         return Domain;
     })();
     KG.Domain = Domain;
@@ -66,6 +73,13 @@ var KG;
         }
     }
     KG.getCoordinates = getCoordinates;
+    function sortObjects(key, descending) {
+        return function (a, b) {
+            var lower = descending ? a[key] : b[key], higher = descending ? b[key] : a[key];
+            return lower > higher ? -1 : lower < higher ? 1 : lower <= higher ? 0 : NaN;
+        };
+    }
+    KG.sortObjects = sortObjects;
     function createInstance(definition) {
         // from http://stackoverflow.com/questions/1366127/
         function typeSpecificConstructor(typeName) {
@@ -97,6 +111,9 @@ var KG;
                     var value = definition[key];
                     if (value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
                         model[key] = KG.createInstance(value);
+                    }
+                    else {
+                        model[key] = value;
                     }
                 }
             }
@@ -155,7 +172,7 @@ var KG;
                     // If the object's property is an object, parses the object.
                     return parseObject(value);
                 }
-                else if (value.toString() !== undefined) {
+                else if (scope && value.toString() !== undefined) {
                     var e = scope.$eval(value.toString());
                     return (e == undefined) ? value : e;
                 }
@@ -173,6 +190,9 @@ var KG;
             return model;
         };
         Model.prototype._update = function (scope) {
+            return this; // overridden by child classes
+        };
+        Model.prototype._calculateValues = function () {
             return this; // overridden by child classes
         };
         return Model;
@@ -292,6 +312,19 @@ var KGMath;
                 var s = (f.yValue(a) - f.yValue(b)) / (a - b);
                 return inverse ? 1 / s : s;
             };
+            Base.prototype.setBase = function (index, base) {
+                var fn = this;
+                if (fn.hasOwnProperty('bases')) {
+                    fn.bases[index - 1] = base;
+                }
+                else {
+                    fn.bases = [];
+                    for (var i = 0; i < index; i++) {
+                        fn.bases.push((i == index - 1) ? base : 1);
+                    }
+                }
+                return fn;
+            };
             // set bases for evaluating a polynomial or monomial
             Base.prototype.setBases = function (bases) {
                 return this.setArrayProperty({
@@ -319,8 +352,28 @@ var KGMath;
             Base.prototype.xValue = function (y) {
                 return 0;
             };
-            Base.prototype.points = function (view) {
-                return [{ x: 0, y: 0 }]; // overridden by subclass
+            Base.prototype.points = function (view, yIsIndependent, numSamplePoints) {
+                var fn = this, points = [];
+                numSamplePoints = numSamplePoints || 51;
+                var xSamplePoints = view.xAxis.domain.samplePoints(numSamplePoints), ySamplePoints = view.yAxis.domain.samplePoints(numSamplePoints);
+                for (var i = 0; i < numSamplePoints; i++) {
+                    var x = xSamplePoints[i];
+                    var yOfX = fn.yValue(x);
+                    if (view.yAxis.domain.contains(yOfX)) {
+                        points.push({ x: x, y: yOfX });
+                    }
+                    var y = ySamplePoints[i];
+                    var xOfY = fn.xValue(y);
+                    if (view.yAxis.domain.contains(yOfX)) {
+                        points.push({ x: xOfY, y: y });
+                    }
+                }
+                if (yIsIndependent) {
+                    return points.sort(KG.sortObjects('y'));
+                }
+                else {
+                    return points.sort(KG.sortObjects('x'));
+                }
             };
             return Base;
         })(KG.Model);
@@ -372,9 +425,141 @@ var KGMath;
                 }
                 return result;
             };
+            // Return the monomial that is the derivative of this monomial
+            // with respect to the n'th variable
+            Monomial.prototype.derivative = function (n) {
+                var m = this;
+                // n is the index of the term; first term by default
+                n = n - 1 || 0;
+                return new Monomial({
+                    // the new coefficient is the old coefficient times
+                    //the power of the variable whose derivative we're taking
+                    coefficient: m.coefficient * m.powers[n],
+                    powers: m.powers.map(function (p, index) {
+                        if (index == n) {
+                            return p - 1;
+                        }
+                        else {
+                            return p;
+                        }
+                    }),
+                    bases: m.bases
+                });
+            };
+            // Return the monomial that solves the function c(b1^p1)(b2^p2) = level for bn
+            // For example, to find the level curve where 3(x^2)(y^3) = 6 and express it as y(x), this would return
+            // y = [6/(3x^-2)]^(1/3) = [(6/2)^1/3][(x^-2)^1/3] = [(6/2)^1/3][x^-2/3]
+            // Note that the indices of the bases in the returned monomial are the same as the original.
+            Monomial.prototype.levelCurve = function (n, level) {
+                var m = this;
+                // note: level can be a numerical value or an array of bases at which to evaluate the monomial
+                if (level) {
+                    m.setLevel(level);
+                }
+                // n is the index of the term; first term by default
+                n = n - 1 || 0;
+                // pn is the power to which the base variable we're solving for is raised
+                var pn = m.powers[n];
+                if (pn == 0) {
+                    return null;
+                }
+                return new Monomial({
+                    // the coefficient of the new monomial is (level/c)^1/p
+                    coefficient: Math.pow(m.level / m.coefficient, 1 / pn),
+                    // each of the powers for the remaining bases is divided by -p
+                    powers: m.powers.map(function (p, index) {
+                        if (index == n) {
+                            return 0;
+                        }
+                        else {
+                            return -p / pn;
+                        }
+                    }),
+                    bases: m.bases
+                });
+            };
+            // returns the y value corresponding to the given x value for m(x,y) = m.level
+            Monomial.prototype.yValue = function (x) {
+                this.setBase(1, x);
+                return this.levelCurve(2).value();
+            };
+            // returns the x value corresponding to the given y value for m(x,y) = m.level
+            Monomial.prototype.xValue = function (y) {
+                this.setBase(2, y);
+                return this.levelCurve(1).value();
+            };
             return Monomial;
         })(Functions.Base);
         Functions.Monomial = Monomial;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+/*
+ A polynomial function is an array of monomial functions.
+ Its value is the sum of its component functions.
+ Its derivative is the array of the derivatives of its component functions.
+ */
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Polynomial = (function (_super) {
+            __extends(Polynomial, _super);
+            function Polynomial(definition) {
+                _super.call(this, definition);
+                // Each element of the params array should be a monomial or a monomial definition.
+                function createTerm(termDef) {
+                    if (termDef instanceof Functions.Monomial) {
+                        return termDef;
+                    }
+                    else {
+                        return new Functions.Monomial(termDef);
+                    }
+                }
+                this.terms = definition.terms.map(createTerm);
+            }
+            // The coefficients and powers of each term may be get and set via the term's index
+            Polynomial.prototype.setCoefficient = function (n, coefficient) {
+                var p = this;
+                p.terms[n - 1].setCoefficient(coefficient);
+                return p;
+            };
+            Polynomial.prototype.setPowers = function (n, powers) {
+                var p = this;
+                p.terms[n - 1].setPowers(powers);
+                return p;
+            };
+            // The value of a polynomial is the sum of the values of its monomial terms
+            Polynomial.prototype.value = function (bases) {
+                var p = this;
+                p.setBases(bases);
+                var result = 0;
+                for (var i = 0; i < p.terms.length; i++) {
+                    result += p.terms[i].value(p.bases);
+                }
+                return result;
+            };
+            // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
+            Polynomial.prototype.derivative = function (n) {
+                var p = this;
+                return new Polynomial({ terms: p.terms.map(function (term) {
+                    return term.derivative(n);
+                }) });
+            };
+            // Assume all bases except the first have been set; replace the base of the first variable ('x') with the x value
+            Polynomial.prototype.yValue = function (x) {
+                var p = this;
+                var inputs = p.bases.map(function (val, index) {
+                    return (index == 0) ? x : val;
+                });
+                return p.value(inputs);
+            };
+            // Not generally a valid concept for a polynomial
+            Polynomial.prototype.xValue = function (y) {
+                return null;
+            };
+            return Polynomial;
+        })(Functions.Base);
+        Functions.Polynomial = Polynomial;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
 /*
@@ -388,8 +573,8 @@ var KGMath;
     (function (Functions) {
         var Linear = (function (_super) {
             __extends(Linear, _super);
-            function Linear() {
-                _super.apply(this, arguments);
+            function Linear(definition) {
+                _super.call(this, definition);
                 this.linearIntersection = function (otherLine, delta) {
                     var thisLine = this;
                     delta = delta || 0;
@@ -403,6 +588,7 @@ var KGMath;
                     }), x = diffLine.xIntercept, y = thisLine.yValue(x);
                     return { x: x, y: y };
                 };
+                this._calculateValues();
             }
             Linear.prototype._update = function (scope) {
                 return this.updateLine();
@@ -410,20 +596,20 @@ var KGMath;
             Linear.prototype.updateLine = function () {
                 var l = this;
                 var a = l.coefficients.a, b = l.coefficients.b, c = l.coefficients.c;
-                l.slope = -a / b;
-                l.inverseSlope = -b / a;
                 l.isVertical = (b === 0);
                 l.isHorizontal = (a === 0);
+                l.slope = l.isVertical ? Infinity : -a / b;
+                l.inverseSlope = l.isHorizontal ? Infinity : -b / a;
                 l.xIntercept = l.isHorizontal ? null : -c / a;
                 l.yIntercept = l.isVertical ? null : -c / b;
                 return l;
             };
             Linear.prototype.yValue = function (x) {
-                var l = this;
+                var l = this.updateLine();
                 return l.isVertical ? undefined : l.yIntercept + l.slope * x;
             };
             Linear.prototype.xValue = function (y) {
-                var l = this;
+                var l = this.updateLine();
                 return l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
             };
             Linear.prototype.points = function (view) {
@@ -476,7 +662,7 @@ var KGMath;
                 _super.call(this, definition);
             }
             // Given y = m*x + b => m*x + (-1)y + b = 0
-            SlopeInterceptLine.prototype._update = function (scope) {
+            SlopeInterceptLine.prototype._calculateValues = function () {
                 var l = this;
                 l.coefficients = {
                     a: l.m,
@@ -495,7 +681,7 @@ var KGMath;
                 _super.call(this, definition);
             }
             // Given Y - y = slope(X - x) => slope*X - Y + (y - slope*x)
-            PointSlopeLine.prototype._update = function (scope) {
+            PointSlopeLine.prototype._calculateValues = function () {
                 var l = this;
                 l.coefficients = {
                     a: l.m,
@@ -514,7 +700,7 @@ var KGMath;
                 definition.p2 = KG.getCoordinates(definition.p2);
                 _super.call(this, definition);
             }
-            TwoPointLine.prototype._update = function (scope) {
+            TwoPointLine.prototype._calculateValues = function () {
                 var l = this;
                 var x1 = l.p1.x, x2 = l.p2.x, y1 = l.p1.y, y2 = l.p2.y, rise = y2 - y1, run = x2 - x1;
                 // If x2 = x1, then it's a vertical line
@@ -544,7 +730,7 @@ var KGMath;
                 _super.call(this, definition);
             }
             // A horizontal line at y = Y may be written 0x - y + Y = 0
-            HorizontalLine.prototype._update = function (scope) {
+            HorizontalLine.prototype._calculateValues = function () {
                 var l = this;
                 l.coefficients = {
                     a: 0,
@@ -562,7 +748,7 @@ var KGMath;
                 _super.call(this, definition);
             }
             // A vertical line at x = X may be written -x + 0y + X = 0
-            VerticalLine.prototype._update = function (scope) {
+            VerticalLine.prototype._calculateValues = function () {
                 var l = this;
                 l.coefficients = {
                     a: -1,
@@ -579,6 +765,7 @@ var KGMath;
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
 /// <reference path="functions/monomial.ts"/>
+/// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
 /// <reference path="../kg.ts"/>
 'use strict';

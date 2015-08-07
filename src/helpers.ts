@@ -8,6 +8,7 @@ module KG
     {
         min: number;
         max: number;
+        samplePoints: (numSamples:number) => number[];
         toArray: () => number[];
         contains: (x:number, strict?:boolean) => boolean;
     }
@@ -29,6 +30,14 @@ module KG
             var lowEnough:boolean = strict ? (this.max > x) : (this.max >= x);
             var highEnough:boolean = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
+        }
+
+        samplePoints(numSamples) {
+            var min = this.min, max = this.max, sp = [];
+            for(var i=0;i<numSamples;i++) {
+                sp.push(min + (i/(numSamples-1))*(max - min));
+            }
+            return sp;
         }
 
     }
@@ -92,6 +101,14 @@ module KG
             return getCoordinates(def.definition)
         } else {
             return defaultCoordinates;
+        }
+    }
+
+    export function sortObjects(key, descending?) {
+        return function (a, b) {
+            var lower = descending ? a[key] : b[key],
+                higher = descending ? b[key] : a[key];
+            return lower > higher ? -1 : lower < higher ? 1 : lower <= higher ? 0 : NaN;
         }
     }
 

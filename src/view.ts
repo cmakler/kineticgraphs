@@ -6,13 +6,13 @@ module KG
 {
     export interface ViewDefinition extends ModelDefinition
     {
-        element_id: string;
-        dimensions: IDimensions;
-        margins: IMargins;
+        element_id?: string;
+        dimensions?: IDimensions;
+        margins?: IMargins;
         xAxis?: AxisDefinition;
         yAxis?: AxisDefinition;
         objects?: ViewObjectDefinition[];
-        background: string;
+        background?: string;
         mask?: boolean;
     }
 

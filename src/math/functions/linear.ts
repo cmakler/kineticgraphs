@@ -38,6 +38,11 @@ module KGMath.Functions {
         public isVertical;
         public isHorizontal;
 
+        constructor(definition:LinearDefinition) {
+            super(definition);
+            this._calculateValues();
+        }
+
         _update(scope) {
             return this.updateLine();
         }
@@ -50,10 +55,11 @@ module KGMath.Functions {
                 b = l.coefficients.b,
                 c = l.coefficients.c;
 
-            l.slope = -a/b;
-            l.inverseSlope = -b/a;
             l.isVertical = (b === 0);
             l.isHorizontal = (a === 0);
+
+            l.slope = l.isVertical ? Infinity : -a/b;
+            l.inverseSlope = l.isHorizontal ? Infinity : -b/a;
 
             l.xIntercept = l.isHorizontal ? null : -c/a;
             l.yIntercept = l.isVertical ? null : -c/b;
@@ -63,12 +69,12 @@ module KGMath.Functions {
         }
 
         yValue(x) {
-            var l = this;
+            var l = this.updateLine();
             return l.isVertical ? undefined : l.yIntercept + l.slope * x;
         }
 
         xValue(y) {
-            var l = this;
+            var l = this.updateLine();
             return l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
         }
 
@@ -174,7 +180,7 @@ module KGMath.Functions {
         }
 
         // Given y = m*x + b => m*x + (-1)y + b = 0
-        _update(scope) {
+        _calculateValues() {
 
             var l = this;
 
@@ -207,7 +213,7 @@ module KGMath.Functions {
         }
 
         // Given Y - y = slope(X - x) => slope*X - Y + (y - slope*x)
-        _update(scope) {
+        _calculateValues() {
 
             var l = this;
 
@@ -240,7 +246,7 @@ module KGMath.Functions {
             super(definition)
         }
 
-        _update(scope) {
+        _calculateValues() {
 
             var l = this;
 
@@ -287,7 +293,7 @@ module KGMath.Functions {
         }
 
         // A horizontal line at y = Y may be written 0x - y + Y = 0
-        _update(scope) {
+        _calculateValues() {
 
             var l=this;
 
@@ -317,7 +323,7 @@ module KGMath.Functions {
         }
 
         // A vertical line at x = X may be written -x + 0y + X = 0
-        _update(scope) {
+        _calculateValues() {
 
             var l=this;
 

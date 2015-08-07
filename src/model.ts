@@ -20,6 +20,8 @@ module KG
         setNumericProperty: (propertySetter:IPropertySetter) => Model;
         setArrayProperty: (propertySetter:IPropertySetter) => Model;
         update: (scope:IScope, callback?: (any)=>any) => void;
+        _update: (scope:IScope) => Model;
+        _calculateValues: () => Model;
     }
 
 
@@ -36,9 +38,12 @@ module KG
                     var value = definition[key];
                     if(value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
                         model[key] = createInstance(value)
+                    } else {
+                        model[key] = value;
                     }
                 }
             }
+
         }
 
         setNumericProperty(propertySetter) {
@@ -94,7 +99,7 @@ module KG
                 } else if(typeof value == 'object') {
                     // If the object's property is an object, parses the object.
                     return parseObject(value)
-                } else if(value.toString() !== undefined) {
+                } else if(scope && value.toString() !== undefined) {
                     var e = scope.$eval(value.toString());
                     return (e == undefined) ? value : e;
                 } else {
@@ -117,6 +122,10 @@ module KG
         }
 
         _update(scope) {
+            return this; // overridden by child classes
+        }
+
+        _calculateValues() {
             return this; // overridden by child classes
         }
     }
