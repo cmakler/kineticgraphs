@@ -111,7 +111,8 @@ module KG
             model = parseObject(model.definition, model);
 
             // Do any model-specific updating
-            model = model._update(scope);
+            model = model._update(scope)._calculateValues();
+
 
             if(callback){
                 callback();
