@@ -45,7 +45,8 @@ module KG {
             OPEN_ARROW_STRING = 'OPEN';
 
             var line = this,
-                linear = this.linear;
+                linear = this.linear,
+                draggable = (line.xDrag || line.yDrag);
 
             var group:D3.Selection = view.objectGroup(line.name, line.initGroupFn(), false);
 
@@ -84,6 +85,12 @@ module KG {
                     'd': dataLine([startPoint,endPoint]),
                     'stroke': line.color,
                 });
+
+            if(draggable){
+                return line.setDragBehavior(view,lineSelection);
+            } else {
+                return view;
+            }
 
             return view;
         }

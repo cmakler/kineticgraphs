@@ -37,7 +37,7 @@ module KG {
 
             var labelDef:GraphDivDefinition = {
                 name: definition.name + '_label',
-                color: 'grey',
+                color: 'black',
                 text: definition.axisLabel,
                 dimensions: {width: 30, height:20},
                 backgroundColor: 'white'

@@ -6,8 +6,8 @@ module EconGraphs {
 
     export interface PointElasticityDefinition extends ElasticityDefinition
     {
-        point: KG.ICoordinates;
-        slope: any;
+        point?: KG.ICoordinates;
+        slope?: any;
     }
 
     export interface IPointElasticity extends IElasticity
@@ -44,14 +44,20 @@ module EconGraphs {
             })
         }
 
-        _update(scope) {
-
-            var e = this;
-
-            e.elasticity = (e.point.x / e.point.y)*e.slope;
-
-            return e.calculateElasticity();
+        _calculateElasticity(inputs) {
+            var e= this;
+            if(inputs) {
+                if(inputs.hasOwnProperty('point')) {
+                    e.point = inputs.point;
+                }
+                if(inputs.hasOwnProperty('slope')) {
+                    e.slope = inputs.slope;
+                }
+            }
+            e.elasticity = (e.point.y / e.point.x)/e.slope;
+            return e;
         }
+
     }
 
 }

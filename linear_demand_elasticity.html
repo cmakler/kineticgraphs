@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Price Elasticity (Midpoint Method)</title>
+    <title>Demand Elasticity</title>
     <link rel="stylesheet" href="bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/econgraphs.css">
     <link rel="stylesheet" href="bower_components/katex/build/katex.min.css">
@@ -20,75 +20,68 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <h1>Price Elasticity (Midpoint Method)</h1>
-    <p>Drag points A and B to see how the elasticity changes. (Point M is the midpoint between A and B.)</p>
+    <h1>Demand Elasticity along a Linear Demand Curve (Point Method)</h1>
+    <p>Drag the endpoints of the demand curve to change its slope. Drag the price up and down to see how the price elasticity at point A changes.</p>
     <hr/>
     <div class="row">
         <div class="col-md-6">
             <div id="graph"></div>
         </div>
         <div class="col-md-6 big">
-            <p class="math displayMath">\color{blue}{\% \Delta Q = \frac{ Q_B - Q_A }{ Q_M } = \frac{ {{params.x1 | number:0}} - {{params.x2 | number:0 }} }{ {{model.xAvg | number:0 }} } = {{model.xPercentDiff | percentage:0 }}}</p>
+            <p class="math displayMath">\color{blue}{\frac{dQ^D}{dP} = \frac{ {{ params.demandQuantityIntercept | number:0 }} }{ {{ params.demandPriceIntercept | number:0}} } = {{ model.demandFunction.inverseSlope | number:2 }}}</p>
             <hr/>
-            <p class="math displayMath">\color{red}{\% \Delta P = \frac{ P_B - P_A }{ P_M } = \frac{ {{params.y1 | number:0 }} - {{params.y2 | number:0 }} }{ {{model.yAvg | number:0 }} } = {{model.yPercentDiff | percentage:0 }}}</p>
+            <p class="math displayMath">\epsilon_{Q^D_A,P_A} = \frac{P_A}{Q^D_A} \times \color{blue}{ \frac{dQ^D}{dP} } = \frac{ {{ params.price | number:0 }} }{ {{ model.quantityAtPrice(params.price) | number:1 }} } \times \color{blue}{ {{ model.demandFunction.inverseSlope | number:2 }} } = {{ model.priceElasticity(params.price).elasticityNumber() }}</p>
             <hr/>
-            <p class="math displayMath">\epsilon_{Q,P} = \frac{\% \Delta Q}{\% \Delta P} = \frac{ \color{blue}{ {{model.xPercentDiff | percentage:0 }} }} { \color{red}{ {{model.yPercentDiff | percentage:0 }} } } = {{ model.elasticityNumber() }}</p>
-            <hr/>
-            <p class="math displayMath">\left| \epsilon_{Q,P} \right| = {{ model.elasticityComparator}} \Rightarrow \text{ {{ model.elasticityWord }}}</p>
+            <p class="math displayMath">\left| \epsilon_{Q^D_A,P_A} \right| = {{ model.priceElasticity(params.price).elasticityComparator}} \Rightarrow \text{ {{ model.priceElasticity(params.price).elasticityWord }}}</p>
         </div>
     </div>
 </div>
 <script>
     var scopeDefinition = {
         params: {
-            x1: 36,
-            y1: 70,
-            x2: 24,
-            y2: 90
+            price: 30,
+            demandPriceIntercept: 40,
+            demandQuantityIntercept: 80
         },
         restrictions: [
             {
-                expression: 'params.x1',
+                expression: 'params.price',
                 restrictionType: 'range',
-                max: 100,
-                min: 20,
-                precision: 2
+                max: 'params.demandPriceIntercept',
+                min: 0,
+                precision: 1
             },
             {
-                expression: 'params.y1',
+                expression: 'params.demandPriceIntercept',
                 restrictionType: 'range',
                 max: 100,
-                min: 10,
-                precision: 2
+                min: 5,
+                precision: 5
             },
             {
-                expression: 'params.x2',
+                expression: 'params.demandQuantityIntercept',
                 restrictionType: 'range',
                 max: 100,
-                min: 20,
-                precision: 2
-            },
-            {
-                expression: 'params.y2',
-                restrictionType: 'range',
-                max: 100,
-                min: 10,
-                precision: 2
+                min: 5,
+                precision: 5
             }
         ],
         model: {
-            type: 'EconGraphs.MidpointElasticity',
+            type: 'EconGraphs.LinearDemand',
             definition: {
-                point1: {
-                    x: 'params.x1',
-                    y: 'params.y1'
-                },
-                point2: {
-                    x: 'params.x2',
-                    y: 'params.y2'
+                elasticityMethod: 'point',
+                type: 'TwoPointLine',
+                def: {
+                    p1: {
+                        x: 0,
+                        y: 'params.demandPriceIntercept'
+                    },
+                    p2: {
+                        x: 'params.demandQuantityIntercept',
+                        y: 0
+                    }
                 }
             }
-
         },
         views: [
             {
@@ -98,7 +91,7 @@
                     dimensions: {width: 600, height: 600},
                     xAxis: {min: 0, max: 100, title: 'Quantity (Q)'},
                     yAxis: {min: 0, max: 100, title: 'Price (P)'},
-                    objects: ['model.line','model.point1view','model.point2view','model.midpoint','model.xDiffSegment','model.yDiffSegment']
+                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice']
                 }
             }
         ]

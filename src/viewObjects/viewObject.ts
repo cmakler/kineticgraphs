@@ -10,8 +10,8 @@ module KG
         name?: string;
         show?: boolean;
         className?: string;
-        xDrag?: boolean;
-        yDrag?: boolean;
+        xDrag?: any;
+        yDrag?: any;
         color?: string;
         coordinates?: ICoordinates;
     }
@@ -64,10 +64,29 @@ module KG
         constructor(definition:ViewObjectDefinition) {
             definition = _.defaults(definition, {className: '', show: true, xDrag: false, yDrag: false});
             super(definition);
-            this.xDragDelta = 0;
-            this.yDragDelta = 0;
-            this.xDragParam = definition.xDrag ? definition.coordinates.x.replace('params.','') : null;
-            this.yDragParam = definition.yDrag ? definition.coordinates.y.replace('params.','') : null;
+
+            var viewObj = this;
+            viewObj.xDragDelta = 0;
+            viewObj.yDragDelta = 0;
+
+            if(definition.xDrag) {
+                if(typeof definition.xDrag == 'string') {
+                    viewObj.xDragParam = definition.xDrag;
+                    viewObj.xDrag = true;
+                } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.x == 'string') {
+                    this.xDragParam = definition.coordinates.x.replace('params.','');
+                }
+
+            }
+
+            if(definition.yDrag) {
+                if(typeof definition.yDrag == 'string') {
+                    viewObj.yDragParam = definition.yDrag;
+                    viewObj.yDrag = true;
+                } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.y == 'string') {
+                    this.yDragParam = definition.coordinates.y.replace('params.','');
+                }
+            }
         }
 
         classAndVisibility() {

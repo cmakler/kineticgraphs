@@ -45,7 +45,7 @@ module KG
                 max: 10,
                 title: '',
                 ticks: 5,
-                textMargin: 7
+                textMargin: 8
             });
 
             super(definition);
@@ -81,7 +81,7 @@ module KG
             var axis_vis = vis.append('g').attr('class', 'x axis').attr("transform", "translate(0," + graph_dimensions.height + ")");
             axis_vis.append("text")
                 .attr("x", graph_dimensions.width / 2)
-                .attr("y", "4em")
+                .attr("y", "60px")
                 .style("text-anchor", "middle")
                 .text(this.title);
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks).tickValues(this.tickValues));
@@ -105,7 +105,7 @@ module KG
             axis_vis.append("text")
                 .attr("transform", "rotate(-90)")
                 .attr("x", -graph_dimensions.height / 2)
-                .attr("y", "-4em")
+                .attr("y", "-60px")
                 .style("text-anchor", "middle")
                 .text(this.title);
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks).tickValues(this.tickValues));

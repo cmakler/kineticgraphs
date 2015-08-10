@@ -6,8 +6,8 @@ module EconGraphs {
 
     export interface MidpointElasticityDefinition extends ElasticityDefinition
     {
-        point1: KG.ICoordinates;
-        point2: KG.ICoordinates;
+        point1?: KG.ICoordinates;
+        point2?: KG.ICoordinates;
     }
 
     export interface IMidpointElasticity extends IElasticity

@@ -70,12 +70,14 @@ module KGMath.Functions {
 
         yValue(x) {
             var l = this.updateLine();
-            return l.isVertical ? undefined : l.yIntercept + l.slope * x;
+            var y = l.isVertical ? undefined : l.yIntercept + l.slope * x;
+            return y;
         }
 
         xValue(y) {
             var l = this.updateLine();
-            return l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
+            var x = l.isHorizontal ? undefined : l.xIntercept + l.inverseSlope * y;
+            return x;
         }
 
         points(view:KG.IView) {

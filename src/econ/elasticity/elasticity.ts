@@ -32,11 +32,11 @@ module EconGraphs {
         constructor(definition:ElasticityDefinition) {
             definition.inverse = _.defaults(false, definition.inverse);
             definition.terms = _.defaults({
-                perfectlyElastic: "'perfectly elastic'",
-                perfectlyInelastic: "'perfectly inelastic'",
-                elastic: "'elastic'",
-                inelastic: "'inelastic'",
-                unitElastic: "'unit elastic'"
+                perfectlyElastic: "perfectly elastic",
+                perfectlyInelastic: "perfectly inelastic",
+                elastic: "elastic",
+                inelastic: "inelastic",
+                unitElastic: "unit elastic"
             },definition.terms);
             super(definition);
         }

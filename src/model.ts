@@ -100,8 +100,13 @@ module KG
                     // If the object's property is an object, parses the object.
                     return parseObject(value)
                 } else if(scope && value.toString() !== undefined) {
-                    var e = scope.$eval(value.toString());
-                    return (e == undefined) ? value : e;
+                    try{
+                        var e = scope.$eval(value.toString());
+                        return (e == undefined) ? value : e;
+                    }
+                    catch(error) {
+                        return value;
+                    }
                 } else {
                     return value;
                 }
