@@ -13,6 +13,7 @@ module KG
         math?: boolean;
         align?: any;
         valign?: any;
+        backgroundColor?: string;
     }
 
     export interface IGraphDiv extends IViewObject {
@@ -25,6 +26,8 @@ module KG
         align: string;
         valign: string;
         color: string;
+        backgroundColor?: string;
+        AXIS_COORDINATE_INDICATOR: string;
     }
 
     export class GraphDiv extends ViewObject implements IGraphDiv
@@ -38,17 +41,19 @@ module KG
         public align;
         public valign;
         public color;
+        public backgroundColor;
+        public AXIS_COORDINATE_INDICATOR;
+
+        static AXIS_COORDINATE_INDICATOR = 'AXIS';
 
         constructor(definition:GraphDivDefinition) {
 
             definition = _.defaults(definition,{
-                coordinates: {x: 0, y: 0},
                 dimensions: {width: 100, height: 20},
                 math: false,
                 align: 'center',
                 valign: 'middle',
-                text: '',
-                color: 'red'
+                text: ''
             });
 
             super(definition);
@@ -59,9 +64,25 @@ module KG
 
             var divObj = this;
 
-            var x = view.margins.left + view.xAxis.scale(divObj.coordinates.x),
-                y = view.margins.top + view.yAxis.scale(divObj.coordinates.y),
-                width = divObj.dimensions.width,
+            var x, y;
+
+            if(divObj.coordinates.x == GraphDiv.AXIS_COORDINATE_INDICATOR) {
+                x = view.margins.left - view.yAxis.textMargin;
+                divObj.align = 'right';
+                divObj.valign = 'middle';
+            } else {
+                x = view.margins.left + view.xAxis.scale(divObj.coordinates.x);
+            }
+
+            if(divObj.coordinates.y == GraphDiv.AXIS_COORDINATE_INDICATOR) {
+                y = view.dimensions.height - view.margins.bottom + view.xAxis.textMargin;
+                divObj.align = 'center';
+                divObj.valign = 'top';
+            } else {
+                y = view.margins.top + view.yAxis.scale(divObj.coordinates.y);
+            }
+
+            var width = divObj.dimensions.width,
                 height = divObj.dimensions.height,
                 text = divObj.text,
                 draggable = (divObj.xDrag || divObj.yDrag);
@@ -76,6 +97,7 @@ module KG
                 .style('width',width + 'px')
                 .style('height',height + 'px')
                 .style('line-height',height + 'px')
+                .style('background-color',divObj.backgroundColor)
 
             // Set left pixel margin; default to centered on x coordinate
             var alignDelta = width*0.5;

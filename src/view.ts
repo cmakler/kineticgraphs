@@ -6,13 +6,13 @@ module KG
 {
     export interface ViewDefinition extends ModelDefinition
     {
-        element_id: string;
-        dimensions: IDimensions;
-        margins: IMargins;
+        element_id?: string;
+        dimensions?: IDimensions;
+        margins?: IMargins;
         xAxis?: AxisDefinition;
         yAxis?: AxisDefinition;
         objects?: ViewObjectDefinition[];
-        background: string;
+        background?: string;
         mask?: boolean;
     }
 
@@ -102,6 +102,34 @@ module KG
             var svg = frame.append('svg')
                 .attr('width', view.dimensions.width)
                 .attr('height', view.dimensions.height);
+
+            // Establish marker style for arrow
+            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue","purple"]).enter()
+                .append("marker")
+                .attr("id", function(d){return "arrow-end-" + d})
+                .attr("refX", 11)
+                .attr("refY", 6)
+                .attr("markerWidth", 13)
+                .attr("markerHeight", 13)
+                .attr("orient", "auto")
+                .attr("markerUnits","userSpaceOnUse")
+                .append("svg:path")
+                .attr("d", "M2,2 L2,11 L10,6 L2,2")
+                .attr("fill",function(d) {return d});
+
+            // Establish marker style for arrow
+            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue","purple"]).enter()
+                .append("svg:marker")
+                .attr("id", function(d){return "arrow-start-" + d})
+                .attr("refX", 2)
+                .attr("refY", 6)
+                .attr("markerWidth", 13)
+                .attr("markerHeight", 13)
+                .attr("orient", "auto")
+                .attr("markerUnits","userSpaceOnUse")
+                .append("svg:path")
+                .attr("d", "M11,2 L11,11 L2,6 L11,2")
+                .attr("fill",function(d) {return d});
 
             // Add a div above the SVG for labels and controls
             view.divs = frame.append('div').attr({style: visTranslation});

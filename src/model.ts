@@ -7,10 +7,24 @@ module KG
 
     }
 
+    export interface IPropertySetter
+    {
+
+        name: string;
+        value: any;
+        defaultValue: any;
+    }
+
     export interface IModel
     {
+        setNumericProperty: (propertySetter:IPropertySetter) => Model;
+        setArrayProperty: (propertySetter:IPropertySetter) => Model;
         update: (scope:IScope, callback?: (any)=>any) => void;
+        _update: (scope:IScope) => Model;
+        _calculateValues: () => Model;
     }
+
+
 
     export class Model
     {
@@ -24,13 +38,38 @@ module KG
                     var value = definition[key];
                     if(value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
                         model[key] = createInstance(value)
+                    } else {
+                        model[key] = value;
                     }
                 }
             }
+
+        }
+
+        setNumericProperty(propertySetter) {
+            var model = this;
+            if(!isNaN(propertySetter.value)) {
+                model[propertySetter.name] = propertySetter.value;
+            } else if(!model.hasOwnProperty(propertySetter.name)) {
+                model[propertySetter.name] = propertySetter.defaultValue || 0;
+            }
+            return model;
+        }
+
+        setArrayProperty(propertySetter) {
+            var model = this;
+            if(propertySetter.value instanceof Array) {
+                model[propertySetter.name] = propertySetter.value;
+            } else if(propertySetter.value) {
+                model[propertySetter.name] = [propertySetter.value];
+            } else if(!model.hasOwnProperty(propertySetter.name)) {
+                model[propertySetter.name] = propertySetter.defaultValue;
+            }
+            return model;
         }
 
         // Update the model
-        update(scope, callback) {
+        update(scope, callback?) {
 
             var model = this;
 
@@ -60,9 +99,14 @@ module KG
                 } else if(typeof value == 'object') {
                     // If the object's property is an object, parses the object.
                     return parseObject(value)
-                } else if(value.toString() !== undefined) {
-                    var e = scope.$eval(value.toString());
-                    return (e == undefined) ? value : e;
+                } else if(scope && value.toString() !== undefined) {
+                    try{
+                        var e = scope.$eval(value.toString());
+                        return (e == undefined) ? value : e;
+                    }
+                    catch(error) {
+                        return value;
+                    }
                 } else {
                     return value;
                 }
@@ -72,7 +116,8 @@ module KG
             model = parseObject(model.definition, model);
 
             // Do any model-specific updating
-            model = model._update(scope);
+            model = model._update(scope)._calculateValues();
+
 
             if(callback){
                 callback();
@@ -83,6 +128,10 @@ module KG
         }
 
         _update(scope) {
+            return this; // overridden by child classes
+        }
+
+        _calculateValues() {
             return this; // overridden by child classes
         }
     }

@@ -9,8 +9,7 @@ module KG
         symbol?: string;
         size?: number;
         label?: GraphDivDefinition;
-        align?: string;
-        valign?: string;
+        droplines?: any;
     }
 
     export interface IPoint extends IViewObject {
@@ -19,6 +18,8 @@ module KG
         symbol: string;
         size: number;
         labelDiv: IGraphDiv;
+        horizontalDropline: Segment;
+        verticalDropline: Segment;
     }
 
     export class Point extends ViewObject implements IPoint
@@ -28,6 +29,9 @@ module KG
         public symbol;
         public size;
         public labelDiv;
+        public color;
+        public horizontalDropline;
+        public verticalDropline;
 
         constructor(definition:PointDefinition) {
 
@@ -42,8 +46,27 @@ module KG
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag
                 });
-                console.log(labelDef.coordinates);
                 this.labelDiv = new GraphDiv(labelDef);
+            }
+
+            if(definition.droplines) {
+                if(definition.droplines.hasOwnProperty('horizontal')) {
+                    this.horizontalDropline = new HorizontalDropline({
+                        name: definition.name,
+                        coordinates: definition.coordinates,
+                        draggable: definition.yDrag,
+                        axisLabel: definition.droplines.horizontal,
+
+                    });
+                }
+                if(definition.droplines.hasOwnProperty('vertical')) {
+                    this.verticalDropline = new VerticalDropline({
+                        name: definition.name,
+                        coordinates: definition.coordinates,
+                        draggable: definition.xDrag,
+                        axisLabel: definition.droplines.vertical
+                    });
+                }
             }
 
             this.viewObjectSVGtype = 'path';
@@ -51,12 +74,19 @@ module KG
         }
 
         createSubObjects(view) {
-            var labelDiv = this.labelDiv;
-            if(labelDiv) {
-                return view.addObject(labelDiv);
-            } else {
-                return view;
+            var p = this;
+            if(p.labelDiv) {
+                view.addObject(p.labelDiv);
             }
+            if(p.verticalDropline) {
+                view.addObject(p.verticalDropline);
+                p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+            }
+            if(p.horizontalDropline) {
+                view.addObject(p.horizontalDropline);
+                p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+            }
+            return view;
         }
 
         render(view) {
@@ -76,6 +106,7 @@ module KG
             pointSymbol
                 .attr({
                     'class': point.classAndVisibility(),
+                    'fill': point.color,
                     'd': d3.svg.symbol().type(point.symbol).size(point.size),
                     'transform': view.translateByCoordinates(point.coordinates)
                 });

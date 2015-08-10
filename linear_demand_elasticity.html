@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html ng-app="KineticGraphs">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Demand Elasticity</title>
+    <link rel="stylesheet" href="bower_components/bootswatch-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/econgraphs.css">
+    <link rel="stylesheet" href="bower_components/katex/build/katex.min.css">
+    <!--<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.1.min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.js"></script>-->
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="bower_components/jquery-color/jquery.color.js"></script>
+    <script type="text/javascript" src="lib/color_mixer.js"></script>
+    <script type="text/javascript" src="bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="bower_components/numericjs/src/numeric.js"></script>
+    <script type="text/javascript" src="bower_components/katex/build/katex/katex.min.js"></script>
+    <script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
+</head>
+<body>
+<div ng-controller="KineticGraphCtrl">
+    <h1>Demand Elasticity along a Linear Demand Curve (Point Method)</h1>
+    <p>Drag the endpoints of the demand curve to change its slope. Drag the price up and down to see how the price elasticity at point A changes.</p>
+    <hr/>
+    <div class="row">
+        <div class="col-md-6">
+            <div id="graph"></div>
+        </div>
+        <div class="col-md-6 big">
+            <p class="math displayMath">\color{blue}{\frac{dQ^D}{dP} = \frac{ {{ params.demandQuantityIntercept | number:0 }} }{ {{ params.demandPriceIntercept | number:0}} } = {{ model.demandFunction.inverseSlope | number:2 }}}</p>
+            <hr/>
+            <p class="math displayMath">\epsilon_{Q^D_A,P_A} = \frac{P_A}{Q^D_A} \times \color{blue}{ \frac{dQ^D}{dP} } = \frac{ {{ params.price | number:0 }} }{ {{ model.quantityAtPrice(params.price) | number:1 }} } \times \color{blue}{ {{ model.demandFunction.inverseSlope | number:2 }} } = {{ model.priceElasticity(params.price).elasticityNumber() }}</p>
+            <hr/>
+            <p class="math displayMath">\left| \epsilon_{Q^D_A,P_A} \right| = {{ model.priceElasticity(params.price).elasticityComparator}} \Rightarrow \text{ {{ model.priceElasticity(params.price).elasticityWord }}}</p>
+        </div>
+    </div>
+</div>
+<script>
+    var scopeDefinition = {
+        params: {
+            price: 30,
+            demandPriceIntercept: 40,
+            demandQuantityIntercept: 80
+        },
+        restrictions: [
+            {
+                expression: 'params.price',
+                restrictionType: 'range',
+                max: 'params.demandPriceIntercept',
+                min: 0,
+                precision: 1
+            },
+            {
+                expression: 'params.demandPriceIntercept',
+                restrictionType: 'range',
+                max: 100,
+                min: 5,
+                precision: 5
+            },
+            {
+                expression: 'params.demandQuantityIntercept',
+                restrictionType: 'range',
+                max: 100,
+                min: 5,
+                precision: 5
+            }
+        ],
+        model: {
+            type: 'EconGraphs.LinearDemand',
+            definition: {
+                elasticityMethod: 'point',
+                type: 'TwoPointLine',
+                def: {
+                    p1: {
+                        x: 0,
+                        y: 'params.demandPriceIntercept'
+                    },
+                    p2: {
+                        x: 'params.demandQuantityIntercept',
+                        y: 0
+                    }
+                }
+            }
+        },
+        views: [
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id:'graph',
+                    dimensions: {width: 600, height: 600},
+                    xAxis: {min: 0, max: 100, title: 'Quantity (Q)'},
+                    yAxis: {min: 0, max: 100, title: 'Price (P)'},
+                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice']
+                }
+            }
+        ]
+    }
+</script>
+<script src="dist/kinetic-graphs.js"></script>
+</body>
+</html>

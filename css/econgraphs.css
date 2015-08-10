@@ -14,9 +14,14 @@ a {
 }
 
 .axis text {
-    font-size: 18px;
+    font-size: 24px;
     font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
     cursor: default;
+}
+
+.axis .tick text {
+    fill: grey;
+    font-size: 12px;
 }
 
 .axis path,
@@ -33,6 +38,7 @@ a {
 .dropline {
     stroke-dasharray: 10, 10;
     stroke-width: 2px;
+    stroke: grey;
 }
 
 .budgetline {
@@ -86,7 +92,6 @@ a {
 }
 
 .draw, .segment {
-    stroke: blue;
     stroke-width: 2;
     fill: none;
 }
@@ -125,4 +130,8 @@ a {
 .matrix td {
     padding: 5px;
     text-align: center;
+}
+
+.big {
+    font-size: 20pt;
 }

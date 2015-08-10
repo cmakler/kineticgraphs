@@ -95,12 +95,17 @@ module FinanceGraphs
                     align: 'right',
                     valign: 'bottom'
                 },
-                color: 'black'
+                color: 'blue'
             });
-            p.riskReturnLine = new KG.Segment({
+            p.riskReturnLine = new KG.Line({
                 name: 'twoPointSegment',
-                a: p.riskFreeAsset,
-                b: p.optimalPortfolio,
+                color: 'blue',
+                arrows: 'OPEN',
+                type: 'TwoPointLine',
+                def: {
+                    p1: p.riskFreeAsset,
+                    p2: p.optimalPortfolio,
+                }
             });
             p.optimalPortfolioMean = 0;
             p.optimalPortfolioStDev = 0.5;

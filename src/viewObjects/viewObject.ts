@@ -10,8 +10,8 @@ module KG
         name?: string;
         show?: boolean;
         className?: string;
-        xDrag?: boolean;
-        yDrag?: boolean;
+        xDrag?: any;
+        yDrag?: any;
         color?: string;
         coordinates?: ICoordinates;
     }
@@ -21,6 +21,7 @@ module KG
         // identifiers
         name: string;
         className?: string;
+        color: string;
 
         show: boolean;
         classAndVisibility: () => string;
@@ -28,6 +29,8 @@ module KG
         // Creation and rendering
         initGroupFn: (svgType:string, className: string) => any;
         render: (view: View) => View;
+        addArrow: (group:D3.Selection, startOrEnd: string) => void;
+        removeArrow: (group:D3.Selection, startOrEnd: string) => void;
         createSubObjects: (view: View) => View;
 
         // Dragging behavior
@@ -46,6 +49,7 @@ module KG
 
         public show;
         public className;
+        public color;
         public name;
         public coordinates;
         public xDrag;
@@ -60,10 +64,29 @@ module KG
         constructor(definition:ViewObjectDefinition) {
             definition = _.defaults(definition, {className: '', show: true, xDrag: false, yDrag: false});
             super(definition);
-            this.xDragDelta = 0;
-            this.yDragDelta = 0;
-            this.xDragParam = definition.xDrag ? definition.coordinates.x.replace('params.','') : null;
-            this.yDragParam = definition.yDrag ? definition.coordinates.y.replace('params.','') : null;
+
+            var viewObj = this;
+            viewObj.xDragDelta = 0;
+            viewObj.yDragDelta = 0;
+
+            if(definition.xDrag) {
+                if(typeof definition.xDrag == 'string') {
+                    viewObj.xDragParam = definition.xDrag;
+                    viewObj.xDrag = true;
+                } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.x == 'string') {
+                    this.xDragParam = definition.coordinates.x.replace('params.','');
+                }
+
+            }
+
+            if(definition.yDrag) {
+                if(typeof definition.yDrag == 'string') {
+                    viewObj.yDragParam = definition.yDrag;
+                    viewObj.yDrag = true;
+                } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.y == 'string') {
+                    this.yDragParam = definition.coordinates.y.replace('params.','');
+                }
+            }
         }
 
         classAndVisibility() {
@@ -77,6 +100,14 @@ module KG
                 classString += ' invisible';
             }
             return classString;
+        }
+
+        addArrow(group: D3.Selection, startOrEnd: string) {
+            group.attr("marker-" + startOrEnd, "url(#arrow-" + startOrEnd + "-" + this.color + ")")
+        }
+
+        removeArrow(group: D3.Selection, startOrEnd: string) {
+            group.attr("marker-" + startOrEnd, null);
         }
 
         render(view) {

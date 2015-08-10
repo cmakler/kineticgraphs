@@ -7,14 +7,25 @@ module KG {
     export interface SegmentDefinition extends ViewObjectDefinition {
         a: any;
         b: any;
-        label?: string;
+        label?: GraphDivDefinition;
+        arrows?: string;
     }
 
     export interface ISegment extends IViewObject {
         a: ICoordinates;
         b: ICoordinates;
-        label: string;
+        midpoint: ICoordinates;
         labelDiv: IGraphDiv;
+        startArrow: boolean;
+        endArrow: boolean;
+        length: number;
+
+        startPoint: (view:IView) => ICoordinates;
+        endPoint: (view:IView) => ICoordinates;
+
+        START_ARROW_STRING: string;
+        END_ARROW_STRING: string;
+        BOTH_ARROW_STRING: string;
     }
 
     export class Segment extends ViewObject implements ISegment {
@@ -23,25 +34,70 @@ module KG {
         public b;
         public label;
         public labelDiv;
+        public startArrow;
+        public endArrow;
+        public midpoint;
+        public length;
+
+        public START_ARROW_STRING;
+        public END_ARROW_STRING;
+        public BOTH_ARROW_STRING;
+
+        static START_ARROW_STRING = 'START';
+        static END_ARROW_STRING = 'END';
+        static BOTH_ARROW_STRING = 'BOTH';
+
 
         constructor(definition:SegmentDefinition) {
 
             definition.a = KG.getCoordinates(definition.a);
             definition.b = KG.getCoordinates(definition.b);
+            definition.color = definition.color || 'gray';
 
             super(definition);
 
             if(definition.label) {
-                var labelDefinition = _.clone(definition);
-                labelDefinition.coordinates = {
-                    x: 0.5*(definition.a.x + definition.b.x),
-                    y: 0.5*(definition.a.y + definition.b.y)
-                };
-                this.labelDiv = new GraphDiv(labelDefinition);
+                var labelDef = _.defaults(definition.label, {
+                    name: definition.name + '_label',
+                    xDrag: definition.xDrag,
+                    yDrag: definition.yDrag,
+                    color: definition.color
+                });
+                this.labelDiv = new GraphDiv(labelDef);
             }
+
+            this.startArrow = (definition.arrows == Segment.START_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
+            this.endArrow = (definition.arrows == Segment.END_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
 
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'segment';
+        }
+
+        _update(scope) {
+
+            var segment = this;
+
+            segment.midpoint = {
+                x: 0.5*(segment.a.x + segment.b.x),
+                y: 0.5*(segment.a.y + segment.b.y)
+            };
+
+            if(segment.hasOwnProperty('labelDiv')){
+                segment.labelDiv.coordinates = segment.midpoint;
+            }
+
+            segment.length = KG.distanceBetweenCoordinates(segment.a,segment.b);
+
+            return segment;
+        }
+
+        createSubObjects(view) {
+            var labelDiv = this.labelDiv;
+            if(labelDiv) {
+                return view.addObject(labelDiv);
+            } else {
+                return view;
+            }
         }
 
         render(view) {
@@ -49,6 +105,18 @@ module KG {
             var segment = this;
 
             var group:D3.Selection = view.objectGroup(segment.name, segment.initGroupFn(), false);
+
+            if(segment.endArrow && segment.length > 0) {
+                segment.addArrow(group,'end');
+            } else {
+                segment.removeArrow(group,'end');
+            }
+
+            if(segment.startArrow && segment.length > 0) {
+                segment.addArrow(group,'start');
+            } else {
+                segment.removeArrow(group,'start');
+            }
 
             var dataLine = d3.svg.line()
                 .x(function (d) { return view.xAxis.scale(d.x) })
@@ -59,10 +127,19 @@ module KG {
             segmentSelection
                 .attr({
                     'class': segment.classAndVisibility(),
-                    'd': dataLine([segment.a, segment.b])
+                    'd': dataLine([segment.startPoint(view), segment.endPoint(view)]),
+                    'stroke': segment.color,
                 });
 
             return view;
+        }
+
+        startPoint(view) {
+            return this.a;
+        }
+
+        endPoint(view) {
+            return this.b;
         }
 
     }

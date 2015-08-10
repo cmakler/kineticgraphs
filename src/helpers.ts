@@ -8,8 +8,9 @@ module KG
     {
         min: number;
         max: number;
+        samplePoints: (numSamples:number) => number[];
         toArray: () => number[];
-        contains: (x:number) => boolean;
+        contains: (x:number, strict?:boolean) => boolean;
     }
 
     export class Domain implements IDomain
@@ -24,10 +25,19 @@ module KG
             return [this.min, this.max]
         }
 
-        contains(x) {
-            var lowEnough:boolean = (this.max >= x);
-            var highEnough:boolean = (this.min <= x);
+        contains(x, strict?) {
+            strict = strict || false;
+            var lowEnough:boolean = strict ? (this.max > x) : (this.max >= x);
+            var highEnough:boolean = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
+        }
+
+        samplePoints(numSamples) {
+            var min = this.min, max = this.max, sp = [];
+            for(var i=0;i<numSamples;i++) {
+                sp.push(min + (i/(numSamples-1))*(max - min));
+            }
+            return sp;
         }
 
     }
@@ -52,6 +62,14 @@ module KG
         y: any;
     }
 
+    export function areTheSamePoint(a:ICoordinates, b:ICoordinates) {
+        return (a.x === b.x && a.y === b.y);
+    }
+
+    export function areNotTheSamePoint(a:ICoordinates, b:ICoordinates) {
+        return !areTheSamePoint(a,b);
+    }
+
     export function translateByPixelCoordinates(coordinates:ICoordinates) {
         return 'translate(' + coordinates.x + ',' + coordinates.y + ')'
     }
@@ -64,6 +82,10 @@ module KG
             }
         }
         return style;
+    }
+
+    export function distanceBetweenCoordinates(a:ICoordinates, b:ICoordinates){
+        return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
     }
 
     export function getCoordinates(def) {
@@ -79,6 +101,14 @@ module KG
             return getCoordinates(def.definition)
         } else {
             return defaultCoordinates;
+        }
+    }
+
+    export function sortObjects(key, descending?) {
+        return function (a, b) {
+            var lower = descending ? a[key] : b[key],
+                higher = descending ? b[key] : a[key];
+            return lower > higher ? -1 : lower < higher ? 1 : lower <= higher ? 0 : NaN;
         }
     }
 
