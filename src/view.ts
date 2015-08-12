@@ -7,7 +7,7 @@ module KG
     export interface ViewDefinition extends ModelDefinition
     {
         element_id?: string;
-        dimensions?: IDimensions;
+        maxDimensions?: IDimensions;
         margins?: IMargins;
         xAxis?: AxisDefinition;
         yAxis?: AxisDefinition;
@@ -47,6 +47,7 @@ module KG
     export class View extends Model implements IView
     {
         private element_id;
+        public maxDimensions;
         public dimensions;
         public margins;
         public masked;
@@ -88,7 +89,9 @@ module KG
 
             // Establish dimensions of the view
             var element = $('#' + view.element_id)[0];
-            view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
+            view.dimensions = {
+                width: Math.min(view.maxDimensions.width, element.clientWidth),
+                height: Math.min(view.maxDimensions.height, window.innerHeight - (10 + $('#' + view.element_id).offset().top - $(window).scrollTop()))};
             var frameTranslation = KG.positionByPixelCoordinates({x:(element.clientWidth - view.dimensions.width)/2,y:0});
             var visTranslation = KG.translateByPixelCoordinates({x:view.margins.left, y:view.margins.top});
 
@@ -160,8 +163,10 @@ module KG
 
                 // draw axes
                 if(view.xAxis) {
+                    view.xAxis.draw(axes, view.divs, axisDimensions, view.margins);
                 }
                 if(view.yAxis) {
+                    view.yAxis.draw(axes, view.divs, axisDimensions, view.margins);
                 }
 
             }
@@ -223,8 +228,10 @@ module KG
                 .on('drag', function () {
                     d3.event.sourceEvent.preventDefault();
                     var dragUpdate = {}, newX, newY;
+                    var mouseX = d3.mouse(view.masked[0][0])[0],
+                        mouseY = d3.mouse(view.masked[0][0])[1];
                     if(xParam !== null) {
-                        newX = xAxis.scale.invert(d3.event.x + xDelta);
+                        newX = xAxis.scale.invert(mouseX + xDelta);
                         if(newX < xAxis.domain.min) {
                             dragUpdate[xParam] = xAxis.domain.min;
                         } else if(newX > xAxis.domain.max) {
@@ -234,7 +241,7 @@ module KG
                         }
                     }
                     if(yParam !== null) {
-                        newY = yAxis.scale.invert(d3.event.y + yDelta);
+                        newY = yAxis.scale.invert(mouseY + yDelta);
                         if(newY < yAxis.domain.min) {
                             dragUpdate[yParam] = yAxis.domain.min;
                         } else if(newY > xAxis.domain.max) {
