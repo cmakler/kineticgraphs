@@ -125,8 +125,6 @@ module KG
             katex.render(text.toString(),div[0][0]);
 
             if(draggable){
-                divObj.xDragDelta = -view.margins.left;
-                divObj.yDragDelta = view.dimensions.height - vAlignDelta;
                 return divObj.setDragBehavior(view,div);
             } else {
                 return view;

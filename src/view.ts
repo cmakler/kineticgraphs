@@ -89,7 +89,6 @@ module KG
             // Establish dimensions of the view
             var element = $('#' + view.element_id)[0];
             view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
-            view.dimensions.height = Math.min(view.dimensions.height, window.innerHeight - element.offsetTop);
             var frameTranslation = KG.positionByPixelCoordinates({x:(element.clientWidth - view.dimensions.width)/2,y:0});
             var visTranslation = KG.translateByPixelCoordinates({x:view.margins.left, y:view.margins.top});
 
@@ -161,10 +160,8 @@ module KG
 
                 // draw axes
                 if(view.xAxis) {
-                    view.xAxis.draw(axes,axisDimensions);
                 }
                 if(view.yAxis) {
-                    view.yAxis.draw(axes,axisDimensions);
                 }
 
             }

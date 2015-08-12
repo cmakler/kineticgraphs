@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Mean-Variance Portfolio Analysis</title>
     <link rel="stylesheet" href="bower_components/bootswatch-dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/econgraphs.css">
     <link rel="stylesheet" href="bower_components/katex/build/katex.min.css">
     <!--<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.1.min.js"></script>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
@@ -251,8 +251,8 @@
                 definition: {
                     element_id:'graph',
                     dimensions: {width: 700, height: 700},
-                    xAxis: {min: 0, max: 1, title: '"Standard Deviation"'},
-                    yAxis: {min: 0, max: 0.5, title: '"Mean"'},
+                    xAxis: {min: 0, max: 1, title: "\\text{Standard Deviation }(\\sigma)"},
+                    yAxis: {min: 0, max: 0.5, title: "\\text{Mean }(\\mu)"},
                     objects: ['model.optimalPortfolio','model.asset1.point','model.asset2.point','model.asset3.point','model.riskFreeAsset','model.riskReturnLine','model.threeAssetPortfolios','model.twoAssetPortfolios']
                 }
             },
