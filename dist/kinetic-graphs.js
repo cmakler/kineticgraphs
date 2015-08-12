@@ -1443,8 +1443,8 @@ var KG;
             return d3.behavior.drag().on('drag', function () {
                 d3.event.sourceEvent.preventDefault();
                 var dragUpdate = {}, newX, newY;
-                var mouseX = d3.mouse(view.masked[0][0])[0], mouseY = d3.mouse(view.masked[0][0])[1];
-                if (xParam !== null) {
+                var relativeElement = view.unmasked[0][0], mouseX = d3.mouse(relativeElement)[0], mouseY = d3.mouse(relativeElement)[1];
+                if (xAxis && xParam !== null) {
                     newX = xAxis.scale.invert(mouseX + xDelta);
                     if (newX < xAxis.domain.min) {
                         dragUpdate[xParam] = xAxis.domain.min;
@@ -1456,7 +1456,7 @@ var KG;
                         dragUpdate[xParam] = newX;
                     }
                 }
-                if (yParam !== null) {
+                if (yAxis && yParam !== null) {
                     newY = yAxis.scale.invert(mouseY + yDelta);
                     if (newY < yAxis.domain.min) {
                         dragUpdate[yParam] = yAxis.domain.min;
