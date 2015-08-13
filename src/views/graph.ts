@@ -28,8 +28,8 @@ module KG
         constructor(definition:GraphDefinition) {
 
             // ensure dimensions and margins are set; set any missing elements to defaults
-            definition.dimensions = _.defaults(definition.dimensions || {}, { width: 500, height: 500 });
-            definition.margins = _.defaults(definition.margins || {}, {top: 20, left: 100, bottom: 100, right: 20});
+            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
+            definition.margins = _.defaults(definition.margins || {}, {top: 20, left: 80, bottom: 70, right: 20});
             super(definition);
 
             this.xAxis = new XAxis(definition.xAxis);

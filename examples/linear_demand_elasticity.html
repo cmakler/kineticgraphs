@@ -3,20 +3,17 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>Demand Elasticity</title>
-    <link rel="stylesheet" href="bower_components/bootswatch-dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="css/econgraphs.css">
-    <link rel="stylesheet" href="bower_components/katex/build/katex.min.css">
-    <!--<script type="text/javascript" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.10.1.min.js"></script>
-    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.js"></script>-->
-    <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="bower_components/jquery-color/jquery.color.js"></script>
-    <script type="text/javascript" src="lib/color_mixer.js"></script>
-    <script type="text/javascript" src="bower_components/angular/angular.js"></script>
-    <script type="text/javascript" src="bower_components/d3/d3.min.js"></script>
-    <script type="text/javascript" src="bower_components/numericjs/src/numeric.js"></script>
-    <script type="text/javascript" src="bower_components/katex/build/katex/katex.min.js"></script>
-    <script type="text/javascript" src="bower_components/underscore/underscore-min.js"></script>
+    <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../dist/kinetic-graphs.css">
+    <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
+    <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
+    <script type="text/javascript" src="../lib/color_mixer.js"></script>
+    <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/build/katex/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
@@ -88,15 +85,14 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id:'graph',
-                    dimensions: {width: 600, height: 600},
-                    xAxis: {min: 0, max: 100, title: 'Quantity (Q)'},
-                    yAxis: {min: 0, max: 100, title: 'Price (P)'},
+                    xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
+                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
                     objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice']
                 }
             }
         ]
     }
 </script>
-<script src="dist/kinetic-graphs.js"></script>
+<script src="../dist/kinetic-graphs.js"></script>
 </body>
 </html>

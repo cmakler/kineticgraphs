@@ -1228,8 +1228,6 @@ var KG;
             div.style('top', (y - vAlignDelta) + 'px');
             katex.render(text.toString(), div[0][0]);
             if (draggable) {
-                divObj.xDragDelta = -view.margins.left;
-                divObj.yDragDelta = view.dimensions.height - vAlignDelta;
                 return divObj.setDragBehavior(view, div);
             }
             else {
@@ -1250,27 +1248,24 @@ var KG;
         function LinePlot(definition) {
             definition = _.defaults(definition, { data: [], interpolation: 'linear' });
             _super.call(this, definition);
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'dataPath';
         }
-        LinePlot.prototype.render = function (graph) {
-            // constants TODO should these be defined somewhere else?
-            var DATA_PATH_CLASS = 'dataPath';
-            var dataCoordinates = graph.dataCoordinates(this.data);
-            function init(newGroup) {
-                newGroup.append('path').attr('class', DATA_PATH_CLASS);
-                return newGroup;
-            }
-            var group = graph.objectGroup(this.name, init);
+        LinePlot.prototype.render = function (view) {
+            var linePlot = this;
+            var dataCoordinates = view.dataCoordinates(this.data);
+            var group = view.objectGroup(linePlot.name, linePlot.initGroupFn(), false);
             var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
                 return d.x;
             }).y(function (d) {
                 return d.y;
             });
-            var dataPath = group.select('.' + DATA_PATH_CLASS);
+            var dataPath = group.select('.' + linePlot.viewObjectClass);
             dataPath.attr({
-                'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
+                'class': this.classAndVisibility() + ' ' + linePlot.viewObjectClass,
                 'd': dataLine(dataCoordinates)
             });
-            return graph;
+            return view;
         };
         return LinePlot;
     })(KG.ViewObject);
@@ -1348,8 +1343,10 @@ var KG;
             var view = this;
             // Establish dimensions of the view
             var element = $('#' + view.element_id)[0];
-            view.dimensions.width = Math.min(view.dimensions.width, element.clientWidth);
-            view.dimensions.height = Math.min(view.dimensions.height, window.innerHeight - element.offsetTop);
+            view.dimensions = {
+                width: Math.min(view.maxDimensions.width, element.clientWidth),
+                height: Math.min(view.maxDimensions.height, window.innerHeight - (10 + $('#' + view.element_id).offset().top - $(window).scrollTop()))
+            };
             var frameTranslation = KG.positionByPixelCoordinates({ x: (element.clientWidth - view.dimensions.width) / 2, y: 0 });
             var visTranslation = KG.translateByPixelCoordinates({ x: view.margins.left, y: view.margins.top });
             d3.select(element).select('div').remove();
@@ -1391,10 +1388,10 @@ var KG;
                 };
                 // draw axes
                 if (view.xAxis) {
-                    view.xAxis.draw(axes, axisDimensions);
+                    view.xAxis.draw(axes, view.divs, axisDimensions, view.margins);
                 }
                 if (view.yAxis) {
-                    view.yAxis.draw(axes, axisDimensions);
+                    view.yAxis.draw(axes, view.divs, axisDimensions, view.margins);
                 }
             }
             // Establish SVG group for objects that lie above the axes (e.g., points and labels)
@@ -1446,8 +1443,9 @@ var KG;
             return d3.behavior.drag().on('drag', function () {
                 d3.event.sourceEvent.preventDefault();
                 var dragUpdate = {}, newX, newY;
-                if (xParam !== null) {
-                    newX = xAxis.scale.invert(d3.event.x + xDelta);
+                var relativeElement = view.unmasked[0][0], mouseX = d3.mouse(relativeElement)[0], mouseY = d3.mouse(relativeElement)[1];
+                if (xAxis && xParam !== null) {
+                    newX = xAxis.scale.invert(mouseX + xDelta);
                     if (newX < xAxis.domain.min) {
                         dragUpdate[xParam] = xAxis.domain.min;
                     }
@@ -1458,8 +1456,8 @@ var KG;
                         dragUpdate[xParam] = newX;
                     }
                 }
-                if (yParam !== null) {
-                    newY = yAxis.scale.invert(d3.event.y + yDelta);
+                if (yAxis && yParam !== null) {
+                    newY = yAxis.scale.invert(mouseY + yDelta);
                     if (newY < yAxis.domain.min) {
                         dragUpdate[yParam] = yAxis.domain.min;
                     }
@@ -1489,7 +1487,8 @@ var KG;
                 max: 10,
                 title: '',
                 ticks: 5,
-                textMargin: 8
+                textMargin: 8,
+                axisBuffer: 30
             });
             _super.call(this, definition);
             if (this.ticks == 0) {
@@ -1497,7 +1496,7 @@ var KG;
             }
             this.domain = new KG.Domain(definition.min, definition.max);
         }
-        Axis.prototype.draw = function (vis, graph_definition) {
+        Axis.prototype.draw = function (vis, divs, graph_definition, margins) {
             // overridden by child class
         };
         Axis.prototype.scaleFunction = function (pixelLength, domain) {
@@ -1514,11 +1513,12 @@ var KG;
         XAxis.prototype.scaleFunction = function (pixelLength, domain) {
             return d3.scale.linear().range([0, pixelLength]).domain(domain.toArray());
         };
-        XAxis.prototype.draw = function (vis, graph_dimensions) {
+        XAxis.prototype.draw = function (vis, divs, graph_dimensions, margins) {
             this.scale = this.scaleFunction(graph_dimensions.width, this.domain);
             var axis_vis = vis.append('g').attr('class', 'x axis').attr("transform", "translate(0," + graph_dimensions.height + ")");
-            axis_vis.append("text").attr("x", graph_dimensions.width / 2).attr("y", "60px").style("text-anchor", "middle").text(this.title);
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks).tickValues(this.tickValues));
+            var title = divs.append("div").style('text-align', 'center').style('position', 'absolute').style('width', graph_dimensions.width + 'px').style('height', (margins.bottom - this.axisBuffer) + 'px').style('left', margins.left + 'px').style('top', (margins.top + graph_dimensions.height + this.axisBuffer) + 'px').attr('class', 'big');
+            katex.render(this.title.toString(), title[0][0]);
         };
         return XAxis;
     })(Axis);
@@ -1531,11 +1531,12 @@ var KG;
         YAxis.prototype.scaleFunction = function (pixelLength, domain) {
             return d3.scale.linear().range([pixelLength, 0]).domain(domain.toArray());
         };
-        YAxis.prototype.draw = function (vis, graph_dimensions) {
+        YAxis.prototype.draw = function (vis, divs, graph_dimensions, margins) {
             this.scale = this.scaleFunction(graph_dimensions.height, this.domain);
             var axis_vis = vis.append('g').attr('class', 'y axis');
-            axis_vis.append("text").attr("transform", "rotate(-90)").attr("x", -graph_dimensions.height / 2).attr("y", "-60px").style("text-anchor", "middle").text(this.title);
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks).tickValues(this.tickValues));
+            var title = divs.append("div").style('text-align', 'center').style('position', 'absolute').style('width', graph_dimensions.height + 'px').style('height', (margins.left - this.axisBuffer) + 'px').style('left', 0.5 * (margins.left - graph_dimensions.height - this.axisBuffer) + 'px').style('top', margins.top + 0.5 * (graph_dimensions.height - margins.left + this.axisBuffer) + 'px').style('-webkit-transform', 'rotate(-90deg)').style('transform', 'rotate(-90deg)').attr('class', 'big');
+            katex.render(this.title.toString(), title[0][0]);
         };
         return YAxis;
     })(Axis);
@@ -1549,8 +1550,8 @@ var KG;
         __extends(Graph, _super);
         function Graph(definition) {
             // ensure dimensions and margins are set; set any missing elements to defaults
-            definition.dimensions = _.defaults(definition.dimensions || {}, { width: 500, height: 500 });
-            definition.margins = _.defaults(definition.margins || {}, { top: 20, left: 100, bottom: 100, right: 20 });
+            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
+            definition.margins = _.defaults(definition.margins || {}, { top: 20, left: 80, bottom: 70, right: 20 });
             _super.call(this, definition);
             this.xAxis = new KG.XAxis(definition.xAxis);
             this.yAxis = new KG.YAxis(definition.yAxis);
@@ -1588,7 +1589,7 @@ var KG;
     var Slider = (function (_super) {
         __extends(Slider, _super);
         function Slider(definition) {
-            definition.dimensions = _.defaults(definition.dimensions || {}, { width: 300, height: 50 });
+            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 300, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, { top: 25, left: 25, bottom: 25, right: 25 });
             definition.mask = false;
             _super.call(this, definition);

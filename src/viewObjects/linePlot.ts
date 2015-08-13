@@ -20,36 +20,33 @@ module KG {
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
             super(definition);
 
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'dataPath';
+
         }
 
-        render(graph) {
+        render(view) {
 
-            // constants TODO should these be defined somewhere else?
-            var DATA_PATH_CLASS = 'dataPath';
+            var linePlot = this;
 
-            var dataCoordinates:ICoordinates[] = graph.dataCoordinates(this.data);
+            var dataCoordinates:ICoordinates[] = view.dataCoordinates(this.data);
 
-            function init(newGroup:D3.Selection) {
-                newGroup.append('path').attr('class', DATA_PATH_CLASS);
-                return newGroup;
-            }
-
-            var group:D3.Selection = graph.objectGroup(this.name, init);
+            var group:D3.Selection = view.objectGroup(linePlot.name, linePlot.initGroupFn(), false);
 
             var dataLine = d3.svg.line()
                 .interpolate(this.interpolation)
                 .x(function (d) { return d.x })
                 .y(function (d) { return d.y });
 
-            var dataPath:D3.Selection = group.select('.' + DATA_PATH_CLASS);
+            var dataPath:D3.Selection = group.select('.' + linePlot.viewObjectClass);
 
             dataPath
                 .attr({
-                    'class': this.classAndVisibility() + ' ' + DATA_PATH_CLASS,
+                    'class': this.classAndVisibility() + ' ' + linePlot.viewObjectClass,
                     'd': dataLine(dataCoordinates)
                 });
 
-            return graph;
+            return view;
         }
 
     }
