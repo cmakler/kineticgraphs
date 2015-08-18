@@ -7,7 +7,7 @@ module KG {
     export interface ILinePlot extends IViewObject {
 
         data: ICoordinates[];
-        interpolation: string;
+        interpolation?: string;
     }
 
     export class LinePlot extends ViewObject implements ILinePlot {

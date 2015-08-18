@@ -511,16 +511,7 @@ var KGMath;
             __extends(Polynomial, _super);
             function Polynomial(definition) {
                 _super.call(this, definition);
-                // Each element of the params array should be a monomial or a monomial definition.
-                function createTerm(termDef) {
-                    if (termDef instanceof Functions.Monomial) {
-                        return termDef;
-                    }
-                    else {
-                        return new Functions.Monomial(termDef);
-                    }
-                }
-                this.terms = definition.terms.map(createTerm);
+                this.bases = [0];
             }
             // The coefficients and powers of each term may be get and set via the term's index
             Polynomial.prototype.setCoefficient = function (n, coefficient) {
@@ -1308,6 +1299,28 @@ var KG;
         return PathFamily;
     })(KG.ViewObject);
     KG.PathFamily = PathFamily;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var FunctionPlot = (function (_super) {
+        __extends(FunctionPlot, _super);
+        function FunctionPlot(definition) {
+            definition = _.defaults(definition, { yIsIndependent: false, interpolation: 'linear', numSamplePoints: 51 });
+            _super.call(this, definition);
+            var linePlotDefinition = definition;
+            linePlotDefinition.data = [];
+            this.linePlot = new KG.LinePlot(linePlotDefinition);
+        }
+        FunctionPlot.prototype.createSubObjects = function (view) {
+            var p = this;
+            p.linePlot.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
+            return view;
+        };
+        return FunctionPlot;
+    })(KG.ViewObject);
+    KG.FunctionPlot = FunctionPlot;
 })(KG || (KG = {}));
 /// <reference path='kg.ts'/>
 'use strict';
@@ -2157,6 +2170,7 @@ var EconGraphs;
             e.xPercentDiff = e.xDiff / e.xAvg;
             e.yPercentDiff = e.yDiff / e.yAvg;
             e.elasticity = e.xPercentDiff / e.yPercentDiff;
+            console.log('calculating elasticity');
             return e;
         };
         return MidpointElasticity;
@@ -2324,12 +2338,78 @@ var EconGraphs;
     })(EconGraphs.Demand);
     EconGraphs.LinearDemand = LinearDemand;
 })(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+'use strict';
+var EconGraphs;
+(function (EconGraphs) {
+    var RamseyCassKoopmans = (function (_super) {
+        __extends(RamseyCassKoopmans, _super);
+        function RamseyCassKoopmans(definition) {
+            _super.call(this, definition);
+            this.steadyCapital = new KGMath.Functions.Polynomial({ terms: [
+                {
+                    type: 'KGMath.Functions.Monomial',
+                    definition: {
+                        coefficient: 1,
+                        powers: ['params.alpha']
+                    }
+                },
+                {
+                    type: 'KGMath.Functions.Monomial',
+                    definition: {
+                        coefficient: '-(params.delta + params.n)',
+                        powers: [0]
+                    }
+                }
+            ] });
+            this.steadyCapitalView = new KG.FunctionPlot({
+                name: 'steadyCapital',
+                fn: 'model.steadyCapital',
+                color: 'red'
+            });
+            this.steadyConsumptionView = new KG.Line({
+                name: 'steadyConsumption',
+                color: 'blue',
+                type: 'VerticalLine',
+                def: {
+                    x: 'model.steadyStateK'
+                }
+            });
+            this.steadyStateView = new KG.Point({
+                name: 'midpoint',
+                coordinates: {
+                    x: 'model.steadyStateK',
+                    y: 'model.steadyStateC'
+                },
+                symbol: 'cross',
+                color: 'grey',
+                size: 100,
+                label: {
+                    text: 'S',
+                    align: 'right',
+                    valign: 'bottom',
+                    color: 'grey'
+                }
+            });
+        }
+        RamseyCassKoopmans.prototype._update = function (scope) {
+            var model = this;
+            model.steadyCapital.update(scope);
+            model.steadyStateK = Math.pow(model.delta + model.n + model.rho, (1 / model.alpha));
+            model.steadyStateC = model.steadyCapital.yValue(model.steadyStateK);
+            return model;
+        };
+        return RamseyCassKoopmans;
+    })(KG.Model);
+    EconGraphs.RamseyCassKoopmans = RamseyCassKoopmans;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="elasticity/elasticity.ts"/>
 /// <reference path="elasticity/midpoint.ts"/>
 /// <reference path="elasticity/point.ts"/>
 /// <reference path="market/demand.ts"/>
-/// <reference path="market/linearDemand.ts"/> 
+/// <reference path="market/linearDemand.ts"/>
+/// <reference path="growth/ramseyCassKoopmans.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
@@ -2347,6 +2427,7 @@ var EconGraphs;
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
+/// <reference path="viewObjects/functionPlot.ts"/>
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />
