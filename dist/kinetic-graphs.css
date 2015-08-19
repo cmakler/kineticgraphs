@@ -93,9 +93,15 @@ a {
     fill: none;
 }
 
-.draw, .segment {
+.draw, .segment, .dataPath {
+    stroke: red;
     stroke-width: 2;
     fill: none;
+}
+
+.growth {
+    stroke: green;
+    color: green;
 }
 
 .scatter {

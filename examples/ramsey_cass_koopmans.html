@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Mean-Variance Portfolio Analysis</title>
+    <title>Ramsey-Cass-Koopmans</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/kinetic-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
@@ -34,10 +34,6 @@
                 <div class="col-xs-8" id="alphaSlider"></div>
             </div>
             <div class="row">
-                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">n:</div>
-                <div class="col-xs-8" id="nSlider"></div>
-            </div>
-            <div class="row">
                 <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\delta :</div>
                 <div class="col-xs-8" id="deltaSlider"></div>
             </div>
@@ -45,7 +41,20 @@
                 <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\rho :</div>
                 <div class="col-xs-8" id="rhoSlider"></div>
             </div>
-            <hr/>
+            <div class="row">
+                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\theta :</div>
+                <div class="col-xs-8" id="thetaSlider"></div>
+            </div>
+
+
+        </div>
+        <div class="big">
+            <div class="math">\text{Laws of Motion}</div>
+            <div class="math displayMath">\color{green}{\dot K = f(K_t) - C_t - \delta K_t}</div>
+            <div class="math displayMath">\color{green}{\frac{\dot C}{C_t} = \frac{f'(K_t) - \delta - \rho}{\theta}}</div>
+            <div class="math">\text{Steady-state equations}</div>
+            <div class="math displayMath">\dot K = 0 \Rightarrow \color{red}{C_t = f(K_t) - \delta K_t}</div>
+            <div class="math displayMath">\dot C = 0 \Rightarrow \color{blue}{f'(K_t) = \rho + \delta}</div>
         </div>
     </div>
 
@@ -55,18 +64,37 @@
     var scopeDefinition = {
         params: {
             alpha: 0.5,
-            rho: 0.5,
-            n: 0.2,
-            delta: 0.3
+            rho: 0.3,
+            g:0,
+            n:0,
+            delta: 0.4,
+            theta: 0.5,
+            initialK: 0.3,
+            initialC: 0.1
         },
-        restrictions: [],
+        restrictions: [
+            {
+                expression: 'model.positiveConsumption',
+                restrictionType: 'boolean',
+                error: 'Would make steady state consumption negative'
+            },
+            {
+                expression: 'model.steadyStateOnGraph',
+                restrictionType: 'boolean',
+                error: 'Let\'s keep the steady state on the graph...'
+            }
+        ],
         model: {
             type: 'EconGraphs.RamseyCassKoopmans',
             definition: {
                 alpha: 'params.alpha',
                 rho: 'params.rho',
+                g: 'params.g',
                 n: 'params.n',
-                delta: 'params.delta'
+                delta: 'params.delta',
+                theta: 'params.theta',
+                initialK: 'params.initialK',
+                initialC: 'params.initialC'
             }
         },
         views: [
@@ -75,9 +103,9 @@
                 definition: {
                     element_id:'graph',
                     dimensions: {width: 700, height: 700},
-                    xAxis: {min: 0, max: 4, title: "\\text{Capital }(K)"},
-                    yAxis: {min: 0, max: 4, title: "\\text{Consumption }(C)"},
-                    objects: ['model.steadyConsumptionView','model.steadyStateView']
+                    xAxis: {min: 0, max: 2, title: "\\text{Capital }(K)"},
+                    yAxis: {min: 0, max: 2, title: "\\text{Consumption }(C)"},
+                    objects: ['model.steadyConsumptionView','model.steadyStateView','model.steadyCapitalView','model.initialPoint','model.growthPathView']
                 }
             },
             {
@@ -101,8 +129,8 @@
             {
                 type: 'KG.Slider',
                 definition: {
-                    element_id:'nSlider',
-                    param: 'n',
+                    element_id:'deltaSlider',
+                    param: 'delta',
                     precision: '0.01',
                     axis: {min: 0, max: 1, tickValues:[0,0.5,1]}
                 }
@@ -110,8 +138,8 @@
             {
                 type: 'KG.Slider',
                 definition: {
-                    element_id:'deltaSlider',
-                    param: 'delta',
+                    element_id:'thetaSlider',
+                    param: 'theta',
                     precision: '0.01',
                     axis: {min: 0, max: 1, tickValues:[0,0.5,1]}
                 }

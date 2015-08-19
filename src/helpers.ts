@@ -27,6 +27,7 @@ module KG
 
         contains(x, strict?) {
             strict = strict || false;
+            if(x == undefined || x == null || isNaN(x)) { return false }
             var lowEnough:boolean = strict ? (this.max > x) : (this.max >= x);
             var highEnough:boolean = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
@@ -60,6 +61,13 @@ module KG
     {
         x: any;
         y: any;
+    }
+
+    export function isAlmostTo(a:number,b:number,t?:number) {
+        t = t || 0.01;
+        var diff = Math.abs(a - b),
+            avg = 0.5*(a + b);
+        return (diff/avg < t);
     }
 
     export function areTheSamePoint(a:ICoordinates, b:ICoordinates) {

@@ -38,7 +38,14 @@ module KG {
 
         createSubObjects(view) {
             var p = this;
+            //view.addObject(p.linePlot);
+            return view;
+        }
+
+        render(view) {
+            var p = this;
             p.linePlot.data = p.fn.points(view,p.yIsIndependent,p.numSamplePoints);
+            view = p.linePlot.render(view);
             return view;
         }
 

@@ -105,7 +105,7 @@ module KGMath.Functions {
                 }
                 var y = ySamplePoints[i];
                 var xOfY = fn.xValue(y);
-                if(view.yAxis.domain.contains(yOfX)) {
+                if(view.xAxis.domain.contains(xOfY)) {
                     points.push({x: xOfY, y: y})
                 }
             }

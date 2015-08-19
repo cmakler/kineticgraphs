@@ -7,7 +7,8 @@
 module KGMath.Functions {
 
     export interface PolynomialDefinition extends BaseDefinition {
-        terms: any;
+        terms?: Monomial[];
+        termDefs?: any;
     }
 
     export interface IPolynomial extends IBase {
@@ -25,7 +26,15 @@ module KGMath.Functions {
 
         constructor(definition:PolynomialDefinition) {
             super(definition);
+            if(definition.hasOwnProperty('termDefs')){
+                this.terms = definition.termDefs.map(function(termDef) { return new Monomial(termDef)});
+            }
             this.bases = [0];
+        }
+
+        _update(scope) {
+            this.terms.forEach(function(monomial) {monomial.update(scope)});
+            return this;
         }
 
         // The coefficients and powers of each term may be get and set via the term's index
