@@ -14,6 +14,9 @@ var KG;
         };
         Domain.prototype.contains = function (x, strict) {
             strict = strict || false;
+            if (x == undefined || x == null || isNaN(x)) {
+                return false;
+            }
             var lowEnough = strict ? (this.max > x) : (this.max >= x);
             var highEnough = strict ? (this.min < x) : (this.min <= x);
             return lowEnough && highEnough;
@@ -28,6 +31,12 @@ var KG;
         return Domain;
     })();
     KG.Domain = Domain;
+    function isAlmostTo(a, b, t) {
+        t = t || 0.01;
+        var diff = Math.abs(a - b), avg = 0.5 * (a + b);
+        return (diff / avg < t);
+    }
+    KG.isAlmostTo = isAlmostTo;
     function areTheSamePoint(a, b) {
         return (a.x === b.x && a.y === b.y);
     }
@@ -224,7 +233,13 @@ var KG;
             var BOOLEAN_TYPE = "boolean";
             var r = this;
             function isSimpleParam(name) {
-                return name === name.match(/params\.[a-zA-Z0-9]+/)[0];
+                var match = name.match(/params\.[a-zA-Z0-9]+/);
+                if (match) {
+                    return name === name.match[0];
+                }
+                else {
+                    return false;
+                }
             }
             function paramName(name) {
                 return name.split('params.')[1];
@@ -369,7 +384,7 @@ var KGMath;
                     }
                     var y = ySamplePoints[i];
                     var xOfY = fn.xValue(y);
-                    if (view.yAxis.domain.contains(yOfX)) {
+                    if (view.xAxis.domain.contains(xOfY)) {
                         points.push({ x: xOfY, y: y });
                     }
                 }
@@ -511,17 +526,19 @@ var KGMath;
             __extends(Polynomial, _super);
             function Polynomial(definition) {
                 _super.call(this, definition);
-                // Each element of the params array should be a monomial or a monomial definition.
-                function createTerm(termDef) {
-                    if (termDef instanceof Functions.Monomial) {
-                        return termDef;
-                    }
-                    else {
+                if (definition.hasOwnProperty('termDefs')) {
+                    this.terms = definition.termDefs.map(function (termDef) {
                         return new Functions.Monomial(termDef);
-                    }
+                    });
                 }
-                this.terms = definition.terms.map(createTerm);
+                this.bases = [0];
             }
+            Polynomial.prototype._update = function (scope) {
+                this.terms.forEach(function (monomial) {
+                    monomial.update(scope);
+                });
+                return this;
+            };
             // The coefficients and powers of each term may be get and set via the term's index
             Polynomial.prototype.setCoefficient = function (n, coefficient) {
                 var p = this;
@@ -1308,6 +1325,43 @@ var KG;
         return PathFamily;
     })(KG.ViewObject);
     KG.PathFamily = PathFamily;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var FunctionPlot = (function (_super) {
+        __extends(FunctionPlot, _super);
+        function FunctionPlot(definition) {
+            definition = _.defaults(definition, { yIsIndependent: false, interpolation: 'linear', numSamplePoints: 51 });
+            _super.call(this, definition);
+            var linePlotDefinition = definition;
+            linePlotDefinition.data = [];
+            var fnPlot = this;
+            fnPlot.linePlot = new KG.LinePlot(linePlotDefinition);
+            if (this.fn instanceof KGMath.Functions.Base) {
+                fnPlot.f = fnPlot.fn;
+            }
+            else if (typeof this.fn == 'function') {
+                fnPlot.f = new KGMath.Functions.Base({ yValue: fnPlot.fn });
+            }
+        }
+        FunctionPlot.prototype.createSubObjects = function (view) {
+            var p = this;
+            //view.addObject(p.linePlot);
+            return view;
+        };
+        FunctionPlot.prototype.render = function (view) {
+            var p = this;
+            if (p.fn instanceof KGMath.Functions.Base) {
+                p.linePlot.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
+            }
+            view = p.linePlot.render(view);
+            return view;
+        };
+        return FunctionPlot;
+    })(KG.ViewObject);
+    KG.FunctionPlot = FunctionPlot;
 })(KG || (KG = {}));
 /// <reference path='kg.ts'/>
 'use strict';
@@ -2157,6 +2211,7 @@ var EconGraphs;
             e.xPercentDiff = e.xDiff / e.xAvg;
             e.yPercentDiff = e.yDiff / e.yAvg;
             e.elasticity = e.xPercentDiff / e.yPercentDiff;
+            console.log('calculating elasticity');
             return e;
         };
         return MidpointElasticity;
@@ -2324,12 +2379,190 @@ var EconGraphs;
     })(EconGraphs.Demand);
     EconGraphs.LinearDemand = LinearDemand;
 })(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+'use strict';
+var EconGraphs;
+(function (EconGraphs) {
+    var RamseyCassKoopmans = (function (_super) {
+        __extends(RamseyCassKoopmans, _super);
+        function RamseyCassKoopmans(definition) {
+            _super.call(this, definition);
+            this.steadyCapital = new KGMath.Functions.Polynomial({ termDefs: [
+                {
+                    coefficient: 1,
+                    powers: ['params.alpha']
+                },
+                {
+                    coefficient: '-(params.delta + params.n + params.g)',
+                    powers: [1]
+                }
+            ] });
+            this.steadyCapitalView = new KG.FunctionPlot({
+                name: 'steadyCapital',
+                fn: 'model.steadyCapital',
+                color: 'red',
+                numSamplePoints: 201
+            });
+            this.steadyConsumptionView = new KG.Line({
+                name: 'steadyConsumption',
+                color: 'blue',
+                type: 'VerticalLine',
+                def: {
+                    x: 'model.steadyStateK'
+                }
+            });
+            this.steadyStateView = new KG.Point({
+                name: 'steadyStatePoint',
+                coordinates: {
+                    x: 'model.steadyStateK',
+                    y: 'model.steadyStateC'
+                },
+                symbol: 'cross',
+                color: 'grey',
+                size: 100,
+                label: {
+                    text: 'S',
+                    align: 'right',
+                    valign: 'bottom',
+                    color: 'grey'
+                }
+            });
+            this.initialPoint = new KG.Point({
+                name: 'initialPoint',
+                coordinates: {
+                    x: 'params.initialK',
+                    y: 'params.initialC'
+                },
+                className: 'growth',
+                size: 500,
+                label: {
+                    text: 'O'
+                },
+                xDrag: true,
+                yDrag: true
+            });
+            this.growthPathView = new KG.LinePlot({
+                name: 'growthPath',
+                data: 'model.growthPath',
+                className: 'growth'
+            });
+            this.balancedGrowthPathView = new KG.LinePlot({
+                name: 'balancedGrowthPth',
+                data: 'model.balancedGrowthPath',
+                className: 'growth dashed',
+                interpolation: 'basis'
+            });
+        }
+        RamseyCassKoopmans.prototype._update = function (scope) {
+            var model = this;
+            model.steadyCapital.update(scope);
+            model.steadyStateK = Math.pow((model.delta + model.n + model.rho) / model.alpha, (1 / (model.alpha - 1)));
+            model.steadyStateC = model.steadyCapital.yValue(model.steadyStateK);
+            model.growthPath = model.dynamicPath(model.initialK, model.initialC);
+            model.balancedGrowthPath = model.generateBalancedGrowthPathData();
+            model.positiveConsumption = (model.steadyStateC >= 0);
+            model.steadyStateOnGraph = (model.steadyStateK <= 2);
+            return model;
+        };
+        RamseyCassKoopmans.prototype.y = function (k) {
+            var model = this;
+            return Math.pow(k, model.alpha); // y = f(k) = k^alpha
+        };
+        RamseyCassKoopmans.prototype.r = function (k) {
+            var model = this;
+            return model.alpha * Math.pow(k, model.alpha - 1) - model.delta; // interest rate = f'(k) - delta
+        };
+        RamseyCassKoopmans.prototype.kdot = function (k, c) {
+            var model = this;
+            return model.y(k) - c - (model.n + model.g + model.delta) * k;
+        };
+        RamseyCassKoopmans.prototype.cdot = function (k, c) {
+            var model = this;
+            return (model.r(k) - model.rho) * c / model.theta;
+        };
+        RamseyCassKoopmans.prototype.normalizedNextPoint = function (k, c, distance) {
+            var model = this;
+            var kdot = model.kdot(k, c), cdot = model.cdot(k, c);
+            // normalize to smooth curve
+            var vectorLength = Math.sqrt(kdot * kdot + cdot * cdot), deltaK = distance * kdot / vectorLength, deltaC = distance * cdot / vectorLength;
+            return { k: k + deltaK, c: c + deltaC };
+        };
+        RamseyCassKoopmans.prototype.generateBalancedGrowthPathData = function () {
+            var model = this;
+            function tendsToZeroCapital(testK, testC) {
+                var iterations = 0;
+                while (model.cdot(testK, testC) * model.kdot(testK, testC) > 0 && iterations < 800) {
+                    var next = model.normalizedNextPoint(testK, testC, 0.005);
+                    testK = next.k;
+                    testC = next.c;
+                    iterations++;
+                }
+                // once it's no longer heading NW or SE, return true if it's heading N or false if it's heading S
+                return (model.cdot(testK, testC) > 0 || model.kdot(testK, testC) < 0);
+            }
+            var points = [{ x: 0, y: 0 }];
+            var k = 0, c = 0;
+            var edgeNotReached = true;
+            while (edgeNotReached) {
+                k = k + 0.05;
+                while (!tendsToZeroCapital(k, c) && c < 2) {
+                    c += 0.01;
+                }
+                if (c < 2) {
+                    points.push({ x: k, y: c });
+                }
+                else {
+                    c = 2;
+                    k = k - 0.05;
+                    while (tendsToZeroCapital(k, c) && k < 2) {
+                        k += 0.01;
+                    }
+                    points.push({ x: k, y: c });
+                    edgeNotReached = false;
+                }
+                if (k >= 2) {
+                    edgeNotReached = false;
+                }
+            }
+            return points;
+        };
+        RamseyCassKoopmans.prototype.dynamicPath = function (k, c) {
+            var model = this;
+            var points = [{ x: k, y: c }];
+            var steadyStateAchieved = false, zeroConsumption = false, zeroCapital = false;
+            var iterations = 0;
+            while (!steadyStateAchieved && !zeroConsumption && !zeroCapital && iterations < 500) {
+                iterations++;
+                var next = model.normalizedNextPoint(k, c, 0.005);
+                if (next.k < 0) {
+                    zeroCapital = true;
+                }
+                else if (next.c < 0) {
+                    zeroConsumption = true;
+                }
+                else if (KG.isAlmostTo(next.k, model.steadyStateK, 0.05) && KG.isAlmostTo(next.c, model.steadyStateC, 0.05)) {
+                    points.push({ x: model.steadyStateK, y: model.steadyStateC });
+                    steadyStateAchieved = true;
+                }
+                else {
+                    k = next.k;
+                    c = next.c;
+                    points.push({ x: k, y: c });
+                }
+            }
+            return points;
+        };
+        return RamseyCassKoopmans;
+    })(KG.Model);
+    EconGraphs.RamseyCassKoopmans = RamseyCassKoopmans;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="elasticity/elasticity.ts"/>
 /// <reference path="elasticity/midpoint.ts"/>
 /// <reference path="elasticity/point.ts"/>
 /// <reference path="market/demand.ts"/>
-/// <reference path="market/linearDemand.ts"/> 
+/// <reference path="market/linearDemand.ts"/>
+/// <reference path="growth/ramseyCassKoopmans.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
@@ -2347,6 +2580,7 @@ var EconGraphs;
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
+/// <reference path="viewObjects/functionPlot.ts"/>
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />

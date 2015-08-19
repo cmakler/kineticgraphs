@@ -159,6 +159,8 @@ module EconGraphs {
             e.yPercentDiff = e.yDiff / e.yAvg;
             e.elasticity = e.xPercentDiff / e.yPercentDiff;
 
+            console.log('calculating elasticity');
+
             return e;
         }
 

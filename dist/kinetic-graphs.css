@@ -37,6 +37,10 @@ a {
     stroke-width: 4px;
 }
 
+.dashed {
+    stroke-dasharray: 10, 10;
+}
+
 .dropline {
     stroke-dasharray: 10, 10;
     stroke-width: 2px;
@@ -93,9 +97,15 @@ a {
     fill: none;
 }
 
-.draw, .segment {
+.draw, .segment, .dataPath {
+    stroke: red;
     stroke-width: 2;
     fill: none;
+}
+
+.growth {
+    stroke: green;
+    color: green;
 }
 
 .scatter {
