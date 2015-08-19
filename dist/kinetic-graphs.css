@@ -37,6 +37,10 @@ a {
     stroke-width: 4px;
 }
 
+.dashed {
+    stroke-dasharray: 10, 10;
+}
+
 .dropline {
     stroke-dasharray: 10, 10;
     stroke-width: 2px;

@@ -12,7 +12,8 @@ module KG {
     }
 
     export interface IFunctionPlot extends IViewObject {
-        fn: KGMath.Functions.Base;
+        fn: any;
+        f: KGMath.Functions.Base;
         yIsIndependent: boolean;
         numSamplePoints: number;
         interpolation: string;
@@ -22,6 +23,7 @@ module KG {
     export class FunctionPlot extends ViewObject implements IFunctionPlot {
 
         public fn;
+        public f;
         public yIsIndependent;
         public interpolation;
         public linePlot;
@@ -33,7 +35,14 @@ module KG {
             super(definition);
             var linePlotDefinition:any = definition;
             linePlotDefinition.data = [];
-            this.linePlot = new KG.LinePlot(linePlotDefinition);
+
+            var fnPlot = this;
+            fnPlot.linePlot = new KG.LinePlot(linePlotDefinition);
+            if(this.fn instanceof KGMath.Functions.Base) {
+                fnPlot.f = fnPlot.fn;
+            } else if(typeof this.fn == 'function') {
+                fnPlot.f = new KGMath.Functions.Base({yValue: fnPlot.fn})
+            }
         }
 
         createSubObjects(view) {
@@ -44,7 +53,10 @@ module KG {
 
         render(view) {
             var p = this;
-            p.linePlot.data = p.fn.points(view,p.yIsIndependent,p.numSamplePoints);
+            if(p.fn instanceof KGMath.Functions.Base) {
+                p.linePlot.data = p.fn.points(view,p.yIsIndependent,p.numSamplePoints);
+            }
+
             view = p.linePlot.render(view);
             return view;
         }

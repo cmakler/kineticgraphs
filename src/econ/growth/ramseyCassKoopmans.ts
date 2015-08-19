@@ -63,6 +63,7 @@ module EconGraphs {
         public growthPath;
         public growthPathView;
         public balancedGrowthPath;
+        public balancedGrowthPathView;
         public positiveConsumption;
         public steadyStateOnGraph;
         public steadyCapital;
@@ -132,8 +133,13 @@ module EconGraphs {
                 name: 'growthPath',
                 data: 'model.growthPath',
                 className: 'growth'
+            });
+            this.balancedGrowthPathView = new KG.LinePlot({
+                name: 'balancedGrowthPth',
+                data: 'model.balancedGrowthPath',
+                className: 'growth dashed',
+                interpolation: 'basis'
             })
-
         }
 
         _update(scope) {
@@ -143,6 +149,7 @@ module EconGraphs {
             model.steadyStateK = Math.pow((model.delta + model.n + model.rho)/model.alpha,(1/(model.alpha - 1)));
             model.steadyStateC = model.steadyCapital.yValue(model.steadyStateK);
             model.growthPath = model.dynamicPath(model.initialK, model.initialC);
+            model.balancedGrowthPath = model.generateBalancedGrowthPathData();
             model.positiveConsumption = (model.steadyStateC >= 0);
             model.steadyStateOnGraph = (model.steadyStateK <= 2);
 
@@ -169,6 +176,74 @@ module EconGraphs {
             return (model.r(k) - model.rho)*c/model.theta;
         }
 
+        normalizedNextPoint(k,c,distance) {
+
+            var model = this;
+
+            var kdot = model.kdot(k,c),
+                cdot = model.cdot(k,c);
+
+            // normalize to smooth curve
+
+            var vectorLength = Math.sqrt(kdot*kdot + cdot*cdot),
+                deltaK = distance*kdot/vectorLength,
+                deltaC = distance*cdot/vectorLength;
+
+            return {k: k + deltaK, c: c + deltaC};
+        }
+
+        private generateBalancedGrowthPathData() {
+
+            var model = this;
+
+            function tendsToZeroCapital(testK,testC) {
+
+                var iterations = 0;
+
+                // follow the dynamic path as long as it's heading NE or SW
+                while(model.cdot(testK,testC)*model.kdot(testK,testC) > 0 && iterations < 800) {
+                    var next = model.normalizedNextPoint(testK,testC,0.005);
+                    testK = next.k;
+                    testC = next.c;
+                    iterations++;
+                }
+
+                // once it's no longer heading NW or SE, return true if it's heading N or false if it's heading S
+                return (model.cdot(testK,testC) > 0 || model.kdot(testK,testC) < 0);
+            }
+
+            var points = [{x: 0, y: 0}];
+
+            var k = 0,
+                c = 0;
+
+            var edgeNotReached = true;
+
+            while(edgeNotReached) {
+                k = k + 0.05;
+                while(!tendsToZeroCapital(k,c) && c < 2) {
+                    c += 0.01;
+                }
+                if(c < 2) {
+                    points.push({x: k, y: c});
+                } else {
+                    c = 2;
+                    k = k - 0.05;
+                    while(tendsToZeroCapital(k,c) && k < 2) {
+                        k += 0.01;
+                    }
+                    points.push({x: k, y: c});
+                    edgeNotReached = false;
+                }
+                if(k >= 2) {
+                    edgeNotReached = false;
+                }
+            }
+
+            return points;
+
+        }
+
         dynamicPath(k,c) {
             var model = this;
 
@@ -183,28 +258,19 @@ module EconGraphs {
             while(!steadyStateAchieved && !zeroConsumption && !zeroCapital && iterations < 500) {
 
                 iterations++;
-                var kdot = model.kdot(k,c),
-                    cdot = model.cdot(k,c);
 
-                // normalize to smooth curve
+                var next = model.normalizedNextPoint(k,c,0.005);
 
-                var vectorLength = Math.sqrt(kdot*kdot + cdot*cdot),
-                    deltaK = 0.005*kdot/vectorLength,
-                    deltaC = 0.005*cdot/vectorLength;
-
-                var nextK = k + deltaK,
-                    nextC = c + deltaC;
-
-                if(nextK < 0) {
+                if(next.k < 0) {
                     zeroCapital = true;
-                } else if(nextC < 0) {
+                } else if(next.c < 0) {
                     zeroConsumption = true;
-                } else if(KG.isAlmostTo(nextK,model.steadyStateK, 0.05) && KG.isAlmostTo(nextC,model.steadyStateC, 0.05)) {
+                } else if(KG.isAlmostTo(next.k,model.steadyStateK, 0.05) && KG.isAlmostTo(next.c,model.steadyStateC, 0.05)) {
                     points.push({x:model.steadyStateK, y:model.steadyStateC});
                     steadyStateAchieved = true;
                 } else {
-                    k = nextK;
-                    c = nextC;
+                    k = next.k;
+                    c = next.c;
                     points.push({x: k, y: c});
                 }
             }

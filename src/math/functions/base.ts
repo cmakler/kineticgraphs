@@ -1,6 +1,7 @@
 module KGMath.Functions {
 
     export interface BaseDefinition {
+        yValue? : () => number;
         level?: any;
     }
 
