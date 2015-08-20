@@ -91,7 +91,7 @@ module EconGraphs {
             });
             this.line = new KG.Line({
                 name: 'demand',
-                color: 'purple',
+                className: 'demand',
                 arrows: 'NONE',
                 type: 'TwoPointLine',
                 def: {
@@ -105,15 +105,14 @@ module EconGraphs {
                     }
                 }
             });
-            this.xDiffSegment = new KG.Segment({
+            this.xDiffSegment = new KG.Arrow({
                 name: 'xDiffSegment',
-                color: 'blue',
-                arrows: 'END',
-                a: {
+                className: 'diff2',
+                begin: {
                     x: definition.point2.x,
                     y: 5
                 },
-                b: {
+                end: {
                     x: definition.point1.x,
                     y: 5
                 },
@@ -122,15 +121,14 @@ module EconGraphs {
                     valign: 'top'
                 }
             });
-            this.yDiffSegment = new KG.Segment({
+            this.yDiffSegment = new KG.Arrow({
                 name: 'yDiffSegment',
-                color: 'red',
-                arrows: 'END',
-                a: {
+                className: 'diff1',
+                begin: {
                     x: 15,
                     y: definition.point2.y
                 },
-                b: {
+                end: {
                     x: 15,
                     y: definition.point1.y
                 },

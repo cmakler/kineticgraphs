@@ -102,3 +102,19 @@ a {
   stroke: #31a354;
   fill: #31a354;
 }
+.asset {
+  color: #3182bd;
+  stroke: #3182bd;
+  fill: #3182bd;
+  stroke-width: 2;
+}
+.dataPathFamily.asset {
+  color: #3182bd;
+  fill: none;
+  stroke: #3182bd;
+  stroke-width: 2;
+}
+.max-portfolio {
+  color: #31a354;
+  stroke: #31a354;
+}

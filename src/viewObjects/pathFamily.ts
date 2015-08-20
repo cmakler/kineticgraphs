@@ -10,7 +10,7 @@ module KG {
         interpolation: string;
     }
 
-    export class PathFamily extends ViewObject implements ILinePlot {
+    export class PathFamily extends ViewObject implements IPathFamily {
 
         public data;
         public interpolation;

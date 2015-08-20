@@ -30,6 +30,8 @@ module KG
         yAxis: Axis;
         xOnGraph: (x:number) => boolean;
         yOnGraph: (x:number) => boolean;
+        nearTop: (p:ICoordinates) => boolean;
+        nearRight: (p:ICoordinates) => boolean;
 
         // render given current scope
         render: (scope:IScope, redraw:boolean) => void;
@@ -106,7 +108,7 @@ module KG
                 .attr('height', view.dimensions.height);
 
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue","purple"]).enter()
+            var endMarkers = svg.append("svg:defs").selectAll("marker").data(allColors()).enter()
                 .append("marker")
                 .attr("id", function(d){return "arrow-end-" + d})
                 .attr("refX", 11)
@@ -114,13 +116,20 @@ module KG
                 .attr("markerWidth", 13)
                 .attr("markerHeight", 13)
                 .attr("orient", "auto")
-                .attr("markerUnits","userSpaceOnUse")
-                .append("svg:path")
+                .attr("markerUnits","userSpaceOnUse");
+
+            endMarkers.append("svg:rect")
+                .attr('x',2)
+                .attr('width', 11)
+                .attr('height', 13)
+                .attr('fill','white');
+
+            endMarkers.append("svg:path")
                 .attr("d", "M2,2 L2,11 L10,6 L2,2")
                 .attr("fill",function(d) {return d});
 
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red","gray","blue","purple"]).enter()
+            var startMarkers = svg.append("svg:defs").selectAll("marker").data(allColors()).enter()
                 .append("svg:marker")
                 .attr("id", function(d){return "arrow-start-" + d})
                 .attr("refX", 2)
@@ -128,8 +137,15 @@ module KG
                 .attr("markerWidth", 13)
                 .attr("markerHeight", 13)
                 .attr("orient", "auto")
-                .attr("markerUnits","userSpaceOnUse")
-                .append("svg:path")
+                .attr("markerUnits","userSpaceOnUse");
+
+            startMarkers.append("svg:rect")
+                .attr('x',2)
+                .attr('width', 11)
+                .attr('height', 13)
+
+
+            startMarkers.append("svg:path")
                 .attr("d", "M11,2 L11,11 L2,6 L11,2")
                 .attr("fill",function(d) {return d});
 
@@ -216,6 +232,14 @@ module KG
 
         yOnGraph(y:number) {
             return this.yAxis.domain.contains(y);
+        }
+
+        nearTop(point:ICoordinates) {
+            return KG.isAlmostTo(point.y, this.yAxis.domain.max)
+        }
+
+        nearRight(point:ICoordinates) {
+            return KG.isAlmostTo(point.x, this.xAxis.domain.max)
         }
 
         drag(xParam:string, yParam:string, xDelta:number, yDelta:number) {

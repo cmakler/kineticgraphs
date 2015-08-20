@@ -37,19 +37,19 @@ module EconGraphs {
                 name: 'demandPriceIntercept',
                 coordinates: {x: 0, y: 'params.demandPriceIntercept'},
                 size: 200,
-                color: 'blue',
+                className: 'demand',
                 yDrag: true
             });
             this.quantityInterceptPoint = new KG.Point({
                 name: 'demandQuantityIntercept',
                 coordinates: {x: 'params.demandQuantityIntercept', y:0},
                 size: 200,
-                color: 'blue',
+                className: 'demand',
                 xDrag: true
             });
             this.curve = new KG.Line({
                 name: 'demand',
-                color: 'blue',
+                className: 'demand',
                 arrows: 'NONE',
                 type: definition.type,
                 def: definition.def

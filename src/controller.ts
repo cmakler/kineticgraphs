@@ -24,6 +24,7 @@ module KG
         renderMath: () => void;
         error: string;
         interpolate: any;
+        color: (className:string) => string;
     }
 
     export class Controller
@@ -33,6 +34,10 @@ module KG
         {
 
             $scope.interpolate = $interpolate;
+
+            $scope.color = function(className) {
+                return KG.colorForClassName(className);
+            }
 
             $scope.init = function(definition:ScopeDefinition) {
                 $scope.params = definition.params;

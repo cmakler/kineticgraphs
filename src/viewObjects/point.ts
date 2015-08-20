@@ -42,10 +42,10 @@ module KG
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
                     coordinates:definition.coordinates,
-                    color:'white',
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag
                 });
+                labelDef.color = (labelDef.hasOwnProperty('align')) ? this.color : 'white';
                 this.labelDiv = new GraphDiv(labelDef);
             }
 

@@ -68,13 +68,14 @@ module FinanceGraphs
             });
             p.twoAssetPortfolios = new KG.PathFamily({
                 name: 'twoAssetData',
-                className: 'draw',
+                className: 'asset',
                 data: 'model.twoAssetData',
                 interpolation: 'basis'
             });
             p.riskFreeAsset = new KG.Point({
                 name: 'riskFreeAsset',
                 coordinates: {x: 0, y:'params.riskFreeReturn'},
+                className: 'risk-free',
                 size: 500,
                 xDrag: false,
                 yDrag: true,
@@ -85,21 +86,20 @@ module FinanceGraphs
             p.optimalPortfolio = new KG.Point({
                 name: 'optimalPortfolio',
                 coordinates: {x: 'params.optimalPortfolioStDev', y:'params.optimalPortfolioMean'},
+                className: 'risk-free',
                 symbol: 'cross',
                 size: 100,
                 xDrag: false,
                 yDrag: false,
                 label: {
                     text: 'P',
-                    color: 'blue',
                     align: 'right',
                     valign: 'bottom'
-                },
-                color: 'blue'
+                }
             });
             p.riskReturnLine = new KG.Line({
                 name: 'twoPointSegment',
-                color: 'blue',
+                className: 'risk-free',
                 arrows: 'OPEN',
                 type: 'TwoPointLine',
                 def: {

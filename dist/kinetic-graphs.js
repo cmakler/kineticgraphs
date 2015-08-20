@@ -2,6 +2,70 @@
 'use strict';
 var KG;
 (function (KG) {
+    KG.CLASS_COLORS = {
+        demand: 'blue',
+        supply: 'orange',
+        growth: 'green',
+        diff1: 'purple',
+        diff2: 'green',
+        capital: 'orange',
+        consumption: 'blue',
+        asset: 'blue',
+        'risk-free': 'green'
+    };
+    KG.COLORS = {
+        blue: {
+            dark: "#3182bd",
+            medium: "#6baed6",
+            light: "#9ecae1",
+            faint: "#c6dbef"
+        },
+        orange: {
+            dark: "#e6550d",
+            medium: "#fd8d3c",
+            light: "#fdae6b",
+            faint: "#fdd0a2"
+        },
+        green: {
+            dark: "#31a354",
+            medium: "#74c476",
+            light: "#a1d99b",
+            faint: "#c7e9c0"
+        },
+        purple: {
+            dark: "#756bb1",
+            medium: "#9e9ac8",
+            light: "#bcbddc",
+            faint: "#dadaeb"
+        },
+        gray: {
+            dark: "#636363",
+            medium: "#969696",
+            light: "#bdbdbd",
+            faint: "#d9d9d9"
+        }
+    };
+})(KG || (KG = {}));
+/// <reference path="kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    function colorForClassName(className, shade) {
+        shade = shade || 'dark';
+        var classColor = KG.CLASS_COLORS[className] || 'gray';
+        return KG.COLORS[classColor][shade];
+    }
+    KG.colorForClassName = colorForClassName;
+    function allColors() {
+        var colorArray = [];
+        for (var color in KG.COLORS) {
+            for (var shade in KG.COLORS[color]) {
+                colorArray.push(KG.COLORS[color][shade]);
+            }
+        }
+        return colorArray;
+    }
+    KG.allColors = allColors;
     var Domain = (function () {
         function Domain(min, max) {
             this.min = min;
@@ -45,6 +109,31 @@ var KG;
         return !areTheSamePoint(a, b);
     }
     KG.areNotTheSamePoint = areNotTheSamePoint;
+    function averageTwoObjects(o1, o2) {
+        if (typeof o1 == 'number' && typeof o2 == 'number') {
+            return 0.5 * (o1 + o2);
+        }
+        else if (typeof o1 == 'object' && typeof o2 == 'object') {
+            var avgObj = {};
+            for (var key in o1) {
+                if (o1.hasOwnProperty(key) && o2.hasOwnProperty(key)) {
+                    avgObj[key] = averageTwoObjects(o1[key], o2[key]);
+                }
+            }
+            return avgObj;
+        }
+    }
+    KG.averageTwoObjects = averageTwoObjects;
+    function medianDataPoint(data) {
+        var l = data.length;
+        if (l % 2) {
+            return data[(l - 1) / 2];
+        }
+        else {
+            return averageTwoObjects(data[l / 2], data[l / 2 - 1]);
+        }
+    }
+    KG.medianDataPoint = medianDataPoint;
     function translateByPixelCoordinates(coordinates) {
         return 'translate(' + coordinates.x + ',' + coordinates.y + ')';
     }
@@ -798,7 +887,13 @@ var KG;
     var ViewObject = (function (_super) {
         __extends(ViewObject, _super);
         function ViewObject(definition) {
-            definition = _.defaults(definition, { className: '', show: true, xDrag: false, yDrag: false });
+            definition = _.defaults(definition, {
+                className: '',
+                color: KG.colorForClassName(definition.className),
+                show: true,
+                xDrag: false,
+                yDrag: false
+            });
             _super.call(this, definition);
             var viewObj = this;
             viewObj.xDragDelta = 0;
@@ -877,10 +972,10 @@ var KG;
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
                     coordinates: definition.coordinates,
-                    color: 'white',
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag
                 });
+                labelDef.color = (labelDef.hasOwnProperty('align')) ? this.color : 'white';
                 this.labelDiv = new KG.GraphDiv(labelDef);
             }
             if (definition.droplines) {
@@ -1033,12 +1128,10 @@ var KG;
 'use strict';
 var KG;
 (function (KG) {
-    var Segment = (function (_super) {
-        __extends(Segment, _super);
-        function Segment(definition) {
-            definition.a = KG.getCoordinates(definition.a);
-            definition.b = KG.getCoordinates(definition.b);
-            definition.color = definition.color || 'gray';
+    var Curve = (function (_super) {
+        __extends(Curve, _super);
+        function Curve(definition) {
+            definition = _.defaults(definition, { data: [], interpolation: 'linear' });
             _super.call(this, definition);
             if (definition.label) {
                 var labelDef = _.defaults(definition.label, {
@@ -1049,24 +1142,12 @@ var KG;
                 });
                 this.labelDiv = new KG.GraphDiv(labelDef);
             }
-            this.startArrow = (definition.arrows == Segment.START_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
-            this.endArrow = (definition.arrows == Segment.END_ARROW_STRING || definition.arrows == Segment.BOTH_ARROW_STRING);
+            this.startArrow = (definition.arrows == Curve.START_ARROW_STRING || definition.arrows == Curve.BOTH_ARROW_STRING);
+            this.endArrow = (definition.arrows == Curve.END_ARROW_STRING || definition.arrows == Curve.BOTH_ARROW_STRING);
             this.viewObjectSVGtype = 'path';
-            this.viewObjectClass = 'segment';
+            this.viewObjectClass = 'curve';
         }
-        Segment.prototype._update = function (scope) {
-            var segment = this;
-            segment.midpoint = {
-                x: 0.5 * (segment.a.x + segment.b.x),
-                y: 0.5 * (segment.a.y + segment.b.y)
-            };
-            if (segment.hasOwnProperty('labelDiv')) {
-                segment.labelDiv.coordinates = segment.midpoint;
-            }
-            segment.length = KG.distanceBetweenCoordinates(segment.a, segment.b);
-            return segment;
-        };
-        Segment.prototype.createSubObjects = function (view) {
+        Curve.prototype.createSubObjects = function (view) {
             var labelDiv = this.labelDiv;
             if (labelDiv) {
                 return view.addObject(labelDiv);
@@ -1075,46 +1156,89 @@ var KG;
                 return view;
             }
         };
-        Segment.prototype.render = function (view) {
-            var segment = this;
-            var group = view.objectGroup(segment.name, segment.initGroupFn(), false);
-            if (segment.endArrow && segment.length > 0) {
-                segment.addArrow(group, 'end');
+        Curve.prototype._update = function (scope) {
+            var curve = this;
+            var dataLength = curve.data.length;
+            curve.startPoint = curve.data[0];
+            curve.endPoint = curve.data[dataLength - 1];
+            curve.midPoint = KG.medianDataPoint(curve.data);
+            return curve;
+        };
+        Curve.prototype.positionLabel = function (view) {
+            var curve = this;
+            curve.labelDiv.coordinates = curve.midPoint;
+        };
+        Curve.prototype.addArrows = function (group) {
+            var curve = this;
+            var length = KG.distanceBetweenCoordinates(curve.startPoint, curve.endPoint);
+            if (curve.endArrow && length > 0) {
+                curve.addArrow(group, 'end');
             }
             else {
-                segment.removeArrow(group, 'end');
+                curve.removeArrow(group, 'end');
             }
-            if (segment.startArrow && segment.length > 0) {
-                segment.addArrow(group, 'start');
+            if (curve.startArrow && length > 0) {
+                curve.addArrow(group, 'start');
             }
             else {
-                segment.removeArrow(group, 'start');
+                curve.removeArrow(group, 'start');
             }
-            var dataLine = d3.svg.line().x(function (d) {
-                return view.xAxis.scale(d.x);
+        };
+        Curve.prototype.render = function (view) {
+            var curve = this;
+            var dataCoordinates = view.dataCoordinates(curve.data);
+            var group = view.objectGroup(curve.name, curve.initGroupFn(), false);
+            curve.addArrows(group);
+            curve.positionLabel(view);
+            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
+                return d.x;
             }).y(function (d) {
-                return view.yAxis.scale(d.y);
+                return d.y;
             });
-            var segmentSelection = group.select('.' + segment.viewObjectClass);
-            segmentSelection.attr({
-                'class': segment.classAndVisibility(),
-                'd': dataLine([segment.startPoint(view), segment.endPoint(view)]),
-                'stroke': segment.color
+            var dataPath = group.select('.' + curve.viewObjectClass);
+            dataPath.attr({
+                'class': curve.classAndVisibility(),
+                'd': dataLine(dataCoordinates)
             });
             return view;
         };
-        Segment.prototype.startPoint = function (view) {
-            return this.a;
-        };
-        Segment.prototype.endPoint = function (view) {
-            return this.b;
-        };
-        Segment.START_ARROW_STRING = 'START';
-        Segment.END_ARROW_STRING = 'END';
-        Segment.BOTH_ARROW_STRING = 'BOTH';
-        return Segment;
+        Curve.START_ARROW_STRING = 'START';
+        Curve.END_ARROW_STRING = 'END';
+        Curve.BOTH_ARROW_STRING = 'BOTH';
+        return Curve;
     })(KG.ViewObject);
+    KG.Curve = Curve;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var Segment = (function (_super) {
+        __extends(Segment, _super);
+        function Segment(definition) {
+            definition.data = [KG.getCoordinates(definition.a), KG.getCoordinates(definition.b)];
+            _super.call(this, definition);
+            this.viewObjectClass = 'segment';
+        }
+        return Segment;
+    })(KG.Curve);
     KG.Segment = Segment;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var Arrow = (function (_super) {
+        __extends(Arrow, _super);
+        function Arrow(definition) {
+            definition.data = [KG.getCoordinates(definition.begin), KG.getCoordinates(definition.end)];
+            definition.arrows = "END";
+            _super.call(this, definition);
+            this.viewObjectClass = 'arrow';
+        }
+        return Arrow;
+    })(KG.Curve);
+    KG.Arrow = Arrow;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -1123,7 +1247,6 @@ var KG;
     var Line = (function (_super) {
         __extends(Line, _super);
         function Line(definition) {
-            definition.color = definition.color || 'gray';
             _super.call(this, definition);
             this.linear = new KGMath.Functions[definition.type](definition.def);
             this.viewObjectSVGtype = 'path';
@@ -1263,7 +1386,6 @@ var KG;
     var LinePlot = (function (_super) {
         __extends(LinePlot, _super);
         function LinePlot(definition) {
-            definition = _.defaults(definition, { data: [], interpolation: 'linear' });
             _super.call(this, definition);
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'dataPath';
@@ -1285,7 +1407,7 @@ var KG;
             return view;
         };
         return LinePlot;
-    })(KG.ViewObject);
+    })(KG.Curve);
     KG.LinePlot = LinePlot;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
@@ -1409,15 +1531,19 @@ var KG;
             // Create new SVG element for the view visualization
             var svg = frame.append('svg').attr('width', view.dimensions.width).attr('height', view.dimensions.height);
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue", "purple"]).enter().append("marker").attr("id", function (d) {
+            var endMarkers = svg.append("svg:defs").selectAll("marker").data(KG.allColors()).enter().append("marker").attr("id", function (d) {
                 return "arrow-end-" + d;
-            }).attr("refX", 11).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse").append("svg:path").attr("d", "M2,2 L2,11 L10,6 L2,2").attr("fill", function (d) {
+            }).attr("refX", 11).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse");
+            endMarkers.append("svg:rect").attr('x', 2).attr('width', 11).attr('height', 13).attr('fill', 'white');
+            endMarkers.append("svg:path").attr("d", "M2,2 L2,11 L10,6 L2,2").attr("fill", function (d) {
                 return d;
             });
             // Establish marker style for arrow
-            svg.append("svg:defs").selectAll("marker").data(["red", "gray", "blue", "purple"]).enter().append("svg:marker").attr("id", function (d) {
+            var startMarkers = svg.append("svg:defs").selectAll("marker").data(KG.allColors()).enter().append("svg:marker").attr("id", function (d) {
                 return "arrow-start-" + d;
-            }).attr("refX", 2).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse").append("svg:path").attr("d", "M11,2 L11,11 L2,6 L11,2").attr("fill", function (d) {
+            }).attr("refX", 2).attr("refY", 6).attr("markerWidth", 13).attr("markerHeight", 13).attr("orient", "auto").attr("markerUnits", "userSpaceOnUse");
+            startMarkers.append("svg:rect").attr('x', 2).attr('width', 11).attr('height', 13);
+            startMarkers.append("svg:path").attr("d", "M11,2 L11,11 L2,6 L11,2").attr("fill", function (d) {
                 return d;
             });
             // Add a div above the SVG for labels and controls
@@ -1489,6 +1615,12 @@ var KG;
         };
         View.prototype.yOnGraph = function (y) {
             return this.yAxis.domain.contains(y);
+        };
+        View.prototype.nearTop = function (point) {
+            return KG.isAlmostTo(point.y, this.yAxis.domain.max);
+        };
+        View.prototype.nearRight = function (point) {
+            return KG.isAlmostTo(point.x, this.xAxis.domain.max);
         };
         View.prototype.drag = function (xParam, yParam, xDelta, yDelta) {
             var view = this;
@@ -1694,6 +1826,9 @@ var KG;
             this.$scope = $scope;
             this.$interpolate = $interpolate;
             $scope.interpolate = $interpolate;
+            $scope.color = function (className) {
+                return KG.colorForClassName(className);
+            };
             $scope.init = function (definition) {
                 $scope.params = definition.params;
                 $scope.restrictions = definition.restrictions.map(function (restrictionDefinition) {
@@ -1816,6 +1951,7 @@ var FinanceGraphs;
             this.point = new KG.Point({
                 name: definition.name + 'point',
                 coordinates: { x: definition.stDev, y: definition.mean },
+                className: 'asset',
                 size: 500,
                 xDrag: true,
                 yDrag: true,
@@ -1845,13 +1981,14 @@ var FinanceGraphs;
             });
             p.twoAssetPortfolios = new KG.PathFamily({
                 name: 'twoAssetData',
-                className: 'draw',
+                className: 'asset',
                 data: 'model.twoAssetData',
                 interpolation: 'basis'
             });
             p.riskFreeAsset = new KG.Point({
                 name: 'riskFreeAsset',
                 coordinates: { x: 0, y: 'params.riskFreeReturn' },
+                className: 'risk-free',
                 size: 500,
                 xDrag: false,
                 yDrag: true,
@@ -1862,21 +1999,20 @@ var FinanceGraphs;
             p.optimalPortfolio = new KG.Point({
                 name: 'optimalPortfolio',
                 coordinates: { x: 'params.optimalPortfolioStDev', y: 'params.optimalPortfolioMean' },
+                className: 'risk-free',
                 symbol: 'cross',
                 size: 100,
                 xDrag: false,
                 yDrag: false,
                 label: {
                     text: 'P',
-                    color: 'blue',
                     align: 'right',
                     valign: 'bottom'
-                },
-                color: 'blue'
+                }
             });
             p.riskReturnLine = new KG.Line({
                 name: 'twoPointSegment',
-                color: 'blue',
+                className: 'risk-free',
                 arrows: 'OPEN',
                 type: 'TwoPointLine',
                 def: {
@@ -2147,7 +2283,7 @@ var EconGraphs;
             });
             this.line = new KG.Line({
                 name: 'demand',
-                color: 'purple',
+                className: 'demand',
                 arrows: 'NONE',
                 type: 'TwoPointLine',
                 def: {
@@ -2161,15 +2297,14 @@ var EconGraphs;
                     }
                 }
             });
-            this.xDiffSegment = new KG.Segment({
+            this.xDiffSegment = new KG.Arrow({
                 name: 'xDiffSegment',
-                color: 'blue',
-                arrows: 'END',
-                a: {
+                className: 'diff2',
+                begin: {
                     x: definition.point2.x,
                     y: 5
                 },
-                b: {
+                end: {
                     x: definition.point1.x,
                     y: 5
                 },
@@ -2178,15 +2313,14 @@ var EconGraphs;
                     valign: 'top'
                 }
             });
-            this.yDiffSegment = new KG.Segment({
+            this.yDiffSegment = new KG.Arrow({
                 name: 'yDiffSegment',
-                color: 'red',
-                arrows: 'END',
-                a: {
+                className: 'diff1',
+                begin: {
                     x: 15,
                     y: definition.point2.y
                 },
-                b: {
+                end: {
                     x: 15,
                     y: definition.point1.y
                 },
@@ -2324,19 +2458,19 @@ var EconGraphs;
                 name: 'demandPriceIntercept',
                 coordinates: { x: 0, y: 'params.demandPriceIntercept' },
                 size: 200,
-                color: 'blue',
+                className: 'demand',
                 yDrag: true
             });
             this.quantityInterceptPoint = new KG.Point({
                 name: 'demandQuantityIntercept',
                 coordinates: { x: 'params.demandQuantityIntercept', y: 0 },
                 size: 200,
-                color: 'blue',
+                className: 'demand',
                 xDrag: true
             });
             this.curve = new KG.Line({
                 name: 'demand',
-                color: 'blue',
+                className: 'demand',
                 arrows: 'NONE',
                 type: definition.type,
                 def: definition.def
@@ -2400,12 +2534,12 @@ var EconGraphs;
             this.steadyCapitalView = new KG.FunctionPlot({
                 name: 'steadyCapital',
                 fn: 'model.steadyCapital',
-                color: 'red',
+                className: 'capital',
                 numSamplePoints: 201
             });
             this.steadyConsumptionView = new KG.Line({
                 name: 'steadyConsumption',
-                color: 'blue',
+                className: 'consumption',
                 type: 'VerticalLine',
                 def: {
                     x: 'model.steadyStateK'
@@ -2418,7 +2552,6 @@ var EconGraphs;
                     y: 'model.steadyStateC'
                 },
                 symbol: 'cross',
-                color: 'grey',
                 size: 100,
                 label: {
                     text: 'S',
@@ -2444,7 +2577,8 @@ var EconGraphs;
             this.growthPathView = new KG.LinePlot({
                 name: 'growthPath',
                 data: 'model.growthPath',
-                className: 'growth'
+                className: 'growth',
+                arrows: 'END'
             });
             this.balancedGrowthPathView = new KG.LinePlot({
                 name: 'balancedGrowthPth',
@@ -2568,6 +2702,7 @@ var EconGraphs;
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
+/// <reference path="constants.ts" />
 /// <reference path="helpers.ts" />
 /// <reference path="model.ts" />
 /// <reference path="restriction.ts" />
@@ -2575,7 +2710,9 @@ var EconGraphs;
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/dropline.ts"/>
+/// <reference path="viewObjects/curve.ts"/>
 /// <reference path="viewObjects/segment.ts"/>
+/// <reference path="viewObjects/arrow.ts"/>
 /// <reference path="viewObjects/line.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>

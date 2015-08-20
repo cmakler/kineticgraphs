@@ -23,8 +23,6 @@ module KG {
 
         constructor(definition:LineDefinition) {
 
-            definition.color = definition.color || 'gray';
-
             super(definition);
 
             this.linear = new KGMath.Functions[definition.type](definition.def);

@@ -33,6 +33,7 @@ module FinanceGraphs
             this.point = new KG.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.stDev, y:definition.mean},
+                className: 'asset',
                 size: 500,
                 xDrag: true,
                 yDrag: true,

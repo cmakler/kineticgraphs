@@ -74,7 +74,7 @@ test( "take a simple derivative of a monomial", function( assert ) {
 module('polynomial tests');
 
 test( "evaluate a simple polynomial", function( assert ) {
-	var polynomial_definition = {terms:[{coefficient: 2, powers: [0]},{coefficient: 2, powers: [1]}]},
+	var polynomial_definition = {termDefs:[{coefficient: 2, powers: [0]},{coefficient: 2, powers: [1]}]},
 		expected_output = 8,
 		fn = new KGMath.Functions.Polynomial(polynomial_definition),
 		actual_output = fn.value([3]);
@@ -82,7 +82,7 @@ test( "evaluate a simple polynomial", function( assert ) {
 });
 
 test( "take the simple derivative of a polynomial", function( assert ) {
-	var polynomial_definition = {terms:[{coefficient: 2, powers: [0]},{coefficient: 2, powers: [1]}]},
+	var polynomial_definition = {termDefs:[{coefficient: 2, powers: [0]},{coefficient: 2, powers: [1]}]},
 		fn = new KGMath.Functions.Polynomial(polynomial_definition),
 		der = fn.derivative(),
 		expected_output = 2,
@@ -169,6 +169,21 @@ test( "linear function tests for a vertical line", function( assert ) {
 	assert.deepEqual(pp.points(view),expected_endpoints, 'We expect the endpoints of this line to be (2,0) and (2,10) in the domain [0,10] x [0,10]');
 
 
+});
+
+module( "helper tests");
+
+test("average two objects test", function(assert) {
+	var a = 3,
+		b = 4,
+		c = {x: 3, y: 1},
+		d = {x: 1, y: 5};
+
+	var abAvg = 3.5,
+		cdAvg = {x:2,y:3};
+
+	assert.equal(KG.averageTwoObjects(a,b),abAvg, 'We expect the average of 3 and 4 to be 3.5');
+	assert.deepEqual(KG.averageTwoObjects(c,d),cdAvg, 'We expect the average of {x: 3, y: 1} and {x: 1, y: 5} to b {x:2, y:3}');
 });
 /*
 module( "utility function tests");

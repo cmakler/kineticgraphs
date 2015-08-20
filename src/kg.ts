@@ -4,6 +4,7 @@
 /// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
 /// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
 
+/// <reference path="constants.ts" />
 /// <reference path="helpers.ts" />
 
 /// <reference path="model.ts" />
@@ -14,7 +15,10 @@
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/dropline.ts"/>
+
+/// <reference path="viewObjects/curve.ts"/>
 /// <reference path="viewObjects/segment.ts"/>
+/// <reference path="viewObjects/arrow.ts"/>
 /// <reference path="viewObjects/line.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Ramsey-Cass-Koopmans</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="../dist/kinetic-graphs.css">
+    <link rel="stylesheet" href="../dist/finance-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
@@ -20,7 +20,8 @@
     <div class="row">
         <div class="col-md-8">
             <h2>Ramsey-Cass-Koopmans Model</h2>
-            <p>The dashed green line is the balanced growth path; the solid green line shows the dynamic path of the economy starting at point <span class="math">O</span>. </p>
+            <hr/>
+            <p>The dashed green line is the balanced growth path; the solid green line shows the dynamic path of the economy starting at point <span class="math growth">O</span>. Try dragging point <span class="math growth">O</span> to see how the dynamic path changes; you can also change the parameters using the sliders to the right.</p>
             <hr/>
             <div class="row">
                 <div class="col-md-12" id="graph"></div>
@@ -51,11 +52,11 @@
         </div>
         <div class="big">
             <div class="math">\text{Laws of Motion}</div>
-            <div class="math displayMath">\color{green}{\dot K = f(K_t) - C_t - \delta K_t}</div>
-            <div class="math displayMath">\color{green}{\frac{\dot C}{C_t} = \frac{f'(K_t) - \delta - \rho}{\theta}}</div>
+            <div class="math displayMath">\color{ {{ color('growth') }} }{\dot K = f(K_t) - C_t - \delta K_t}</div>
+            <div class="math displayMath">\color{ {{ color('growth') }} }{\frac{\dot C}{C_t} = \frac{f'(K_t) - \delta - \rho}{\theta}}</div>
             <div class="math">\text{Steady-state equations}</div>
-            <div class="math displayMath">\dot K = 0 \Rightarrow \color{red}{C_t = f(K_t) - \delta K_t}</div>
-            <div class="math displayMath">\dot C = 0 \Rightarrow \color{blue}{f'(K_t) = \rho + \delta}</div>
+            <div class="math displayMath">\dot K = 0 \Rightarrow \color{ {{ color('capital') }} }{C_t = f(K_t) - \delta K_t}</div>
+            <div class="math displayMath">\dot C = 0 \Rightarrow \color{ {{ color('consumption') }} }{f'(K_t) = \rho + \delta}</div>
         </div>
     </div>
 
@@ -83,6 +84,12 @@
                 expression: 'model.steadyStateOnGraph',
                 restrictionType: 'boolean',
                 error: 'Let\'s keep the steady state on the graph...'
+            },
+            {
+                expression: 'params.alpha',
+                restrictionType: 'range',
+                min: 0.01,
+                max: 0.99
             },
             {
                 expression: 'params.theta',

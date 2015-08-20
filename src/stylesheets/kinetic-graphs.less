@@ -1,72 +1,90 @@
+@import 'colors.less';
 @import url("//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,700");
+
+@linkColor: #00B7FF;
+
+@diff1-color: @purple-dark;
+@diff2-color: @green-dark;
+
 body {
   font-size: 12pt;
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  padding: 20px;
+  font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+  padding:20px;
   height: 100%;
   overflow: hidden;
 }
+
 a {
-  color: #00b7ff;
+  color: @linkColor;
 }
+
 .mainPage {
   margin-top: 65px;
 }
+
 .axis text {
   font-size: 24px;
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
   cursor: default;
 }
+
 .axis .tick text {
   fill: grey;
   font-size: 12px;
 }
+
 .axis path,
 .axis line {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
 }
+
 .curve {
   stroke-width: 4px;
 }
+
 .dashed {
   stroke-dasharray: 10, 10;
 }
+
 .dropline {
   stroke-dasharray: 10, 10;
   stroke-width: 2px;
   stroke: grey;
 }
+
 .invisible {
   display: none;
 }
+
 .dataPathFamily {
   stroke: lightgrey;
   stroke-width: 1;
   fill: none;
 }
-.draw,
-.segment,
-.dataPath,
-.line {
+
+.draw, .segment, .dataPath, .line {
   stroke-width: 4;
   fill: none;
 }
+
 .scatter {
   stroke: black;
   stroke-width: 1;
 }
+
 .mask {
   fill: white;
 }
+
 /* matrix notation - from http://stackoverflow.com/questions/11561137 */
 .matrix {
   position: relative;
   padding: 20px;
 }
-.matrix:before,
-.matrix:after {
+
+.matrix:before, .matrix:after {
   content: "";
   position: absolute;
   top: 0;
@@ -86,19 +104,23 @@ a {
   padding: 5px;
   text-align: center;
 }
+
 .big {
   font-size: 20pt;
 }
+
 .arrow {
   stroke-width: 1.5pt;
 }
+
 .diff1 {
-  color: #756bb1;
-  stroke: #756bb1;
-  fill: #756bb1;
+  color: @diff1-color;
+  stroke: @diff1-color;
+  fill: @diff1-color;
 }
+
 .diff2 {
-  color: #31a354;
-  stroke: #31a354;
-  fill: #31a354;
+  color: @diff2-color;
+  stroke: @diff2-color;
+  fill: @diff2-color;
 }

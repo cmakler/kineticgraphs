@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Mean-Variance Portfolio Analysis</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="../dist/kinetic-graphs.css">
+    <link rel="stylesheet" href="../dist/finance-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
@@ -167,16 +167,16 @@
     var scopeDefinition = {
         params: {
             mean1: 0.2,
-                    stDev1: 0.3,
-                    mean2: 0.3,
-                    stDev2: 0.4,
-                    mean3: 0.4,
-                    stDev3: 0.5,
-                    rho12: 0,
-                    rho23: 0,
-                    rho13: 0,
-                    maxLeverage: 0,
-                    riskFreeReturn: 0.05
+            stDev1: 0.3,
+            mean2: 0.3,
+            stDev2: 0.4,
+            mean3: 0.4,
+            stDev3: 0.5,
+            rho12: 0,
+            rho23: 0,
+            rho13: 0,
+            maxLeverage: 0,
+            riskFreeReturn: 0.05
         },
         restrictions: [
             {
@@ -220,40 +220,40 @@
                 error: "'would make matrix not positive definite'"
             }
         ],
-                model: {
-        type: 'FinanceGraphs.Portfolio',
-                definition: {
-            rho12: 'params.rho12',
-                    rho23: 'params.rho23',
-                    rho13: 'params.rho13',
-                    maxLeverage: 'params.maxLeverage',
-                    riskFreeReturn: 'params.riskFreeReturn',
-                    asset1: {
-                type: 'FinanceGraphs.Asset',
-                        definition: {
-                    name: 'A_1',
-                            mean: 'params.mean1',
-                            stDev: 'params.stDev1'
-                }
-            },
-            asset2: {
-                type: 'FinanceGraphs.Asset',
-                        definition: {
-                    name: 'A_2',
-                            mean: 'params.mean2',
-                            stDev: 'params.stDev2'
-                }
-            },
-            asset3: {
-                type: 'FinanceGraphs.Asset',
-                        definition: {
-                    name: 'A_3',
-                            mean: 'params.mean3',
-                            stDev: 'params.stDev3'
+        model: {
+            type: 'FinanceGraphs.Portfolio',
+            definition: {
+                rho12: 'params.rho12',
+                rho23: 'params.rho23',
+                rho13: 'params.rho13',
+                maxLeverage: 'params.maxLeverage',
+                riskFreeReturn: 'params.riskFreeReturn',
+                asset1: {
+                    type: 'FinanceGraphs.Asset',
+                    definition: {
+                        name: 'A_1',
+                        mean: 'params.mean1',
+                        stDev: 'params.stDev1'
+                    }
+                },
+                asset2: {
+                    type: 'FinanceGraphs.Asset',
+                    definition: {
+                        name: 'A_2',
+                        mean: 'params.mean2',
+                        stDev: 'params.stDev2'
+                    }
+                },
+                asset3: {
+                    type: 'FinanceGraphs.Asset',
+                    definition: {
+                        name: 'A_3',
+                        mean: 'params.mean3',
+                        stDev: 'params.stDev3'
+                    }
                 }
             }
-        }
-    },
+        },
         views: [
             {
                 type: 'KG.Graph',

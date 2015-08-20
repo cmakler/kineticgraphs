@@ -102,3 +102,19 @@ a {
   stroke: #31a354;
   fill: #31a354;
 }
+.demand {
+  color: #3182bd;
+  stroke: #3182bd;
+}
+.growth {
+  color: #31a354;
+  stroke: #31a354;
+}
+.capital {
+  color: #e6550d;
+  stroke: #e6550d;
+}
+.consumption {
+  color: #3182bd;
+  stroke: #3182bd;
+}

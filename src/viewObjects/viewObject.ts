@@ -62,7 +62,16 @@ module KG
         public viewObjectClass;
 
         constructor(definition:ViewObjectDefinition) {
-            definition = _.defaults(definition, {className: '', show: true, xDrag: false, yDrag: false});
+
+
+
+            definition = _.defaults(definition, {
+                className: '',
+                color: KG.colorForClassName(definition.className),
+                show: true,
+                xDrag: false,
+                yDrag: false});
+
             super(definition);
 
             var viewObj = this;

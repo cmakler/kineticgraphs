@@ -4,20 +4,18 @@
 
 module KG {
 
-    export interface ILinePlot extends IViewObject {
+    export interface ILinePlot extends ICurve {
 
-        data: ICoordinates[];
-        interpolation?: string;
+
     }
 
-    export class LinePlot extends ViewObject implements ILinePlot {
+    export class LinePlot extends Curve implements ILinePlot {
 
         public data;
         public interpolation;
 
         constructor(definition) {
 
-            definition = _.defaults(definition, {data: [], interpolation: 'linear'});
             super(definition);
 
             this.viewObjectSVGtype = 'path';

@@ -88,12 +88,12 @@ module EconGraphs {
             this.steadyCapitalView = new KG.FunctionPlot({
                 name: 'steadyCapital',
                 fn: 'model.steadyCapital',
-                color: 'red',
+                className: 'capital',
                 numSamplePoints:201
             });
             this.steadyConsumptionView = new KG.Line({
                 name: 'steadyConsumption',
-                color: 'blue',
+                className: 'consumption',
                 type: 'VerticalLine',
                 def: {
                     x: 'model.steadyStateK'
@@ -106,7 +106,6 @@ module EconGraphs {
                     y: 'model.steadyStateC'
                 },
                 symbol: 'cross',
-                color: 'grey',
                 size: 100,
                 label: {
                     text: 'S',
@@ -132,7 +131,8 @@ module EconGraphs {
             this.growthPathView = new KG.LinePlot({
                 name: 'growthPath',
                 data: 'model.growthPath',
-                className: 'growth'
+                className: 'growth',
+                arrows: 'END'
             });
             this.balancedGrowthPathView = new KG.LinePlot({
                 name: 'balancedGrowthPth',

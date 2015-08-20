@@ -4,6 +4,23 @@
 
 module KG
 {
+
+    export function colorForClassName(className:string, shade?:string) {
+        shade = shade || 'dark';
+        var classColor = KG.CLASS_COLORS[className] || 'gray';
+        return KG.COLORS[classColor][shade];
+    }
+
+    export function allColors() {
+        var colorArray = [];
+        for(var color in KG.COLORS) {
+            for(var shade in KG.COLORS[color]) {
+                colorArray.push(KG.COLORS[color][shade])
+            }
+        }
+        return colorArray;
+    }
+
     export interface IDomain
     {
         min: number;
@@ -76,6 +93,32 @@ module KG
 
     export function areNotTheSamePoint(a:ICoordinates, b:ICoordinates) {
         return !areTheSamePoint(a,b);
+    }
+
+    export function averageTwoObjects(o1: any, o2: any) {
+
+        if(typeof o1 == 'number' && typeof o2 == 'number') {
+            return 0.5*(o1 + o2);
+        } else if(typeof o1 == 'object' && typeof o2 == 'object') {
+            var avgObj = {}
+            for(var key in o1) {
+                if(o1.hasOwnProperty(key) && o2.hasOwnProperty(key)) {
+                    avgObj[key] = averageTwoObjects(o1[key],o2[key]);
+                }
+            }
+            return avgObj;
+        }
+
+    }
+
+    export function medianDataPoint(data:any[]) {
+
+        var l = data.length;
+        if(l % 2) {
+            return data[(l-1)/2]
+        } else {
+            return averageTwoObjects(data[l/2],data[l/2 - 1]);
+        }
     }
 
     export function translateByPixelCoordinates(coordinates:ICoordinates) {
