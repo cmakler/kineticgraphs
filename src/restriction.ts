@@ -45,7 +45,7 @@ module KG
             function isSimpleParam(name) {
                 var match = name.match(/params\.[a-zA-Z0-9]+/);
                 if(match) {
-                    return name === name.match[0];
+                    return (name === match[0]);
                 } else {
                     return false;
                 }
