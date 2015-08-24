@@ -21,7 +21,7 @@
         <div class="col-md-8">
             <h2>Ramsey-Cass-Koopmans Model</h2>
             <hr/>
-            <p>The dashed green line is the balanced growth path; the solid green line shows the dynamic path of the
+            <p>The solid green line shows the dynamic path of the
                 economy starting at point <span class="math growth">O</span>. Try dragging point <span
                         class="math growth">O</span> to see how the dynamic path changes; you can also change the
                 parameters using the sliders to the right.</p>
@@ -97,13 +97,14 @@
                 </div>
                 <hr/>
                 <div class="math consumption">\text{Steady-state consumption } (\dot c = 0)</div>
-                <div class="math displayMath">\alpha k^{\alpha - 1} = \rho + \delta + n</div>
-                <div class="math displayMath">{{ params.alpha | number:2 }} k^{ {{ params.alpha | number:2 }} - 1} = {{ params.rho | number:2 }} + {{ params.delta | number : 2 }} + {{ params.n | number:2 }}</div>
+                <div class="math displayMath">\alpha k^{\alpha - 1} = \rho + \delta</div>
+                <div class="math displayMath">{{ params.alpha | number:2 }} k^{ {{ params.alpha | number:2 }} - 1} = {{ params.rho | number:2 }} + {{params.delta | number:2}}</div>
                 <div class="math displayMath">k = {{ model.steadyStateK | number:2 }}</div>
             </div>
         </div>
 
 
+    </div>
     </div>
     <script>
         var scopeDefinition = {
@@ -223,5 +224,6 @@
         }
     </script>
 <script src="../dist/kinetic-graphs.js"></script>
+
 </body>
 </html>
