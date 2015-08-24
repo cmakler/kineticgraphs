@@ -33,6 +33,9 @@ module KG
         removeArrow: (group:D3.Selection, startOrEnd: string) => void;
         createSubObjects: (view: View) => View;
 
+        // Updating
+        updateDataForView: (view: View) => ViewObject
+
         // Dragging behavior
         coordinates: ICoordinates;
         xDrag:boolean;
@@ -62,8 +65,6 @@ module KG
         public viewObjectClass;
 
         constructor(definition:ViewObjectDefinition) {
-
-
 
             definition = _.defaults(definition, {
                 className: '',
@@ -109,6 +110,10 @@ module KG
                 classString += ' invisible';
             }
             return classString;
+        }
+
+        updateDataForView(view) {
+            return this;
         }
 
         addArrow(group: D3.Selection, startOrEnd: string) {

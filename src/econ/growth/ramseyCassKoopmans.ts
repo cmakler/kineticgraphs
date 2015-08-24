@@ -89,7 +89,10 @@ module EconGraphs {
                 name: 'steadyCapital',
                 fn: 'model.steadyCapital',
                 className: 'capital',
-                numSamplePoints:201
+                numSamplePoints:201,
+                label: {
+                    text: '\\dot k = 0'
+                }
             });
             this.steadyConsumptionView = new KG.Line({
                 name: 'steadyConsumption',
@@ -97,6 +100,9 @@ module EconGraphs {
                 type: 'VerticalLine',
                 def: {
                     x: 'model.steadyStateK'
+                },
+                label: {
+                    text: '\\dot c = 0'
                 }
             });
             this.steadyStateView = new KG.Point({
@@ -135,10 +141,13 @@ module EconGraphs {
                 arrows: 'END'
             });
             this.balancedGrowthPathView = new KG.LinePlot({
-                name: 'balancedGrowthPth',
+                name: 'balancedGrowthPath',
                 data: 'model.balancedGrowthPath',
                 className: 'growth dashed',
-                interpolation: 'basis'
+                interpolation: 'basis',
+                label: {
+                    text: 'BGP'
+                }
             })
         }
 
@@ -146,7 +155,7 @@ module EconGraphs {
             var model = this;
 
             model.steadyCapital.update(scope);
-            model.steadyStateK = Math.pow((model.delta + model.n + model.rho)/model.alpha,(1/(model.alpha - 1)));
+            model.steadyStateK = Math.pow((model.delta + model.rho)/model.alpha,(1/(model.alpha - 1)));
             model.steadyStateC = model.steadyCapital.yValue(model.steadyStateK);
             model.growthPath = model.dynamicPath(model.initialK, model.initialC);
             model.balancedGrowthPath = model.generateBalancedGrowthPathData();

@@ -21,6 +21,7 @@ module KG {
 
         constructor(definition:SegmentDefinition) {
 
+            definition.labelPosition = Curve.LABEL_POSITION_MIDDLE;
             definition.data = [KG.getCoordinates(definition.a), KG.getCoordinates(definition.b)];
 
             super(definition);

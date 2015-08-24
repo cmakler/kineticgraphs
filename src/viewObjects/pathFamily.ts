@@ -58,8 +58,6 @@ module KG {
 
             dataPaths.exit().remove();
 
-
-
             return view;
         }
 

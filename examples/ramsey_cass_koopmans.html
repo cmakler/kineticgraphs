@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Ramsey-Cass-Koopmans</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="../dist/finance-graphs.css">
+    <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
@@ -21,146 +21,207 @@
         <div class="col-md-8">
             <h2>Ramsey-Cass-Koopmans Model</h2>
             <hr/>
-            <p>The dashed green line is the balanced growth path; the solid green line shows the dynamic path of the economy starting at point <span class="math growth">O</span>. Try dragging point <span class="math growth">O</span> to see how the dynamic path changes; you can also change the parameters using the sliders to the right.</p>
+            <p>The dashed green line is the balanced growth path; the solid green line shows the dynamic path of the
+                economy starting at point <span class="math growth">O</span>. Try dragging point <span
+                        class="math growth">O</span> to see how the dynamic path changes; you can also change the
+                parameters using the sliders to the right.</p>
             <hr/>
             <div class="row">
                 <div class="col-md-12" id="graph"></div>
             </div>
         </div>
-        <div class="col-md-4 well">
-            <p style="float:right;color:red">{{error}}</p>
-            <h4>Parameters</h4>
 
-            <div class="row">
-                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha :</div>
-                <div class="col-xs-8" id="alphaSlider"></div>
-            </div>
-            <div class="row">
-                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\delta :</div>
-                <div class="col-xs-8" id="deltaSlider"></div>
-            </div>
-            <div class="row">
-                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\rho :</div>
-                <div class="col-xs-8" id="rhoSlider"></div>
-            </div>
-            <div class="row">
-                <div class="col-xs-4 math" style="text-align:right;font-size:12pt;padding-top:10px">\theta :</div>
-                <div class="col-xs-8" id="thetaSlider"></div>
-            </div>
+        <div class="col-md-4">
+            <div class="well">
+                <p style="float:right;color:red">{{ error }}</p>
+                <h4>Parameters</h4>
+
+                <div class="row">
+                    <div class="col-xs-1 math" style="text-align:right;font-size:12pt;padding-top:12px">\alpha :
+                    </div>
+                    <div class="col-xs-9" id="alphaSlider"></div>
+                    <div class="col-xs-2 math" style="font-size:12pt;padding-top:12px">{{ params.alpha | number:2
+                        }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-1 math" style="text-align:right;font-size:12pt;padding-top:10px">\delta :
+                    </div>
+                    <div class="col-xs-9" id="deltaSlider"></div>
+                    <div class="col-xs-2 math" style="font-size:12pt;padding-top:12px">{{ params.delta | number:2
+                        }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-1 math" style="text-align:right;font-size:12pt;padding-top:10px">n :</div>
+                    <div class="col-xs-9" id="nSlider"></div>
+                    <div class="col-xs-2 math" style="font-size:12pt;padding-top:12px">{{ params.n | number:2 }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-1 math" style="text-align:right;font-size:12pt;padding-top:10px">g :</div>
+                    <div class="col-xs-9" id="gSlider"></div>
+                    <div class="col-xs-2 math" style="font-size:12pt;padding-top:12px">{{ params.g | number:2 }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-1 math" style="text-align:right;font-size:12pt;padding-top:10px">\rho :</div>
+                    <div class="col-xs-9" id="rhoSlider"></div>
+                    <div class="col-xs-2 math" style="font-size:12pt;padding-top:12px">{{ params.rho | number:2 }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-1 math" style="text-align:right;font-size:12pt;padding-top:10px">\theta :
+                    </div>
+                    <div class="col-xs-9" id="thetaSlider"></div>
+                    <div class="col-xs-2 math" style="font-size:12pt;padding-top:12px">{{ params.theta | number:2
+                        }}
+                    </div>
+                </div>
 
 
+            </div>
+
+            <div>
+                <!--<div class="math">\text{Laws of Motion}</div>
+                <div class="math displayMath">\color{ {{ color('growth') }} }{\dot K = f(K_t) - C_t - \delta K_t}</div>
+                <div class="math displayMath">\color{ {{ color('growth') }} }{\frac{\dot C}{C_t} = \frac{f'(K_t) - \delta -
+                    \rho}{\theta}}
+                </div>-->
+                <div class="math capital">\text{Steady-state capital } (\dot k = 0)</div>
+                <div class="math displayMath">c = k^\alpha - (\delta + n + g) k</div>
+                <div class="math displayMath">c = k^{ {{ params.alpha | number:2 }} } - ({{ params.delta |
+                    number:2 }} + {{ params.n | number:2 }} + {{ params.g | number:2 }}) k</div>
+                <div class="math displayMath">c = k^{ {{ params.alpha | number:2 }} } - {{ params.delta + params.g + params.n |
+                    number:2 }}k
+                </div>
+                <hr/>
+                <div class="math consumption">\text{Steady-state consumption } (\dot c = 0)</div>
+                <div class="math displayMath">\alpha k^{\alpha - 1} = \rho + \delta + n</div>
+                <div class="math displayMath">{{ params.alpha | number:2 }} k^{ {{ params.alpha | number:2 }} - 1} = {{ params.rho | number:2 }} + {{ params.delta | number : 2 }} + {{ params.n | number:2 }}</div>
+                <div class="math displayMath">k = {{ model.steadyStateK | number:2 }}</div>
+            </div>
         </div>
-        <div class="big">
-            <div class="math">\text{Laws of Motion}</div>
-            <div class="math displayMath">\color{ {{ color('growth') }} }{\dot K = f(K_t) - C_t - \delta K_t}</div>
-            <div class="math displayMath">\color{ {{ color('growth') }} }{\frac{\dot C}{C_t} = \frac{f'(K_t) - \delta - \rho}{\theta}}</div>
-            <div class="math">\text{Steady-state equations}</div>
-            <div class="math displayMath">\dot K = 0 \Rightarrow \color{ {{ color('capital') }} }{C_t = f(K_t) - \delta K_t}</div>
-            <div class="math displayMath">\dot C = 0 \Rightarrow \color{ {{ color('consumption') }} }{f'(K_t) = \rho + \delta}</div>
-        </div>
+
+
     </div>
-
-
-</div>
-<script>
-    var scopeDefinition = {
-        params: {
-            alpha: 0.5,
-            rho: 0.1,
-            g:0,
-            n:0,
-            delta: 0.7,
-            theta: 1,
-            initialK: 1.5,
-            initialC: 0.75
-        },
-        restrictions: [
-            {
-                expression: 'model.positiveConsumption',
-                restrictionType: 'boolean',
-                error: 'Would make steady state consumption negative'
+    <script>
+        var scopeDefinition = {
+            params: {
+                alpha: 0.5,
+                rho: 0.1,
+                g: 0.1,
+                n: 0.1,
+                delta: 0.5,
+                theta: 1,
+                initialK: 1.5,
+                initialC: 0.75
             },
-            {
-                expression: 'model.steadyStateOnGraph',
-                restrictionType: 'boolean',
-                error: 'Let\'s keep the steady state on the graph...'
-            },
-            {
-                expression: 'params.alpha',
-                restrictionType: 'range',
-                min: 0.01,
-                max: 0.99
-            },
-            {
-                expression: 'params.theta',
-                restrictionType: 'range',
-                min: 0.01,
-                max: 2
-            }
-        ],
-        model: {
-            type: 'EconGraphs.RamseyCassKoopmans',
-            definition: {
-                alpha: 'params.alpha',
-                rho: 'params.rho',
-                g: 'params.g',
-                n: 'params.n',
-                delta: 'params.delta',
-                theta: 'params.theta',
-                initialK: 'params.initialK',
-                initialC: 'params.initialC'
-            }
-        },
-        views: [
-            {
-                type: 'KG.Graph',
+            restrictions: [
+                {
+                    expression: 'model.positiveConsumption',
+                    restrictionType: 'boolean',
+                    error: 'Would make steady state consumption negative'
+                },
+                {
+                    expression: 'model.steadyStateOnGraph',
+                    restrictionType: 'boolean',
+                    error: 'Let\'s keep the steady state on the graph...'
+                },
+                {
+                    expression: 'params.alpha',
+                    restrictionType: 'range',
+                    min: 0.01,
+                    max: 0.99
+                },
+                {
+                    expression: 'params.theta',
+                    restrictionType: 'range',
+                    min: 0.01,
+                    max: 2
+                }
+            ],
+            model: {
+                type: 'EconGraphs.RamseyCassKoopmans',
                 definition: {
-                    element_id:'graph',
-                    dimensions: {width: 700, height: 700},
-                    xAxis: {min: 0, max: 2, title: "\\text{Capital }(K)"},
-                    yAxis: {min: 0, max: 2, title: "\\text{Consumption }(C)"},
-                    objects: ['model.steadyConsumptionView','model.steadyStateView','model.steadyCapitalView','model.initialPoint','model.growthPathView','model.balancedGrowthPathView']
+                    alpha: 'params.alpha',
+                    rho: 'params.rho',
+                    g: 'params.g',
+                    n: 'params.n',
+                    delta: 'params.delta',
+                    theta: 'params.theta',
+                    initialK: 'params.initialK',
+                    initialC: 'params.initialC'
                 }
             },
-            {
-                type: 'KG.Slider',
-                definition: {
-                    element_id:'alphaSlider',
-                    param: 'alpha',
-                    precision: '0.01',
-                    axis: {min: 0, max: 1, tickValues:[0,0.5,1]}
+            views: [
+                {
+                    type: 'KG.Graph',
+                    definition: {
+                        element_id: 'graph',
+                        dimensions: {width: 700, height: 700},
+                        xAxis: {min: 0, max: 2, title: "\\text{Capital }(k)"},
+                        yAxis: {min: 0, max: 2, title: "\\text{Consumption }(c)"},
+                        objects: ['model.steadyConsumptionView', 'model.steadyStateView', 'model.steadyCapitalView', 'model.initialPoint', 'model.growthPathView', 'model.balancedGrowthPathView']
+                    }
+                },
+                {
+                    type: 'KG.Slider',
+                    definition: {
+                        element_id: 'alphaSlider',
+                        param: 'alpha',
+                        precision: '0.01',
+                        axis: {min: 0, max: 1, tickValues: [0, 0.5, 1]}
+                    }
+                },
+                {
+                    type: 'KG.Slider',
+                    definition: {
+                        element_id: 'rhoSlider',
+                        param: 'rho',
+                        precision: '0.01',
+                        axis: {min: 0, max: 1, tickValues: [0, 0.5, 1]}
+                    }
+                },
+                {
+                    type: 'KG.Slider',
+                    definition: {
+                        element_id: 'deltaSlider',
+                        param: 'delta',
+                        precision: '0.01',
+                        axis: {min: 0, max: 1, tickValues: [0, 0.5, 1]}
+                    }
+                },
+                {
+                    type: 'KG.Slider',
+                    definition: {
+                        element_id: 'nSlider',
+                        param: 'n',
+                        precision: '0.01',
+                        axis: {min: 0, max: 1, tickValues: [0, 0.5, 1]}
+                    }
+                },
+                {
+                    type: 'KG.Slider',
+                    definition: {
+                        element_id: 'gSlider',
+                        param: 'g',
+                        precision: '0.01',
+                        axis: {min: 0, max: 1, tickValues: [0, 0.5, 1]}
+                    }
+                },
+                {
+                    type: 'KG.Slider',
+                    definition: {
+                        element_id: 'thetaSlider',
+                        param: 'theta',
+                        precision: '0.01',
+                        axis: {min: 0, max: 2, tickValues: [0, 1, 2]}
+                    }
                 }
-            },
-            {
-                type: 'KG.Slider',
-                definition: {
-                    element_id:'rhoSlider',
-                    param: 'rho',
-                    precision: '0.01',
-                    axis: {min: 0, max: 1, tickValues:[0,0.5,1]}
-                }
-            },
-            {
-                type: 'KG.Slider',
-                definition: {
-                    element_id:'deltaSlider',
-                    param: 'delta',
-                    precision: '0.01',
-                    axis: {min: 0, max: 1, tickValues:[0,0.5,1]}
-                }
-            },
-            {
-                type: 'KG.Slider',
-                definition: {
-                    element_id:'thetaSlider',
-                    param: 'theta',
-                    precision: '0.01',
-                    axis: {min: 0, max: 2, tickValues:[0,1,2]}
-                }
-            }
-        ]
-    }
-</script>
+            ]
+        }
+    </script>
 <script src="../dist/kinetic-graphs.js"></script>
 </body>
 </html>

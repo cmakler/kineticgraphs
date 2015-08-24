@@ -52,7 +52,10 @@ module EconGraphs {
                 className: 'demand',
                 arrows: 'NONE',
                 type: definition.type,
-                def: definition.def
+                def: definition.def,
+                label: {
+                    text: 'D'
+                }
             });
             this.priceLine = new KG.Line({
                 name: 'priceLine',

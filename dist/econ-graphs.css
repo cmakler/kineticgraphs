@@ -27,9 +27,6 @@ a {
   stroke: #000;
   shape-rendering: crispEdges;
 }
-.curve {
-  stroke-width: 4px;
-}
 .dashed {
   stroke-dasharray: 10, 10;
 }
@@ -49,7 +46,8 @@ a {
 .draw,
 .segment,
 .dataPath,
-.line {
+.line,
+.curve {
   stroke-width: 4;
   fill: none;
 }
@@ -109,6 +107,11 @@ a {
 .growth {
   color: #31a354;
   stroke: #31a354;
+}
+.balancedGrowth {
+  color: #31a354;
+  stroke: #31a354;
+  stroke-dasharray: 10,10;
 }
 .capital {
   color: #e6550d;
