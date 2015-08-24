@@ -63,6 +63,10 @@ module KG
 
             var divObj = this;
 
+            if(!divObj.hasOwnProperty('coordinates')) {
+                return view;
+            }
+
             var x, y;
 
             if(divObj.coordinates.x == GraphDiv.AXIS_COORDINATE_INDICATOR) {

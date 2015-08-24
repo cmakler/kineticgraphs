@@ -103,7 +103,7 @@ module KG {
             if(curve.labelDiv) {
                 var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
                 var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
-                curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) ? 'left' : 'center';
+                curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
                 curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
                 curve.labelDiv.coordinates = labelCoordinates;
             }
@@ -132,7 +132,7 @@ module KG {
 
             var curve = this;
 
-            curve.updateDataForView(view);
+curve.updateDataForView(view);
 
             var dataCoordinates:ICoordinates[] = view.dataCoordinates(curve.data);
 

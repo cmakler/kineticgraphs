@@ -108,6 +108,11 @@ a {
   color: #31a354;
   stroke: #31a354;
 }
+.balancedGrowth {
+  color: #31a354;
+  stroke: #31a354;
+  stroke-dasharray: 10,10;
+}
 .capital {
   color: #e6550d;
   stroke: #e6550d;
