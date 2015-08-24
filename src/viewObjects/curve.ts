@@ -5,9 +5,10 @@
 module KG {
 
     export interface CurveDefinition extends ViewObjectDefinition {
-        data?: ICoordinates[];
+        data?: any;
         interpolation?: string;
         label?: GraphDivDefinition;
+        labelPosition?: string;
         arrows?: string;
     }
 
@@ -17,6 +18,7 @@ module KG {
         interpolation: string;
 
         labelDiv: IGraphDiv;
+        labelPosition: string;
         positionLabel: (view:IView) => void;
 
         startArrow: boolean;
@@ -25,6 +27,9 @@ module KG {
         startPoint: ICoordinates;
         midPoint: ICoordinates;
         endPoint: ICoordinates;
+
+        //LABEL_POSITION_MIDDLE: string;
+        //LABEL_POSITION_START: string;
 
         START_ARROW_STRING: string;
         END_ARROW_STRING: string;
@@ -41,13 +46,18 @@ module KG {
         public interpolation;
 
         public label;
+        public labelPosition;
         public labelDiv;
+
         public startArrow;
         public endArrow;
 
         public START_ARROW_STRING;
         public END_ARROW_STRING;
         public BOTH_ARROW_STRING;
+
+        static LABEL_POSITION_MIDDLE ='MIDDLE';
+        static LABEL_POSITION_START = 'START';
 
         static START_ARROW_STRING = 'START';
         static END_ARROW_STRING = 'END';
@@ -63,10 +73,12 @@ module KG {
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
+                    className: definition.className,
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag,
                     color: definition.color
                 });
+                console.log(labelDef);
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
@@ -86,24 +98,15 @@ module KG {
             }
         }
 
-        _update(scope) {
-
+        positionLabel(view) {
             var curve = this;
-
-            var dataLength = curve.data.length;
-
-            curve.startPoint = curve.data[0];
-            curve.endPoint = curve.data[dataLength - 1];
-            curve.midPoint = medianDataPoint(curve.data);
-
-            return curve;
-        }
-
-        positionLabel(view:IView) {
-
-            var curve = this;
-            curve.labelDiv.coordinates = curve.midPoint;
-
+            if(curve.labelDiv) {
+                var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
+                var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
+                curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) ? 'left' : 'center';
+                curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                curve.labelDiv.coordinates = labelCoordinates;
+            }
         }
 
         addArrows(group: D3.Selection) {
@@ -129,7 +132,15 @@ module KG {
 
             var curve = this;
 
+            curve.updateDataForView(view);
+
             var dataCoordinates:ICoordinates[] = view.dataCoordinates(curve.data);
+
+            var dataLength = dataCoordinates.length;
+
+            curve.startPoint = dataCoordinates[0];
+            curve.endPoint = dataCoordinates[dataLength - 1];
+            curve.midPoint = medianDataPoint(dataCoordinates);
 
             var group:D3.Selection = view.objectGroup(curve.name, curve.initGroupFn(), false);
 

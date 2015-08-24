@@ -137,8 +137,11 @@ module EconGraphs {
             this.balancedGrowthPathView = new KG.LinePlot({
                 name: 'balancedGrowthPth',
                 data: 'model.balancedGrowthPath',
-                className: 'growth dashed',
-                interpolation: 'basis'
+                className: 'balanced-growth',
+                interpolation: 'basis',
+                label: {
+                    text: 'BGP'
+                }
             })
         }
 

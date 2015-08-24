@@ -20,6 +20,7 @@ module KG
 
         // methods for converting model coordiantes to pixel coordinates
         pixelCoordinates: (coordinates:ICoordinates) => ICoordinates;
+        modelCoordinates: (coordinates:ICoordinates) => ICoordinates;
         dataCoordinates: (coordinateArray:ICoordinates[]) => ICoordinates[];
     }
 
@@ -45,6 +46,13 @@ module KG
         pixelCoordinates(coordinates:ICoordinates) {
             coordinates.x = this.xAxis.scale(coordinates.x);
             coordinates.y = this.yAxis.scale(coordinates.y);
+            return coordinates;
+        }
+
+        // Convert pixel coordinates to model coordinates for a single point
+        modelCoordinates(coordinates:ICoordinates) {
+            coordinates.x = this.xAxis.scale.invert(coordinates.x);
+            coordinates.y = this.yAxis.scale.invert(coordinates.y);
             return coordinates;
         }
 

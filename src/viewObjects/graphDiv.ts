@@ -50,13 +50,12 @@ module KG
 
             definition = _.defaults(definition,{
                 dimensions: {width: 100, height: 20},
-                math: false,
-                align: 'center',
-                valign: 'middle',
                 text: ''
             });
 
             super(definition);
+
+            console.log('graphDiv ', this.text,' color is', this.color);
 
         }
 

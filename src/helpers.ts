@@ -6,6 +6,9 @@ module KG
 {
 
     export function colorForClassName(className:string, shade?:string) {
+        if(className) {
+            className = className.split(' ')[0];
+        }
         shade = shade || 'dark';
         var classColor = KG.CLASS_COLORS[className] || 'gray';
         return KG.COLORS[classColor][shade];
@@ -80,10 +83,10 @@ module KG
         y: any;
     }
 
-    export function isAlmostTo(a:number,b:number,t?:number) {
+    export function isAlmostTo(a:number,b:number,t?:number,basis?:number) {
         t = t || 0.01;
         var diff = Math.abs(a - b),
-            avg = 0.5*(a + b);
+            avg = basis || 0.5*(a + b);
         return (diff/avg < t);
     }
 

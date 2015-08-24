@@ -21,8 +21,9 @@ module KG {
 
         constructor(definition:ArrowDefinition) {
 
+            definition.labelPosition = Curve.LABEL_POSITION_MIDDLE;
             definition.data = [KG.getCoordinates(definition.begin), KG.getCoordinates(definition.end)];
-            definition.arrows = "END";
+            definition.arrows = Curve.END_ARROW_STRING;
 
             super(definition);
 

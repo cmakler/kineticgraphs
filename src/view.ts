@@ -118,11 +118,11 @@ module KG
                 .attr("orient", "auto")
                 .attr("markerUnits","userSpaceOnUse");
 
-            endMarkers.append("svg:rect")
+            /*endMarkers.append("svg:rect")
                 .attr('x',2)
                 .attr('width', 11)
                 .attr('height', 13)
-                .attr('fill','white');
+                .attr('fill','white');*/
 
             endMarkers.append("svg:path")
                 .attr("d", "M2,2 L2,11 L10,6 L2,2")
@@ -139,10 +139,11 @@ module KG
                 .attr("orient", "auto")
                 .attr("markerUnits","userSpaceOnUse");
 
-            startMarkers.append("svg:rect")
+            // TODO need a better way to mask the portion of the line that extends under the arrow
+            /*startMarkers.append("svg:rect")
                 .attr('x',2)
                 .attr('width', 11)
-                .attr('height', 13)
+                .attr('height', 13)*/
 
 
             startMarkers.append("svg:path")
@@ -235,11 +236,19 @@ module KG
         }
 
         nearTop(point:ICoordinates) {
-            return KG.isAlmostTo(point.y, this.yAxis.domain.max)
+            return KG.isAlmostTo(point.y, this.yAxis.domain.max, 0.05)
         }
 
         nearRight(point:ICoordinates) {
-            return KG.isAlmostTo(point.x, this.xAxis.domain.max)
+            return KG.isAlmostTo(point.x, this.xAxis.domain.max, 0.05)
+        }
+
+        nearBottom(point:ICoordinates) {
+            return KG.isAlmostTo(point.y, this.yAxis.domain.min, 0.05, this.yAxis.domain.max - this.yAxis.domain.min)
+        }
+
+        nearLeft(point:ICoordinates) {
+            return KG.isAlmostTo(point.x, this.xAxis.domain.min, 0.05, this.xAxis.domain.max - this.xAxis.domain.min)
         }
 
         drag(xParam:string, yParam:string, xDelta:number, yDelta:number) {
