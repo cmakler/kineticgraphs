@@ -37,7 +37,7 @@
                     <div class="col-xs-8" id="sliderB"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_A = {{ params.price | number : 0}}</div>
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P = {{ params.price | number : 0}}</div>
                     <div class="col-xs-8" id="sliderPrice"></div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                 </div>
             </div>
             <hr/>
-            <equation>\epsilon_{Q^D_A,P_A} = \color{ {{ color('demand') }} }{ \frac{dQ^D}{dP} } \times \frac{P_A}{\color{ {{color('growth')}} }{Q^D(P_A)}} || =  \color{ {{ color('demand') }} }{ {{ model.slopeAtPrice(params.price) | number:2 }} } \times  \frac{ {{ params.price | number:0 }} }{ \color{ {{color('growth')}} }{ {{ model.quantityAtPrice(params.price) | number:2 }} } }|| = -{{ params.b | number: 2 }}</equation>
+            <equation>\epsilon_{Q^D,P} = \color{ {{ color('demand') }} }{ \frac{dQ^D}{dP} } \times \frac{P}{\color{ {{color('growth')}} }{Q^D(P)}} || =  \color{ {{ color('demand') }} }{ {{ model.slopeAtPrice(params.price) | number:2 }} } \times  \frac{ {{ params.price | number:0 }} }{ \color{ {{color('growth')}} }{ {{ model.quantityAtPrice(params.price) | number:2 }} } }|| = -{{ params.b | number: 2 }}</equation>
             </div>
     </div>
 </div>
@@ -68,6 +68,13 @@
                 max: 100,
                 min: 1,
                 precision: 1
+            },
+            {
+                expression: 'params.a',
+                restrictionType: 'range',
+                max: 2000,
+                min: 100,
+                precision: 5
             },
             {
                 expression: 'model.quantityAtPrice(params.price)',
@@ -94,8 +101,8 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id:'graph',
-                    xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
+                    xAxis: {min: 0, max: 100, title: '\\text{Quantity Demanded}'},
+                    yAxis: {min: 0, max: 100, title: '\\text{Price}'},
                     objects: ['model.curve','model.priceLine','model.quantityDemandedAtPrice','model.slopeLine']
                 }
             },
@@ -112,7 +119,7 @@
                 definition: {
                     element_id: 'sliderB',
                     param: 'b',
-                    axis: {min: 0, max: 4, tickValues: [0,2,4]}
+                    axis: {min: 0, max: 2, tickValues: [0,1,2]}
                 }
             },
             {

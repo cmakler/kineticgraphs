@@ -2689,7 +2689,7 @@ var EconGraphs;
                 arrows: 'NONE',
                 fn: 'model.demandFunction',
                 label: {
-                    text: 'Q^D(P)'
+                    text: 'D'
                 }
             });
             this.priceLine = new KG.Line({
@@ -2712,8 +2712,8 @@ var EconGraphs;
                     text: 'A'
                 },
                 droplines: {
-                    vertical: 'Q^D(P_A)',
-                    horizontal: 'P_A'
+                    vertical: 'Q^D(P)',
+                    horizontal: 'P'
                 }
             });
             this.slopeLine = new KG.Line({
