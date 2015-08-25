@@ -29,7 +29,7 @@ module EconGraphs {
                 arrows: 'NONE',
                 fn: 'model.demandFunction',
                 label: {
-                    text: 'D'
+                    text: 'Q^D(P)'
                 }
             });
             this.priceLine = new KG.Line({
@@ -52,7 +52,7 @@ module EconGraphs {
                     text: 'A'
                 },
                 droplines: {
-                    vertical: 'Q^D_A',
+                    vertical: 'Q^D(P_A)',
                     horizontal: 'P_A'
                 }
             });
@@ -87,7 +87,7 @@ module EconGraphs {
         }
 
         slopeAtPriceWords = function(price) {
-            return "\\frac { dQ }{ dP } = " + this.slopeAtPrice(price).toFixed(2);
+            return "\\frac { dQ^D }{ dP } = " + this.slopeAtPrice(price).toFixed(2);
         }
 
     }

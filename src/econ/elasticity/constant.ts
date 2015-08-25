@@ -6,7 +6,7 @@ module EconGraphs {
 
     export interface ConstantElasticityDefinition extends ElasticityDefinition
     {
-        elasticity: any;
+        elasticity?: any;
     }
 
     export interface IConstantElasticity extends IElasticity

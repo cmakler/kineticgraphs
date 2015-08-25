@@ -54,6 +54,34 @@ module KG
             };
 
             $scope.renderMath = function() {
+
+                var equationElements = $('equation');
+                for(var i=0; i<equationElements.length; i++) {
+                    var element:HTMLElement = equationElements[i];
+                    if(!element.hasAttribute('raw')){
+                        element.setAttribute('raw',element.textContent);
+                    }
+                    element.innerHTML = '';
+                    var lines = element.getAttribute('raw').split('||');
+                    var equation:D3.Selection = d3.select(element).append('table').attr('align','center');
+                    for(var l=0; l<lines.length; l++) {
+                        var line = equation.append('tr');
+                        if(lines[l].indexOf('frac') > -1) {line.style('height','85px')};
+                        var lineElements = lines[l].split('=');
+                        for(var le=0; le<lineElements.length; le++) {
+                            var lineElement = line.append('td').attr('class','math big').text('\\displaystyle{' + lineElements[le] + '}');
+                            if(le == 0) {
+                                lineElement.style('text-align','right');
+                            } else {
+                                lineElement.style('text-align','left')
+                            }
+                            if(le < lineElements.length - 1) {
+                                line.append('td').attr('class','math big').style('padding','10px').style('valign','middle').text('=');
+                            }
+                        }
+                    }
+                }
+
                 var mathElements = $('.math');
                 for(var i=0; i<mathElements.length; i++){
                     var element:HTMLElement = mathElements[i];

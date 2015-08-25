@@ -1885,7 +1885,7 @@ var KG;
     var Slider = (function (_super) {
         __extends(Slider, _super);
         function Slider(definition) {
-            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 300, height: 50 });
+            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 500, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, { top: 25, left: 25, bottom: 25, right: 25 });
             definition.mask = false;
             _super.call(this, definition);
@@ -1952,6 +1952,36 @@ var KG;
                 });
             };
             $scope.renderMath = function () {
+                var equationElements = $('equation');
+                for (var i = 0; i < equationElements.length; i++) {
+                    var element = equationElements[i];
+                    if (!element.hasAttribute('raw')) {
+                        element.setAttribute('raw', element.textContent);
+                    }
+                    element.innerHTML = '';
+                    var lines = element.getAttribute('raw').split('||');
+                    var equation = d3.select(element).append('table').attr('align', 'center');
+                    for (var l = 0; l < lines.length; l++) {
+                        var line = equation.append('tr');
+                        if (lines[l].indexOf('frac') > -1) {
+                            line.style('height', '85px');
+                        }
+                        ;
+                        var lineElements = lines[l].split('=');
+                        for (var le = 0; le < lineElements.length; le++) {
+                            var lineElement = line.append('td').attr('class', 'math big').text('\\displaystyle{' + lineElements[le] + '}');
+                            if (le == 0) {
+                                lineElement.style('text-align', 'right');
+                            }
+                            else {
+                                lineElement.style('text-align', 'left');
+                            }
+                            if (le < lineElements.length - 1) {
+                                line.append('td').attr('class', 'math big').style('padding', '10px').style('valign', 'middle').text('=');
+                            }
+                        }
+                    }
+                }
                 var mathElements = $('.math');
                 for (var i = 0; i < mathElements.length; i++) {
                     var element = mathElements[i];
@@ -2651,7 +2681,7 @@ var EconGraphs;
                 return (-1) * a * b * Math.pow(price, -(1 + b));
             };
             this.slopeAtPriceWords = function (price) {
-                return "\\frac { dQ }{ dP } = " + this.slopeAtPrice(price).toFixed(2);
+                return "\\frac { dQ^D }{ dP } = " + this.slopeAtPrice(price).toFixed(2);
             };
             this.curve = new KG.FunctionPlot({
                 name: 'demand',
@@ -2659,7 +2689,7 @@ var EconGraphs;
                 arrows: 'NONE',
                 fn: 'model.demandFunction',
                 label: {
-                    text: 'D'
+                    text: 'Q^D(P)'
                 }
             });
             this.priceLine = new KG.Line({
@@ -2682,7 +2712,7 @@ var EconGraphs;
                     text: 'A'
                 },
                 droplines: {
-                    vertical: 'Q^D_A',
+                    vertical: 'Q^D(P_A)',
                     horizontal: 'P_A'
                 }
             });
