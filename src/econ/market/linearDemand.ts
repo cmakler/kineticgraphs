@@ -93,12 +93,6 @@ module EconGraphs {
             return d;
         }
 
-
-
-
-
-
-
     }
 
 }

@@ -27,9 +27,6 @@ a {
   stroke: #000;
   shape-rendering: crispEdges;
 }
-.dashed {
-  stroke-dasharray: 10, 10;
-}
 .dropline {
   stroke-dasharray: 10, 10;
   stroke-width: 2px;
@@ -99,6 +96,13 @@ a {
   color: #31a354;
   stroke: #31a354;
   fill: #31a354;
+}
+.dashed {
+  stroke-dasharray: 10, 10;
+}
+.dotted {
+  stroke-width: 2;
+  stroke-dasharray: 2, 2;
 }
 .demand {
   color: #3182bd;

@@ -94,6 +94,14 @@ module KG
             var point = this,
                 draggable = (point.xDrag || point.yDrag);
 
+            if(!point.hasOwnProperty('coordinates')) {
+                return view;
+            }
+
+            if(isNaN(point.coordinates.x) || isNaN(point.coordinates.y) || point.coordinates.x == Infinity || point.coordinates.y == Infinity) {
+                return view;
+            }
+
             var group:D3.Selection = view.objectGroup(point.name, point.initGroupFn(), true);
 
             if (point.symbol === 'none') {
@@ -103,13 +111,17 @@ module KG
 
             // draw the symbol at the point
             var pointSymbol:D3.Selection = group.select('.'+ point.viewObjectClass);
-            pointSymbol
-                .attr({
-                    'class': point.classAndVisibility(),
-                    'fill': point.color,
-                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                    'transform': view.translateByCoordinates(point.coordinates)
-                });
+            try {
+                pointSymbol
+                    .attr({
+                        'class': point.classAndVisibility(),
+                        'fill': point.color,
+                        'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                        'transform': view.translateByCoordinates(point.coordinates)
+                    });
+            } catch(error) {
+                console.log(error);
+            }
 
             if(draggable){
                 return point.setDragBehavior(view,pointSymbol);

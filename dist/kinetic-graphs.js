@@ -1022,6 +1022,12 @@ var KG;
         };
         Point.prototype.render = function (view) {
             var point = this, draggable = (point.xDrag || point.yDrag);
+            if (!point.hasOwnProperty('coordinates')) {
+                return view;
+            }
+            if (isNaN(point.coordinates.x) || isNaN(point.coordinates.y) || point.coordinates.x == Infinity || point.coordinates.y == Infinity) {
+                return view;
+            }
             var group = view.objectGroup(point.name, point.initGroupFn(), true);
             if (point.symbol === 'none') {
                 point.show = false;
@@ -1029,12 +1035,17 @@ var KG;
             }
             // draw the symbol at the point
             var pointSymbol = group.select('.' + point.viewObjectClass);
-            pointSymbol.attr({
-                'class': point.classAndVisibility(),
-                'fill': point.color,
-                'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                'transform': view.translateByCoordinates(point.coordinates)
-            });
+            try {
+                pointSymbol.attr({
+                    'class': point.classAndVisibility(),
+                    'fill': point.color,
+                    'd': d3.svg.symbol().type(point.symbol).size(point.size),
+                    'transform': view.translateByCoordinates(point.coordinates)
+                });
+            }
+            catch (error) {
+                console.log(error);
+            }
             if (draggable) {
                 return point.setDragBehavior(view, pointSymbol);
             }
@@ -1096,6 +1107,9 @@ var KG;
         Dropline.prototype.render = function (view) {
             var dropline = this;
             var pointX = view.xAxis.scale(dropline.coordinates.x), pointY = view.yAxis.scale(dropline.coordinates.y), anchorX = dropline.horizontal ? view.xAxis.scale(view.xAxis.min) : pointX, anchorY = dropline.horizontal ? pointY : view.yAxis.scale(view.yAxis.min);
+            if (isNaN(pointX) || isNaN(pointY)) {
+                return view;
+            }
             var group = view.objectGroup(dropline.name, dropline.initGroupFn(), false);
             var droplineSelection = group.select('.' + dropline.viewObjectClass);
             droplineSelection.attr({
@@ -1833,8 +1847,13 @@ var KG;
         };
         // Convert model coordinates to pixel coordinates for a single point
         Graph.prototype.pixelCoordinates = function (coordinates) {
-            coordinates.x = this.xAxis.scale(coordinates.x);
-            coordinates.y = this.yAxis.scale(coordinates.y);
+            try {
+                coordinates.x = this.xAxis.scale(coordinates.x);
+                coordinates.y = this.yAxis.scale(coordinates.y);
+            }
+            catch (error) {
+                console.log(error);
+            }
             return coordinates;
         };
         // Convert pixel coordinates to model coordinates for a single point
@@ -2485,6 +2504,19 @@ var EconGraphs;
     EconGraphs.PointElasticity = PointElasticity;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
+'use strict';
+var EconGraphs;
+(function (EconGraphs) {
+    var ConstantElasticity = (function (_super) {
+        __extends(ConstantElasticity, _super);
+        function ConstantElasticity(definition) {
+            _super.call(this, definition);
+        }
+        return ConstantElasticity;
+    })(EconGraphs.Elasticity);
+    EconGraphs.ConstantElasticity = ConstantElasticity;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
     var Demand = (function (_super) {
@@ -2492,7 +2524,7 @@ var EconGraphs;
         function Demand(definition) {
             _super.call(this, definition);
             this.demandFunction = new KGMath.Functions[definition.type](definition.def);
-            this.elasticity = (definition.elasticityMethod == 'point') ? new EconGraphs.PointElasticity({}) : new EconGraphs.MidpointElasticity({});
+            this.elasticity = (definition.elasticityMethod == 'point') ? new EconGraphs.PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new EconGraphs.ConstantElasticity({}) : new EconGraphs.MidpointElasticity({});
         }
         Demand.prototype.quantityAtPrice = function (price) {
             price = (price > 0) ? price : 0;
@@ -2518,7 +2550,7 @@ var EconGraphs;
                     }
                 });
             }
-            else {
+            else if (d.elasticity instanceof EconGraphs.PointElasticity) {
                 var point = {
                     x: d.quantityAtPrice(price),
                     y: price
@@ -2606,6 +2638,78 @@ var EconGraphs;
         return LinearDemand;
     })(EconGraphs.Demand);
     EconGraphs.LinearDemand = LinearDemand;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var ConstantElasticityDemand = (function (_super) {
+        __extends(ConstantElasticityDemand, _super);
+        function ConstantElasticityDemand(definition) {
+            _super.call(this, definition);
+            this.slopeAtPrice = function (price) {
+                var d = this, a = d.demandFunction.level, b = d.demandFunction.powers[1];
+                return (-1) * a * b * Math.pow(price, -(1 + b));
+            };
+            this.slopeAtPriceWords = function (price) {
+                return "\\frac { dQ }{ dP } = " + this.slopeAtPrice(price).toFixed(2);
+            };
+            this.curve = new KG.FunctionPlot({
+                name: 'demand',
+                className: 'demand',
+                arrows: 'NONE',
+                fn: 'model.demandFunction',
+                label: {
+                    text: 'D'
+                }
+            });
+            this.priceLine = new KG.Line({
+                name: 'priceLine',
+                color: 'grey',
+                arrows: 'NONE',
+                type: 'HorizontalLine',
+                yDrag: 'price',
+                def: {
+                    y: 'params.price'
+                }
+            });
+            this.quantityDemandedAtPrice = new KG.Point({
+                name: 'quantityDemandedAtPrice',
+                coordinates: { x: 'model.quantityAtPrice(params.price)', y: 'params.price' },
+                size: 500,
+                color: 'black',
+                yDrag: true,
+                label: {
+                    text: 'A'
+                },
+                droplines: {
+                    vertical: 'Q^D_A',
+                    horizontal: 'P_A'
+                }
+            });
+            this.slopeLine = new KG.Line({
+                name: 'slopeLine',
+                type: 'PointSlopeLine',
+                className: 'demand dotted',
+                def: {
+                    p: { x: 'model.quantityAtPrice(params.price)', y: 'params.price' },
+                    m: '1/model.slopeAtPrice(params.price)'
+                },
+                label: {
+                    text: 'model.slopeAtPriceWords(params.price)'
+                }
+            });
+            this.elasticity.elasticity = definition.def.powers[1];
+        }
+        ConstantElasticityDemand.prototype._update = function (scope) {
+            var d = this;
+            d.demandFunction.update(scope);
+            d.slopeLine.linear.update(scope);
+            d.elasticity.update(scope);
+            return d;
+        };
+        return ConstantElasticityDemand;
+    })(EconGraphs.Demand);
+    EconGraphs.ConstantElasticityDemand = ConstantElasticityDemand;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
 'use strict';
@@ -2797,8 +2901,10 @@ var EconGraphs;
 /// <reference path="elasticity/elasticity.ts"/>
 /// <reference path="elasticity/midpoint.ts"/>
 /// <reference path="elasticity/point.ts"/>
+/// <reference path="elasticity/constant.ts"/>
 /// <reference path="market/demand.ts"/>
 /// <reference path="market/linearDemand.ts"/>
+/// <reference path="market/constantElasticityDemand.ts"/>
 /// <reference path="growth/ramseyCassKoopmans.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
