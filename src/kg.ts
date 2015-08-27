@@ -24,6 +24,7 @@
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="viewObjects/functionPlot.ts"/>
+/// <reference path="viewObjects/area.ts"/>
 
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />

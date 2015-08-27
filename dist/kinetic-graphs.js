@@ -112,6 +112,39 @@ var KG;
         return !areTheSamePoint(a, b);
     }
     KG.areNotTheSamePoint = areNotTheSamePoint;
+    function arrayAverage(o) {
+        var allNumbers = true;
+        o.forEach(function (obj) {
+            if (typeof obj !== 'number') {
+                allNumbers = false;
+            }
+        });
+        if (allNumbers) {
+            var sum = 0;
+            for (var i = 0; i < o.length; i++) {
+                sum += o[i];
+            }
+            return sum / o.length;
+        }
+        else {
+            var avgObj = {};
+            for (var key in o[0]) {
+                var allObjectsHaveKey = true;
+                o.forEach(function (obj) {
+                    if (!obj.hasOwnProperty(key)) {
+                        allObjectsHaveKey = false;
+                    }
+                });
+                if (allObjectsHaveKey) {
+                    avgObj[key] = arrayAverage(o.map(function (obj) {
+                        return obj[key];
+                    }));
+                }
+            }
+            return avgObj;
+        }
+    }
+    KG.arrayAverage = arrayAverage;
     function averageTwoObjects(o1, o2) {
         if (typeof o1 == 'number' && typeof o2 == 'number') {
             return 0.5 * (o1 + o2);
@@ -1570,6 +1603,66 @@ var KG;
     })(KG.Curve);
     KG.FunctionPlot = FunctionPlot;
 })(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var Area = (function (_super) {
+        __extends(Area, _super);
+        function Area(definition) {
+            definition = _.defaults(definition, { data: [], interpolation: 'linear' });
+            _super.call(this, definition);
+            if (definition.label) {
+                var labelDef = _.defaults(definition.label, {
+                    name: definition.name + '_label',
+                    className: definition.className,
+                    xDrag: definition.xDrag,
+                    yDrag: definition.yDrag,
+                    color: definition.color
+                });
+                console.log(labelDef);
+                this.labelDiv = new KG.GraphDiv(labelDef);
+            }
+            this.viewObjectSVGtype = 'path';
+            this.viewObjectClass = 'area';
+        }
+        Area.prototype.createSubObjects = function (view) {
+            var labelDiv = this.labelDiv;
+            if (labelDiv) {
+                return view.addObject(labelDiv);
+            }
+            else {
+                return view;
+            }
+        };
+        Area.prototype.positionLabel = function (view) {
+            var area = this;
+            if (area.labelDiv) {
+                area.labelDiv.coordinates = view.modelCoordinates(KG.arrayAverage(area.data));
+            }
+        };
+        Area.prototype.render = function (view) {
+            var area = this;
+            area.updateDataForView(view);
+            var dataCoordinates = view.dataCoordinates(area.data);
+            var group = view.objectGroup(area.name, area.initGroupFn(), false);
+            area.positionLabel(view);
+            var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
+                return d.x;
+            }).y(function (d) {
+                return d.y;
+            });
+            var dataPath = group.select('.' + area.viewObjectClass);
+            dataPath.attr({
+                'class': area.classAndVisibility(),
+                'd': dataLine(dataCoordinates)
+            }).style('fill', KG.colorForClassName(area.className, 'faint'));
+            return view;
+        };
+        return Area;
+    })(KG.ViewObject);
+    KG.Area = Area;
+})(KG || (KG = {}));
 /// <reference path='kg.ts'/>
 'use strict';
 var KG;
@@ -2655,6 +2748,18 @@ var EconGraphs;
                     horizontal: 'P_A'
                 }
             });
+            this.consumerSurplus = new KG.Area({
+                name: 'consumerSurplus',
+                className: 'demand',
+                data: [
+                    { x: 'model.quantityAtPrice(params.price)', y: 'params.price' },
+                    { x: 0, y: "params.price" },
+                    { x: 0, y: "params.demandPriceIntercept" }
+                ],
+                label: {
+                    text: "CS"
+                }
+            });
         }
         LinearDemand.prototype._update = function (scope) {
             var d = this;
@@ -2957,6 +3062,7 @@ var EconGraphs;
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="viewObjects/functionPlot.ts"/>
+/// <reference path="viewObjects/area.ts"/>
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />

@@ -17,6 +17,7 @@ module EconGraphs {
         quantityInterceptPoint: KG.Point;
         priceLine: KG.Line;
         quantityDemandedAtPrice: KG.Point;
+        consumerSurplus: KG.Area;
     }
 
     export class LinearDemand extends Demand implements ILinearDemand
@@ -29,6 +30,7 @@ module EconGraphs {
         public quantityInterceptPoint;
         public priceLine;
         public quantityDemandedAtPrice;
+        public consumerSurplus;
 
         constructor(definition:LinearDemandDefinition) {
             super(definition);
@@ -79,6 +81,18 @@ module EconGraphs {
                 droplines: {
                     vertical: 'Q^D_A',
                     horizontal: 'P_A'
+                }
+            })
+            this.consumerSurplus = new KG.Area({
+                name: 'consumerSurplus',
+                className: 'demand',
+                data: [
+                    {x: 'model.quantityAtPrice(params.price)', y: 'params.price'},
+                    {x: 0, y:"params.price"},
+                    {x: 0, y:"params.demandPriceIntercept"}
+                ],
+                label: {
+                    text: "CS"
                 }
             })
         }

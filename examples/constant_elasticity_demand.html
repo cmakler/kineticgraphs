@@ -80,8 +80,16 @@
                 expression: 'model.quantityAtPrice(params.price)',
                 restrictionType: 'range',
                 max: 100,
-                min: 0
+                min: 10
+            },
+            {
+                expression: 'params.b',
+                restrictionType: 'range',
+                max: 2,
+                min: 0.1,
+                precision: 0.01
             }
+
         ],
         model: {
             type: 'EconGraphs.ConstantElasticityDemand',
@@ -91,7 +99,7 @@
                 def: {
                     level: 'params.a',
                     coefficient: 1,
-                    powers: [1,'params.b']
+                    powers: [1, 'params.b']
                 }
 
             }
@@ -100,10 +108,10 @@
             {
                 type: 'KG.Graph',
                 definition: {
-                    element_id:'graph',
+                    element_id: 'graph',
                     xAxis: {min: 0, max: 100, title: '\\text{Quantity Demanded}'},
                     yAxis: {min: 0, max: 100, title: '\\text{Price}'},
-                    objects: ['model.curve','model.priceLine','model.quantityDemandedAtPrice','model.slopeLine']
+                    objects: ['model.curve', 'model.priceLine', 'model.quantityDemandedAtPrice', 'model.slopeLine']
                 }
             },
             {
@@ -111,7 +119,7 @@
                 definition: {
                     element_id: 'sliderA',
                     param: 'a',
-                    axis: {min: 0, max: 2000, tickValues: [0,1000,2000]}
+                    axis: {min: 0, max: 2000, tickValues: [0, 1000, 2000]}
                 }
             },
             {
@@ -119,7 +127,7 @@
                 definition: {
                     element_id: 'sliderB',
                     param: 'b',
-                    axis: {min: 0, max: 2, tickValues: [0,1,2]}
+                    axis: {min: 0, max: 2, tickValues: [0, 1, 2]}
                 }
             },
             {
@@ -127,7 +135,7 @@
                 definition: {
                     element_id: 'sliderPrice',
                     param: 'price',
-                    axis: {min: 0, max: 100, tickValues: [0,50,100]}
+                    axis: {min: 0, max: 100, tickValues: [0, 50, 100]}
                 }
             }
         ]
