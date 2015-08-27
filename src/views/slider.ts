@@ -23,7 +23,7 @@ module KG
 
         constructor(definition: SliderDefinition) {
 
-            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 300, height: 50 });
+            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 500, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, {top: 25, left: 25, bottom: 25, right: 25});
             definition.mask = false;
 

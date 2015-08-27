@@ -44,8 +44,12 @@ module KG
 
         // Convert model coordinates to pixel coordinates for a single point
         pixelCoordinates(coordinates:ICoordinates) {
-            coordinates.x = this.xAxis.scale(coordinates.x);
-            coordinates.y = this.yAxis.scale(coordinates.y);
+            try {
+                coordinates.x = this.xAxis.scale(coordinates.x);
+                coordinates.y = this.yAxis.scale(coordinates.y);
+            } catch(error) {
+                console.log(error)
+            }
             return coordinates;
         }
 

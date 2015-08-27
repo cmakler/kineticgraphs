@@ -39,7 +39,7 @@ module EconGraphs {
         constructor(definition:DemandDefinition) {
             super(definition);
             this.demandFunction = new KGMath.Functions[definition.type](definition.def);
-            this.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : new MidpointElasticity({});
+            this.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
         }
 
         quantityAtPrice(price:number) {
@@ -66,7 +66,7 @@ module EconGraphs {
                         x: d.quantityAtPrice(price*1.01),
                         y: price*1.01
                     }});
-            } else {
+            } else if(d.elasticity instanceof PointElasticity) {
                 var point = {
                     x: d.quantityAtPrice(price),
                     y: price

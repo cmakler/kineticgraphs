@@ -101,7 +101,7 @@ module KGMath.Functions {
         // For example, to find the level curve where 3(x^2)(y^3) = 6 and express it as y(x), this would return
         // y = [6/(3x^-2)]^(1/3) = [(6/2)^1/3][(x^-2)^1/3] = [(6/2)^1/3][x^-2/3]
         // Note that the indices of the bases in the returned monomial are the same as the original.
-        levelCurve (n, level?) {
+        levelCurve (n?, level?) {
 
             var m = this;
 

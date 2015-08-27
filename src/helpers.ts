@@ -98,6 +98,31 @@ module KG
         return !areTheSamePoint(a,b);
     }
 
+    export function arrayAverage(o: any[]) {
+
+        var allNumbers = true;
+        o.forEach(function(obj) { if(typeof obj !== 'number') { allNumbers = false}});
+
+        if(allNumbers) {
+            var sum = 0;
+            for(var i=0; i<o.length; i++) {
+                sum += o[i];
+            }
+            return sum/o.length;
+        } else {
+            var avgObj = {}
+            for(var key in o[0]) {
+                var allObjectsHaveKey = true;
+                o.forEach(function(obj) { if(!obj.hasOwnProperty(key)) { allObjectsHaveKey = false}});
+                if(allObjectsHaveKey) {
+                    avgObj[key] = arrayAverage(o.map(function(obj) { return obj[key]}));
+                }
+            }
+            return avgObj;
+        }
+
+    }
+
     export function averageTwoObjects(o1: any, o2: any) {
 
         if(typeof o1 == 'number' && typeof o2 == 'number') {

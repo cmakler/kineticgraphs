@@ -185,6 +185,23 @@ test("average two objects test", function(assert) {
 	assert.equal(KG.averageTwoObjects(a,b),abAvg, 'We expect the average of 3 and 4 to be 3.5');
 	assert.deepEqual(KG.averageTwoObjects(c,d),cdAvg, 'We expect the average of {x: 3, y: 1} and {x: 1, y: 5} to b {x:2, y:3}');
 });
+
+test("average n objects test", function(assert) {
+	var a = 3,
+		b = 4,
+		c = 5,
+		d = {x: 3, y: 1},
+		e = {x: 1, y: 5},
+		f = {x: 5, y: 6}
+
+	var abcAvg = 4,
+		defAvg = {x:3,y:4};
+
+	assert.equal(KG.arrayAverage([a,b,c]),abcAvg, 'We expect the average of 3, 4, and 5 to be 4');
+	assert.deepEqual(KG.arrayAverage([d,e,f]),defAvg, 'We expect the average of {x: 3, y: 1}, {x: 1, y: 5}, and {x:5, y: 6} to b {x:5, y:6}');
+});
+
+
 /*
 module( "utility function tests");
 

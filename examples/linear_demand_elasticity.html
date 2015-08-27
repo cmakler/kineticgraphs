@@ -27,7 +27,7 @@
         <div class="col-md-6 big">
             <p class="math displayMath">\color{ {{ color('demand') }} }{\frac{dQ^D}{dP} = \frac{ {{ params.demandQuantityIntercept | number:0 }} }{ {{ params.demandPriceIntercept | number:0}} } = {{ model.demandFunction.inverseSlope | number:2 }}}</p>
             <hr/>
-            <p class="math displayMath">\epsilon_{Q^D_A,P_A} = \frac{P_A}{Q^D_A} \times \color{ {{ color('demand') }} }{ \frac{dQ^D}{dP} } = \frac{ {{ params.price | number:0 }} }{ {{ model.quantityAtPrice(params.price) | number:1 }} } \times \color{ {{ color('demand') }} }{ {{ model.demandFunction.inverseSlope | number:2 }} } = {{ model.priceElasticity(params.price).elasticityNumber() }}</p>
+            <p class="math displayMath">\epsilon_{Q^D_A,P_A} = \frac{P_A}{Q^D_A} \times \color{ {{ color('demand') }} }{ \frac{dQ^D}{dP} } = \frac{ {{ params.price | number:0 }} }{ {{ model.quantityAtPrice(params.price) | number:1 }} } \times \color{ {{ color('demand') }} }{ {{ model.demandFunction.inverseSlope | number:2 }} } = {{ model.priceElasticity(params.price).elasticityNumber() | number:2 }}</p>
             <hr/>
             <p class="math displayMath">\left| \epsilon_{Q^D_A,P_A} \right| = {{ model.priceElasticity(params.price).elasticityComparator}} \Rightarrow \text{ {{ model.priceElasticity(params.price).elasticityWord }}}</p>
         </div>
@@ -87,7 +87,7 @@
                     element_id:'graph',
                     xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
                     yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice']
+                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice','model.consumerSurplus']
                 }
             }
         ]
