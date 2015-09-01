@@ -2,9 +2,16 @@
 
 module EconGraphs {
 
+    export interface PointSlopeDemandDefinition extends DemandDefinition
+    {
+        def: KGMath.Functions.PointSlopeLineDefinition;
+    }
+
     export interface LinearDemandDefinition extends DemandDefinition
     {
         def: KGMath.Functions.LinearDefinition;
+        priceInterceptDrag?: string;
+        quantityInterceptDrag?: string;
     }
 
     export interface ILinearDemand extends IDemand
@@ -15,9 +22,6 @@ module EconGraphs {
         quantityIntercept: number;
         priceInterceptPoint: KG.Point;
         quantityInterceptPoint: KG.Point;
-        priceLine: KG.Line;
-        quantityDemandedAtPrice: KG.Point;
-        consumerSurplus: KG.Area;
     }
 
     export class LinearDemand extends Demand implements ILinearDemand
@@ -28,26 +32,23 @@ module EconGraphs {
         public quantityIntercept;
         public priceInterceptPoint;
         public quantityInterceptPoint;
-        public priceLine;
-        public quantityDemandedAtPrice;
-        public consumerSurplus;
 
         constructor(definition:LinearDemandDefinition) {
             super(definition);
             this.marginalRevenue = new KGMath.Functions.TwoPointLine({p1: {x:0, y:0}, p2: {x:0,y:0}});
             this.priceInterceptPoint = new KG.Point({
                 name: 'demandPriceIntercept',
-                coordinates: {x: 0, y: 'params.demandPriceIntercept'},
+                coordinates: {x: 0, y: this.modelProperty('priceIntercept')},
                 size: 200,
                 className: 'demand',
-                yDrag: true
+                yDrag: definition.priceInterceptDrag
             });
             this.quantityInterceptPoint = new KG.Point({
                 name: 'demandQuantityIntercept',
-                coordinates: {x: 'params.demandQuantityIntercept', y:0},
+                coordinates: {x: this.modelProperty('quantityIntercept'), y:0},
                 size: 200,
                 className: 'demand',
-                xDrag: true
+                xDrag: definition.quantityInterceptDrag
             });
             this.curve = new KG.Line({
                 name: 'demand',
@@ -56,50 +57,28 @@ module EconGraphs {
                 type: definition.type,
                 def: definition.def,
                 label: {
-                    text: 'D'
+                    text: definition.curveLabel
                 }
             });
-            this.priceLine = new KG.Line({
-                name: 'priceLine',
-                color: 'grey',
-                arrows: 'NONE',
-                type: 'HorizontalLine',
-                yDrag: 'price',
-                def: {
-                    y: 'params.price'
-                }
-            });
-            this.quantityDemandedAtPrice = new KG.Point({
-                name: 'quantityDemandedAtPrice',
-                coordinates: {x: 'model.quantityAtPrice(params.price)', y: 'params.price'},
-                size: 500,
-                color: 'black',
-                yDrag: true,
-                label: {
-                    text: 'A'
-                },
-                droplines: {
-                    vertical: 'Q^D_A',
-                    horizontal: 'P_A'
-                }
-            })
             this.consumerSurplus = new KG.Area({
                 name: 'consumerSurplus',
                 className: 'demand',
                 data: [
-                    {x: 'model.quantityAtPrice(params.price)', y: 'params.price'},
-                    {x: 0, y:"params.price"},
-                    {x: 0, y:"params.demandPriceIntercept"}
+                    {x: this.modelProperty('quantity'), y: definition.price},
+                    {x: 0, y: definition.price},
+                    {x: 0, y: this.modelProperty('quantityIntercept')}
                 ],
                 label: {
                     text: "CS"
                 }
             })
+
         }
 
         _update(scope) {
             var d = this;
             d.demandFunction.update(scope);
+            d.quantity = d.quantityAtPrice(d.price);
             d.priceIntercept = d.demandFunction.yValue(0);
             d.quantityIntercept = d.demandFunction.xValue(0);
             d.marginalRevenue.p1 = {x:0, y:d.priceIntercept};

@@ -15,34 +15,44 @@ var KG;
     };
     KG.COLORS = {
         blue: {
-            dark: "#3182bd",
-            medium: "#6baed6",
-            light: "#9ecae1",
-            faint: "#c6dbef"
+            dark: "#1f77b4",
+            light: "#aec7e8"
         },
         orange: {
-            dark: "#e6550d",
-            medium: "#fd8d3c",
-            light: "#fdae6b",
-            faint: "#fdd0a2"
+            dark: "#ff7f0e",
+            light: "#98df8a"
         },
         green: {
-            dark: "#31a354",
-            medium: "#74c476",
-            light: "#a1d99b",
-            faint: "#c7e9c0"
+            dark: "#2ca02c",
+            light: "#74c476"
+        },
+        red: {
+            dark: "d62728",
+            light: "ff9896"
         },
         purple: {
-            dark: "#756bb1",
-            medium: "#9e9ac8",
-            light: "#bcbddc",
-            faint: "#dadaeb"
+            dark: "#9467bd",
+            light: "#c5b0d5"
+        },
+        brown: {
+            dark: "#8c564b",
+            light: "#c49c94"
+        },
+        pink: {
+            dark: "#e377c2",
+            light: "#f7b6d2"
         },
         gray: {
-            dark: "#636363",
-            medium: "#969696",
-            light: "#bdbdbd",
-            faint: "#d9d9d9"
+            dark: "#7f7f7f",
+            light: "#c7c7c7"
+        },
+        tan: {
+            dark: "#bcbd22",
+            light: "#dbdb8d"
+        },
+        cyan: {
+            dark: "#17becf",
+            light: "#9edae5"
         }
     };
 })(KG || (KG = {}));
@@ -237,9 +247,11 @@ var KG;
 var KG;
 (function (KG) {
     var Model = (function () {
-        function Model(definition) {
+        function Model(definition, modelPath) {
             this.definition = definition;
+            this.modelPath = modelPath;
             var model = this;
+            model.modelPath = modelPath || 'model';
             for (var key in definition) {
                 if (definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];
@@ -252,6 +264,9 @@ var KG;
                 }
             }
         }
+        Model.prototype.modelProperty = function (name) {
+            return this.modelPath + '.' + name;
+        };
         Model.prototype.setNumericProperty = function (propertySetter) {
             var model = this;
             if (!isNaN(propertySetter.value)) {
@@ -936,7 +951,7 @@ var KG;
             viewObj.yDragDelta = 0;
             if (definition.xDrag) {
                 if (typeof definition.xDrag == 'string') {
-                    viewObj.xDragParam = definition.xDrag;
+                    viewObj.xDragParam = definition.xDrag.replace('params.', '');
                     viewObj.xDrag = true;
                 }
                 else if (definition.hasOwnProperty('coordinates') && typeof definition.coordinates.x == 'string') {
@@ -945,7 +960,7 @@ var KG;
             }
             if (definition.yDrag) {
                 if (typeof definition.yDrag == 'string') {
-                    viewObj.yDragParam = definition.yDrag;
+                    viewObj.yDragParam = definition.yDrag.replace('params.', '');
                     viewObj.yDrag = true;
                 }
                 else if (definition.hasOwnProperty('coordinates') && typeof definition.coordinates.y == 'string') {
@@ -1322,7 +1337,7 @@ var KG;
                     yDrag: definition.yDrag,
                     color: definition.color
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 line.labelDiv = new KG.GraphDiv(labelDef);
             }
             if (definition.hasOwnProperty('xInterceptLabel')) {
@@ -1460,7 +1475,7 @@ var KG;
                 text: ''
             });
             _super.call(this, definition);
-            console.log('graphDiv ', this.text, ' color is', this.color);
+            //console.log('graphDiv ', this.text,' color is', this.color);
         }
         GraphDiv.prototype.render = function (view) {
             var divObj = this;
@@ -1620,7 +1635,7 @@ var KG;
                     yDrag: definition.yDrag,
                     color: definition.color
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 this.labelDiv = new KG.GraphDiv(labelDef);
             }
             this.viewObjectSVGtype = 'path';
@@ -1656,7 +1671,7 @@ var KG;
             dataPath.attr({
                 'class': area.classAndVisibility(),
                 'd': dataLine(dataCoordinates)
-            }).style('fill', KG.colorForClassName(area.className, 'faint'));
+            }).style('fill', KG.colorForClassName(area.className, 'light')).style('opacity', 0.5);
             return view;
         };
         return Area;
@@ -2644,11 +2659,45 @@ var EconGraphs;
 (function (EconGraphs) {
     var Demand = (function (_super) {
         __extends(Demand, _super);
-        function Demand(definition) {
-            _super.call(this, definition);
+        function Demand(definition, modelPath) {
+            definition.className = definition.className || 'demand';
+            definition.curveLabel = definition.curveLabel || 'D';
+            _super.call(this, definition, modelPath);
             this.demandFunction = new KGMath.Functions[definition.type](definition.def);
             this.elasticity = (definition.elasticityMethod == 'point') ? new EconGraphs.PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new EconGraphs.ConstantElasticity({}) : new EconGraphs.MidpointElasticity({});
+            var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.', '') : false;
+            this.priceLine = new KG.Line({
+                name: 'priceLine',
+                color: 'grey',
+                arrows: 'NONE',
+                type: 'HorizontalLine',
+                yDrag: definition.priceDrag,
+                def: {
+                    y: definition.price
+                }
+            });
+            this.quantityDemandedPoint = new KG.Point({
+                name: 'quantityDemandedAtPrice',
+                coordinates: { x: this.modelProperty('quantity'), y: this.modelProperty('price') },
+                size: 500,
+                color: 'black',
+                yDrag: definition.price,
+                label: {
+                    text: 'A'
+                },
+                droplines: {
+                    vertical: 'Q^D_A',
+                    horizontal: 'P_A'
+                }
+            });
         }
+        Demand.prototype._update = function (scope) {
+            var d = this;
+            if (d.price) {
+                d.quantity = d.quantityAtPrice(d.price);
+            }
+            return d;
+        };
         Demand.prototype.quantityAtPrice = function (price) {
             price = (price > 0) ? price : 0;
             var qd = this.demandFunction.xValue(price);
@@ -2702,17 +2751,17 @@ var EconGraphs;
             this.marginalRevenue = new KGMath.Functions.TwoPointLine({ p1: { x: 0, y: 0 }, p2: { x: 0, y: 0 } });
             this.priceInterceptPoint = new KG.Point({
                 name: 'demandPriceIntercept',
-                coordinates: { x: 0, y: 'params.demandPriceIntercept' },
+                coordinates: { x: 0, y: this.modelProperty('priceIntercept') },
                 size: 200,
                 className: 'demand',
-                yDrag: true
+                yDrag: definition.priceInterceptDrag
             });
             this.quantityInterceptPoint = new KG.Point({
                 name: 'demandQuantityIntercept',
-                coordinates: { x: 'params.demandQuantityIntercept', y: 0 },
+                coordinates: { x: this.modelProperty('quantityIntercept'), y: 0 },
                 size: 200,
                 className: 'demand',
-                xDrag: true
+                xDrag: definition.quantityInterceptDrag
             });
             this.curve = new KG.Line({
                 name: 'demand',
@@ -2721,40 +2770,16 @@ var EconGraphs;
                 type: definition.type,
                 def: definition.def,
                 label: {
-                    text: 'D'
-                }
-            });
-            this.priceLine = new KG.Line({
-                name: 'priceLine',
-                color: 'grey',
-                arrows: 'NONE',
-                type: 'HorizontalLine',
-                yDrag: 'price',
-                def: {
-                    y: 'params.price'
-                }
-            });
-            this.quantityDemandedAtPrice = new KG.Point({
-                name: 'quantityDemandedAtPrice',
-                coordinates: { x: 'model.quantityAtPrice(params.price)', y: 'params.price' },
-                size: 500,
-                color: 'black',
-                yDrag: true,
-                label: {
-                    text: 'A'
-                },
-                droplines: {
-                    vertical: 'Q^D_A',
-                    horizontal: 'P_A'
+                    text: definition.curveLabel
                 }
             });
             this.consumerSurplus = new KG.Area({
                 name: 'consumerSurplus',
                 className: 'demand',
                 data: [
-                    { x: 'model.quantityAtPrice(params.price)', y: 'params.price' },
-                    { x: 0, y: "params.price" },
-                    { x: 0, y: "params.demandPriceIntercept" }
+                    { x: this.modelProperty('quantity'), y: definition.price },
+                    { x: 0, y: definition.price },
+                    { x: 0, y: this.modelProperty('quantityIntercept') }
                 ],
                 label: {
                     text: "CS"
@@ -2764,6 +2789,7 @@ var EconGraphs;
         LinearDemand.prototype._update = function (scope) {
             var d = this;
             d.demandFunction.update(scope);
+            d.quantity = d.quantityAtPrice(d.price);
             d.priceIntercept = d.demandFunction.yValue(0);
             d.quantityIntercept = d.demandFunction.xValue(0);
             d.marginalRevenue.p1 = { x: 0, y: d.priceIntercept };
@@ -3032,6 +3058,177 @@ var EconGraphs;
     })(KG.Model);
     EconGraphs.RamseyCassKoopmans = RamseyCassKoopmans;
 })(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var ProductionCost = (function (_super) {
+        __extends(ProductionCost, _super);
+        function ProductionCost(definition) {
+            _super.call(this, definition);
+            this.totalCostCurve = new KG.FunctionPlot({
+                fn: this.totalCost,
+                className: 'totalCost',
+                label: {
+                    text: 'TC'
+                }
+            });
+        }
+        ProductionCost.prototype._update = function (scope) {
+            var productionCost = this;
+            productionCost.fixedCost = productionCost.totalCost(0);
+            return productionCost;
+        };
+        ProductionCost.prototype.totalCost = function (quantity) {
+            return this.costFunction.yValue(quantity);
+        };
+        ProductionCost.prototype.averageTotalCost = function (quantity) {
+            return this.totalCost(quantity) / quantity;
+        };
+        ProductionCost.prototype.averageFixedCost = function (quantity) {
+            return this.fixedCost / quantity;
+        };
+        ProductionCost.prototype.variableCost = function (quantity) {
+            return this.totalCost(quantity) - this.fixedCost;
+        };
+        ProductionCost.prototype.averageVariableCost = function (quantity) {
+            return this.variableCost(quantity) / quantity;
+        };
+        ProductionCost.prototype.marginalCost = function (quantity) {
+            var costFunction = this.costFunction;
+            if (costFunction.hasOwnProperty('derivative')) {
+                return costFunction.derivative.yValue(quantity);
+            }
+            else {
+                return quantity > 0 ? costFunction.slopeBetweenPoints(quantity, 1.01 * quantity) : costFunction.slopeBetweenPoints(quantity, 0.01);
+            }
+        };
+        ProductionCost.prototype.averageMarginalCost = function (quantity) {
+            return this.marginalCost(quantity) / quantity;
+        };
+        return ProductionCost;
+    })(KG.Model);
+    EconGraphs.ProductionCost = ProductionCost;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var LinearMarginalCost = (function (_super) {
+        __extends(LinearMarginalCost, _super);
+        function LinearMarginalCost(definition) {
+            _super.call(this, definition);
+            this.totalCostCurve = new KG.FunctionPlot({
+                fn: this.totalCost,
+                className: 'totalCost',
+                label: {
+                    text: 'TC'
+                }
+            });
+        }
+        LinearMarginalCost.prototype._update = function (scope) {
+            var linearMarginalCost = this;
+            linearMarginalCost.fixedCost = linearMarginalCost.totalCost(0);
+            return linearMarginalCost;
+        };
+        return LinearMarginalCost;
+    })(EconGraphs.ProductionCost);
+    EconGraphs.LinearMarginalCost = LinearMarginalCost;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var Monopoly = (function (_super) {
+        __extends(Monopoly, _super);
+        function Monopoly(definition) {
+            _super.call(this, definition);
+            var m = this;
+            var Pref = 'model.price', Qref = 'model.quantity', ACQref = 'model.costFunction.averageTotalCost(model.quantity)', MCQref = 'model.costFunction.marginalCost(model.quantity)', MC0ref = 'model.costFunction.marginalCost(0)';
+            m.producerSurplus = new KG.Area({
+                data: [
+                    { x: 0, y: Pref },
+                    { x: Qref, y: Pref },
+                    { x: Qref, y: MCQref },
+                    { x: 0, y: MC0ref }
+                ]
+            });
+            m.profit = new KG.Area({
+                data: [
+                    { x: 0, y: Pref },
+                    { x: Qref, y: Pref },
+                    { x: Qref, y: ACQref },
+                    { x: 0, y: ACQref }
+                ]
+            });
+        }
+        Monopoly.prototype._update = function (scope) {
+            var m = this;
+            m.demandFunction.update(scope);
+            m.costFunction.update(scope);
+            if (m.choosePrice) {
+                m.quantity = m.demandFunction.quantityAtPrice(m.price);
+            }
+            else {
+                m.price = m.demandFunction.priceAtQuantity(m.quantity);
+            }
+            return m;
+        };
+        return Monopoly;
+    })(KG.Model);
+    EconGraphs.Monopoly = Monopoly;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var CournotDuopoly = (function (_super) {
+        __extends(CournotDuopoly, _super);
+        function CournotDuopoly(definition) {
+            _super.call(this, definition);
+            this.marketDemand = new EconGraphs.LinearDemand({
+                type: 'SlopeInterceptLine',
+                def: {
+                    b: definition.marketDemandIntercept,
+                    m: definition.marketDemandSlope
+                },
+                curveLabel: 'P(q_1 + q_2)',
+                quantityLabel: 'q_1 + q_2'
+            });
+            this.marketDemand.path = 'model.residualDemand2';
+            this.residualDemand1 = new EconGraphs.LinearDemand({
+                type: 'SlopeInterceptLine',
+                def: {
+                    b: definition.marketDemandIntercept,
+                    m: definition.marketDemandSlope
+                },
+                curveLabel: 'P(q_1 | q_2)',
+                quantityLabel: 'q_1'
+            });
+            this.residualDemand1.path = 'model.residualDemand1';
+            this.residualDemand2 = new EconGraphs.LinearDemand({
+                type: 'SlopeInterceptLine',
+                def: {
+                    b: definition.marketDemandIntercept,
+                    m: definition.marketDemandSlope
+                },
+                curveLabel: 'P(q_2 | q_1)',
+                quantityLabel: 'q_2'
+            });
+            this.residualDemand2.path = 'model.residualDemand2';
+        }
+        CournotDuopoly.prototype.residualDemandIntercept = function (otherQuantity) {
+            return this.marketDemand.priceAtQuantity(otherQuantity);
+        };
+        CournotDuopoly.prototype._update = function (scope) {
+            var d = this;
+            d.marketDemand.update(scope);
+            d.residualDemand1.update(scope);
+            d.residualDemand2.update(scope);
+            d.residualDemand1.demandFunction.b = d.residualDemandIntercept(d.q2);
+            d.residualDemand2.demandFunction.b = d.residualDemandIntercept(d.q1);
+            return d;
+        };
+        return CournotDuopoly;
+    })(KG.Model);
+    EconGraphs.CournotDuopoly = CournotDuopoly;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="elasticity/elasticity.ts"/>
 /// <reference path="elasticity/midpoint.ts"/>
@@ -3040,7 +3237,11 @@ var EconGraphs;
 /// <reference path="market/demand.ts"/>
 /// <reference path="market/linearDemand.ts"/>
 /// <reference path="market/constantElasticityDemand.ts"/>
-/// <reference path="growth/ramseyCassKoopmans.ts"/> 
+/// <reference path="growth/ramseyCassKoopmans.ts"/>
+/// <reference path="production/productionCost.ts"/>
+/// <reference path="production/linearMarginalCost.ts"/>
+/// <reference path="monopoly/monopoly.ts"/>
+/// <reference path="oligopoly/cournotDuopoly.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
 /// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>

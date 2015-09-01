@@ -55,7 +55,7 @@ module KG
 
             super(definition);
 
-            console.log('graphDiv ', this.text,' color is', this.color);
+            //console.log('graphDiv ', this.text,' color is', this.color);
 
         }
 

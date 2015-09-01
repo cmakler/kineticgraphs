@@ -50,7 +50,7 @@ module KG {
                     yDrag: definition.yDrag,
                     color: definition.color
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 line.labelDiv = new GraphDiv(labelDef);
             }
 

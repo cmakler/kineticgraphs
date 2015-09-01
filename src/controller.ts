@@ -50,7 +50,6 @@ module KG
                         return createInstance(view);
                     });
                 });
-
             };
 
             $scope.renderMath = function() {

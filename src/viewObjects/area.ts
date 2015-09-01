@@ -45,7 +45,7 @@ module KG {
                     yDrag: definition.yDrag,
                     color: definition.color
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
@@ -93,7 +93,8 @@ module KG {
                     'class': area.classAndVisibility(),
                     'd': dataLine(dataCoordinates)
                 })
-                .style('fill',KG.colorForClassName(area.className, 'faint'))
+                .style('fill',KG.colorForClassName(area.className, 'light'))
+                .style('opacity',0.5)
 
             return view;
         }

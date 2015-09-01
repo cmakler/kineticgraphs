@@ -17,7 +17,7 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <h1>Demand Elasticity along a Linear Demand Curve (Point Method)</h1>
+    <h1>Cost Curves</h1>
     <p>Drag the endpoints of the demand curve to change its slope. Drag the price up and down to see how the price elasticity at point A changes.</p>
     <hr/>
     <div class="row">
@@ -36,52 +36,17 @@
 <script>
     var scopeDefinition = {
         params: {
-            price: 30,
-            demandPriceIntercept: 40,
+            fc: 10,
+            mc_intercept: 40,
             demandQuantityIntercept: 80
         },
         restrictions: [
-            {
-                expression: 'params.price',
-                restrictionType: 'range',
-                max: 'params.demandPriceIntercept',
-                min: 0,
-                precision: 1
-            },
-            {
-                expression: 'params.demandPriceIntercept',
-                restrictionType: 'range',
-                max: 100,
-                min: 5,
-                precision: 5
-            },
-            {
-                expression: 'params.demandQuantityIntercept',
-                restrictionType: 'range',
-                max: 100,
-                min: 5,
-                precision: 5
-            }
+
         ],
         model: {
-            type: 'EconGraphs.LinearDemand',
+            type: 'EconGraphs.ProductionCosts',
             definition: {
-                elasticityMethod: 'point',
-                price: 'params.price',
-                type: 'TwoPointLine',
-                def: {
-                    p1: {
-                        x: 0,
-                        y: 'params.demandPriceIntercept'
-                    },
-                    p2: {
-                        x: 'params.demandQuantityIntercept',
-                        y: 0
-                    }
-                },
-                priceInterceptDrag: 'params.demandPriceIntercept',
-                quantityInterceptDrag: 'params.demandQuantityIntercept',
-                priceDrag: 'params.price'
+
             }
         },
         views: [
@@ -91,7 +56,7 @@
                     element_id:'graph',
                     xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
                     yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedPoint']
+                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice','model.consumerSurplus']
                 }
             }
         ]

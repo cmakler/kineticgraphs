@@ -6,10 +6,14 @@ module EconGraphs {
     {
         type: string;
         def: KGMath.Functions.BaseDefinition;
-        className: string;
-        curveLabel: string;
-        quantityLabel: string;
-        elasticityMethod: string;
+        className?: string;
+        curveLabel?: string;
+        quantityLabel?: string;
+        elasticityMethod?: string;
+        price?: any;
+        quantity?: any;
+        priceDrag?: string;
+        quantityDrag?: string;
     }
 
     export interface IDemand extends KG.IModel
@@ -19,10 +23,16 @@ module EconGraphs {
         priceAtQuantity: (quantity: number) => number;
         priceElasticity: (price: number) => Elasticity;
         curve: KG.ViewObject;
-        quantityAtPriceView: (price: number) => KG.Point;
         className: string;
         curveLabel: string;
         quantityLabel: string;
+
+        price: number;
+        quantity: number;
+
+        priceLine: KG.Line;
+        quantityDemandedPoint: KG.Point;
+        consumerSurplus: KG.Area;
     }
 
     export class Demand extends KG.Model implements IDemand
@@ -36,10 +46,56 @@ module EconGraphs {
         public elasticity: Elasticity;
         public curve;
 
-        constructor(definition:DemandDefinition) {
-            super(definition);
+        public price;
+        public quantity;
+
+        public priceLine;
+        public quantityDemandedPoint;
+        public consumerSurplus;
+
+        constructor(definition:DemandDefinition, modelPath?:string) {
+            definition.className = definition.className || 'demand';
+            definition.curveLabel = definition.curveLabel || 'D';
+            super(definition, modelPath);
             this.demandFunction = new KGMath.Functions[definition.type](definition.def);
             this.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
+
+            var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.','') : false;
+
+            this.priceLine = new KG.Line({
+                name: 'priceLine',
+                color: 'grey',
+                arrows: 'NONE',
+                type: 'HorizontalLine',
+                yDrag: definition.priceDrag,
+                def: {
+                    y: definition.price
+                }
+            });
+
+            this.quantityDemandedPoint = new KG.Point({
+                name: 'quantityDemandedAtPrice',
+                coordinates: {x: this.modelProperty('quantity'), y: this.modelProperty('price')},
+                size: 500,
+                color: 'black',
+                yDrag: definition.price,
+                label: {
+                    text: 'A'
+                },
+                droplines: {
+                    vertical: 'Q^D_A',
+                    horizontal: 'P_A'
+                }
+            });
+
+        }
+
+        _update(scope) {
+            var d = this;
+            if(d.price) {
+                d.quantity = d.quantityAtPrice(d.price)
+            }
+            return d;
         }
 
         quantityAtPrice(price:number) {

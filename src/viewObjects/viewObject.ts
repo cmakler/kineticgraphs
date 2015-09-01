@@ -81,17 +81,16 @@ module KG
 
             if(definition.xDrag) {
                 if(typeof definition.xDrag == 'string') {
-                    viewObj.xDragParam = definition.xDrag;
+                    viewObj.xDragParam = definition.xDrag.replace('params.','');
                     viewObj.xDrag = true;
                 } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.x == 'string') {
                     this.xDragParam = definition.coordinates.x.replace('params.','');
                 }
-
             }
 
             if(definition.yDrag) {
                 if(typeof definition.yDrag == 'string') {
-                    viewObj.yDragParam = definition.yDrag;
+                    viewObj.yDragParam = definition.yDrag.replace('params.','');
                     viewObj.yDrag = true;
                 } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.y == 'string') {
                     this.yDragParam = definition.coordinates.y.replace('params.','');

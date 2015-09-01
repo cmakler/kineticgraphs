@@ -18,35 +18,44 @@ module KG
 
     export var COLORS = {
         blue: {
-            dark: "#3182bd",
-            medium: "#6baed6",
-            light: "#9ecae1",
-            faint: "#c6dbef"
+            dark: "#1f77b4",
+            light: "#aec7e8"
         },
         orange: {
-            dark: "#e6550d",
-            medium: "#fd8d3c",
-            light: "#fdae6b",
-            faint: "#fdd0a2"
+            dark: "#ff7f0e",
+            light: "#98df8a"
         },
         green: {
-            dark: "#31a354",
-            medium: "#74c476",
-            light: "#a1d99b",
-            faint: "#c7e9c0",
+            dark: "#2ca02c",
+            light: "#74c476"
+        },
+        red: {
+            dark: "d62728",
+            light: "ff9896"
         },
         purple: {
-            dark: "#756bb1",
-            medium: "#9e9ac8",
-            light: "#bcbddc",
-            faint: "#dadaeb"
+            dark: "#9467bd",
+            light: "#c5b0d5"
+        },
+        brown: {
+            dark: "#8c564b",
+            light: "#c49c94"
+        },
+        pink: {
+            dark: "#e377c2",
+            light: "#f7b6d2"
         },
         gray: {
-            dark: "#636363",
-            medium: "#969696",
-            light: "#bdbdbd",
-            faint: "#d9d9d9"
+            dark: "#7f7f7f",
+            light: "#c7c7c7"
+        },
+        tan: {
+            dark: "#bcbd22",
+            light: "#dbdb8d"
+        },
+        cyan: {
+            dark: "#17becf",
+            light: "#9edae5"
         }
     };
-
 }
