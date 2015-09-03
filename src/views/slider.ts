@@ -10,7 +10,7 @@ module KG
     {
         param: string;
         precision: number;
-        axis: AxisDefinition;
+        axisDef: AxisDefinition;
     }
 
     export interface ISlider extends IView
@@ -19,7 +19,7 @@ module KG
     }
 
     export class Slider extends View implements ISlider {
-        public axis;
+        public axisDef;
 
         constructor(definition: SliderDefinition) {
 
@@ -28,7 +28,7 @@ module KG
             definition.mask = false;
 
             super(definition);
-            this.xAxis = new XAxis(definition.axis);
+            this.xAxis = new XAxis(definition.axisDef);
             this.objects = [
                 new SliderControl({name: definition.element_id + 'Ctrl', param: 'params.' + definition.param})
             ]

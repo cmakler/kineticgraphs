@@ -1,3 +1,4 @@
+/* Note: these colors are chosen to match the ordinal scales in D3 */
 @import url("//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,700");
 body {
   font-size: 12pt;
@@ -88,14 +89,14 @@ a {
   stroke-width: 1.5pt;
 }
 .diff1 {
-  color: #756bb1;
-  stroke: #756bb1;
-  fill: #756bb1;
+  color: #9467bd;
+  stroke: #9467bd;
+  fill: #9467bd;
 }
 .diff2 {
-  color: #31a354;
-  stroke: #31a354;
-  fill: #31a354;
+  color: #2ca02c;
+  stroke: #2ca02c;
+  fill: #2ca02c;
 }
 .dashed {
   stroke-dasharray: 10, 10;
@@ -105,23 +106,27 @@ a {
   stroke-dasharray: 2, 2;
 }
 .demand {
-  color: #3182bd;
-  stroke: #3182bd;
+  color: #1f77b4;
+  stroke: #1f77b4;
 }
 .growth {
-  color: #31a354;
-  stroke: #31a354;
+  color: #2ca02c;
+  stroke: #2ca02c;
 }
 .balancedGrowth {
-  color: #31a354;
-  stroke: #31a354;
+  color: #2ca02c;
+  stroke: #2ca02c;
   stroke-dasharray: 10,10;
 }
 .capital {
-  color: #e6550d;
-  stroke: #e6550d;
+  color: #ff7f0e;
+  stroke: #ff7f0e;
 }
 .consumption {
-  color: #3182bd;
-  stroke: #3182bd;
+  color: #1f77b4;
+  stroke: #1f77b4;
+}
+.totalCost {
+  color: #1f77b4;
+  stroke: #1f77b4;
 }

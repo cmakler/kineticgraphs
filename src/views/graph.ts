@@ -8,8 +8,8 @@ module KG
     // Graph definition objects
     export interface GraphDefinition extends ViewDefinition
     {
-        xAxis: AxisDefinition;
-        yAxis: AxisDefinition;
+        xAxisDef: AxisDefinition;
+        yAxisDef: AxisDefinition;
     }
 
     // Additions to the scope of a graph
@@ -33,8 +33,8 @@ module KG
             definition.margins = _.defaults(definition.margins || {}, {top: 20, left: 80, bottom: 70, right: 20});
             super(definition);
 
-            this.xAxis = new XAxis(definition.xAxis);
-            this.yAxis = new YAxis(definition.yAxis);
+            this.xAxis = new XAxis(definition.xAxisDef);
+            this.yAxis = new YAxis(definition.yAxisDef);
         }
 
         // Check to see if a point is on the graph

@@ -461,6 +461,9 @@ var KGMath;
             function Base(definition) {
                 definition.level = definition.level || 0;
                 _super.call(this, definition);
+                if (definition.hasOwnProperty('yValue')) {
+                    this.yValue = definition.yValue;
+                }
             }
             // Returns the slope between (a,f(a)) and (b,f(b)).
             // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
@@ -504,13 +507,9 @@ var KGMath;
             Base.prototype.value = function (bases) {
                 return 0; // overridden by subclass
             };
-            // Returns y value for given x, for a two-dimensional function
-            Base.prototype.yValue = function (x) {
-                return 0;
-            };
             // Returns x value for given y, for a two-dimensional function
             Base.prototype.xValue = function (y) {
-                return 0;
+                return null;
             };
             Base.prototype.points = function (view, yIsIndependent, numSamplePoints) {
                 var fn = this, points = [];
@@ -519,14 +518,16 @@ var KGMath;
                 for (var i = 0; i < numSamplePoints; i++) {
                     var x = xSamplePoints[i];
                     var yOfX = fn.yValue(x);
-                    if (view.yAxis.domain.contains(yOfX)) {
+                    if (view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i - 1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i + 1])))) {
                         points.push({ x: x, y: yOfX });
                     }
+                    ;
                     var y = ySamplePoints[i];
                     var xOfY = fn.xValue(y);
                     if (view.xAxis.domain.contains(xOfY)) {
                         points.push({ x: xOfY, y: y });
                     }
+                    ;
                 }
                 if (yIsIndependent) {
                     return points.sort(KG.sortObjects('y'));
@@ -1231,6 +1232,12 @@ var KG;
             if (curve.labelDiv) {
                 var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
                 var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
+                if (labelCoordinates.y > view.yAxis.domain.max) {
+                    labelCoordinates.y = view.yAxis.domain.max;
+                }
+                if (labelCoordinates.x > view.xAxis.domain.max) {
+                    labelCoordinates.x = view.xAxis.domain.max;
+                }
                 curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
                 curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
                 curve.labelDiv.coordinates = labelCoordinates;
@@ -1599,19 +1606,10 @@ var KG;
         function FunctionPlot(definition) {
             definition = _.defaults(definition, { yIsIndependent: false, interpolation: 'linear', numSamplePoints: 51 });
             _super.call(this, definition);
-            var fnPlot = this;
-            if (this.fn instanceof KGMath.Functions.Base) {
-                fnPlot.f = fnPlot.fn;
-            }
-            else if (typeof this.fn == 'function') {
-                fnPlot.f = new KGMath.Functions.Base({ yValue: fnPlot.fn });
-            }
         }
         FunctionPlot.prototype.updateDataForView = function (view) {
             var p = this;
-            if (p.fn instanceof KGMath.Functions.Base) {
-                p.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
-            }
+            p.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
             return p;
         };
         return FunctionPlot;
@@ -1769,10 +1767,10 @@ var KG;
                 };
                 // draw axes
                 if (view.xAxis) {
-                    view.xAxis.draw(axes, view.divs, axisDimensions, view.margins);
+                    view.xAxis.update(scope).draw(axes, view.divs, axisDimensions, view.margins);
                 }
                 if (view.yAxis) {
-                    view.yAxis.draw(axes, view.divs, axisDimensions, view.margins);
+                    view.yAxis.update(scope).draw(axes, view.divs, axisDimensions, view.margins);
                 }
             }
             // Establish SVG group for objects that lie above the axes (e.g., points and labels)
@@ -1854,7 +1852,7 @@ var KG;
                     if (newY < yAxis.domain.min) {
                         dragUpdate[yParam] = yAxis.domain.min;
                     }
-                    else if (newY > xAxis.domain.max) {
+                    else if (newY > yAxis.domain.max) {
                         dragUpdate[yParam] = yAxis.domain.max;
                     }
                     else {
@@ -1891,6 +1889,11 @@ var KG;
         }
         Axis.prototype.draw = function (vis, divs, graph_definition, margins) {
             // overridden by child class
+        };
+        Axis.prototype._update = function (scope) {
+            this.domain.min = this.min;
+            this.domain.max = this.max;
+            return this;
         };
         Axis.prototype.scaleFunction = function (pixelLength, domain) {
             return d3.scale.linear(); // overridden by child class
@@ -1946,8 +1949,8 @@ var KG;
             definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
             definition.margins = _.defaults(definition.margins || {}, { top: 20, left: 80, bottom: 70, right: 20 });
             _super.call(this, definition);
-            this.xAxis = new KG.XAxis(definition.xAxis);
-            this.yAxis = new KG.YAxis(definition.yAxis);
+            this.xAxis = new KG.XAxis(definition.xAxisDef);
+            this.yAxis = new KG.YAxis(definition.yAxisDef);
         }
         // Check to see if a point is on the graph
         Graph.prototype.onGraph = function (coordinates) {
@@ -1997,7 +2000,7 @@ var KG;
             definition.margins = _.defaults(definition.margins || {}, { top: 25, left: 25, bottom: 25, right: 25 });
             definition.mask = false;
             _super.call(this, definition);
-            this.xAxis = new KG.XAxis(definition.axis);
+            this.xAxis = new KG.XAxis(definition.axisDef);
             this.objects = [
                 new SliderControl({ name: definition.element_id + 'Ctrl', param: 'params.' + definition.param })
             ];
@@ -2949,21 +2952,18 @@ var EconGraphs;
                 name: 'balancedGrowthPath',
                 data: 'model.balancedGrowthPath',
                 className: 'growth dashed',
-                interpolation: 'basis',
-                label: {
-                    text: 'BGP'
-                }
+                interpolation: 'basis'
             });
         }
         RamseyCassKoopmans.prototype._update = function (scope) {
             var model = this;
             model.steadyCapital.update(scope);
-            model.steadyStateK = Math.pow((model.delta + model.rho) / model.alpha, (1 / (model.alpha - 1)));
+            model.steadyStateK = Math.pow((model.delta + model.rho + model.theta * model.g) / model.alpha, (1 / (model.alpha - 1)));
             model.steadyStateC = model.steadyCapital.yValue(model.steadyStateK);
             model.growthPath = model.dynamicPath(model.initialK, model.initialC);
             model.balancedGrowthPath = model.generateBalancedGrowthPathData();
             model.positiveConsumption = (model.steadyStateC >= 0);
-            model.steadyStateOnGraph = (model.steadyStateK <= 2);
+            model.steadyStateOnGraph = (model.steadyStateK <= model.kMax) && (model.steadyStateC <= model.cMax);
             return model;
         };
         RamseyCassKoopmans.prototype.y = function (k) {
@@ -2980,7 +2980,7 @@ var EconGraphs;
         };
         RamseyCassKoopmans.prototype.cdot = function (k, c) {
             var model = this;
-            return (model.r(k) - model.rho) * c / model.theta;
+            return (model.r(k) - model.rho - model.theta * model.g) * c / model.theta;
         };
         RamseyCassKoopmans.prototype.normalizedNextPoint = function (k, c, distance) {
             var model = this;
@@ -2993,8 +2993,8 @@ var EconGraphs;
             var model = this;
             function tendsToZeroCapital(testK, testC) {
                 var iterations = 0;
-                while (model.cdot(testK, testC) * model.kdot(testK, testC) > 0 && iterations < 800) {
-                    var next = model.normalizedNextPoint(testK, testC, 0.005);
+                while (model.cdot(testK, testC) * model.kdot(testK, testC) > 0 && iterations < 10000) {
+                    var next = model.normalizedNextPoint(testK, testC, model.cMax * model.kMax / 100);
                     testK = next.k;
                     testC = next.c;
                     iterations++;
@@ -3004,25 +3004,25 @@ var EconGraphs;
             }
             var points = [{ x: 0, y: 0 }];
             var k = 0, c = 0;
-            var edgeNotReached = true;
+            var edgeNotReached = true, kIncrement = model.kMax * 0.002, cIncrement = model.cMax * 0.002;
             while (edgeNotReached) {
-                k = k + 0.05;
-                while (!tendsToZeroCapital(k, c) && c < 2) {
-                    c += 0.01;
+                k = k + kIncrement;
+                while (!tendsToZeroCapital(k, c) && c < model.cMax) {
+                    c += cIncrement;
                 }
-                if (c < 2) {
-                    points.push({ x: k, y: c });
+                if (c < model.cMax) {
+                    points.push({ x: k, y: c - 0.5 * cIncrement });
                 }
                 else {
-                    c = 2;
-                    k = k - 0.05;
-                    while (tendsToZeroCapital(k, c) && k < 2) {
-                        k += 0.01;
+                    c = model.cMax;
+                    k = k - kIncrement;
+                    while (tendsToZeroCapital(k, c) && k < model.kMax) {
+                        k += kIncrement * 0.1;
                     }
                     points.push({ x: k, y: c });
                     edgeNotReached = false;
                 }
-                if (k >= 2) {
+                if (k >= model.kMax) {
                     edgeNotReached = false;
                 }
             }
@@ -3033,7 +3033,7 @@ var EconGraphs;
             var points = [{ x: k, y: c }];
             var steadyStateAchieved = false, zeroConsumption = false, zeroCapital = false;
             var iterations = 0;
-            while (!steadyStateAchieved && !zeroConsumption && !zeroCapital && iterations < 500) {
+            while (!steadyStateAchieved && !zeroConsumption && !zeroCapital && iterations < 10000) {
                 iterations++;
                 var next = model.normalizedNextPoint(k, c, 0.005);
                 if (next.k < 0) {
@@ -3059,15 +3059,19 @@ var EconGraphs;
     EconGraphs.RamseyCassKoopmans = RamseyCassKoopmans;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
+'use strict';
 var EconGraphs;
 (function (EconGraphs) {
     var ProductionCost = (function (_super) {
         __extends(ProductionCost, _super);
         function ProductionCost(definition) {
             _super.call(this, definition);
+            this.costFunction = new KGMath.Functions[definition.costFunctionType](definition.costFunctionDef);
             this.totalCostCurve = new KG.FunctionPlot({
-                fn: this.totalCost,
+                name: 'totalCostCurve',
+                fn: this.modelProperty('costFunction'),
                 className: 'totalCost',
+                numSamplePoints: 201,
                 label: {
                     text: 'TC'
                 }
@@ -3075,11 +3079,11 @@ var EconGraphs;
         }
         ProductionCost.prototype._update = function (scope) {
             var productionCost = this;
+            productionCost.totalCost = function (quantity) {
+                return productionCost.costFunction.yValue(quantity);
+            };
             productionCost.fixedCost = productionCost.totalCost(0);
             return productionCost;
-        };
-        ProductionCost.prototype.totalCost = function (quantity) {
-            return this.costFunction.yValue(quantity);
         };
         ProductionCost.prototype.averageTotalCost = function (quantity) {
             return this.totalCost(quantity) / quantity;
@@ -3141,22 +3145,27 @@ var EconGraphs;
         function Monopoly(definition) {
             _super.call(this, definition);
             var m = this;
-            var Pref = 'model.price', Qref = 'model.quantity', ACQref = 'model.costFunction.averageTotalCost(model.quantity)', MCQref = 'model.costFunction.marginalCost(model.quantity)', MC0ref = 'model.costFunction.marginalCost(0)';
+            var p = m.modelProperty('price'), q = m.modelProperty('quantity'), mcq = m.modelProperty('costFunction.marginalCost(' + q + ')'), mc0 = m.modelProperty('costFunction.marginalCost(0)'), acq = m.modelProperty('costFunction.averageCost(' + q + ')');
+            m.demandFunction = new EconGraphs[definition.demandType](definition.demandDef, this.modelPath + '.demandFunction');
+            m.costFunction = new EconGraphs[definition.costType](definition.costDef, this.modelPath + '.costFunction');
             m.producerSurplus = new KG.Area({
                 data: [
-                    { x: 0, y: Pref },
-                    { x: Qref, y: Pref },
-                    { x: Qref, y: MCQref },
-                    { x: 0, y: MC0ref }
+                    { x: 0, y: p },
+                    { x: q, y: p },
+                    { x: q, y: mcq },
+                    { x: 0, y: mc0 }
                 ]
             });
             m.profit = new KG.Area({
                 data: [
-                    { x: 0, y: Pref },
-                    { x: Qref, y: Pref },
-                    { x: Qref, y: ACQref },
-                    { x: 0, y: ACQref }
-                ]
+                    { x: 0, y: p },
+                    { x: q, y: p },
+                    { x: q, y: acq },
+                    { x: 0, y: acq }
+                ],
+                label: {
+                    text: '\\pi'
+                }
             });
         }
         Monopoly.prototype._update = function (scope) {

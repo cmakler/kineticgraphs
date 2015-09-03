@@ -4,7 +4,9 @@ module EconGraphs {
 
     export interface MonopolyDefinition extends KG.ModelDefinition
     {
+        demandType: string;
         demandDef: DemandDefinition;
+        costType: string;
         costDef: ProductionCostDefinition;
         choosePrice?: boolean;
         quantity?: any;
@@ -56,28 +58,34 @@ module EconGraphs {
 
             var m = this;
 
-            var Pref = 'model.price',
-                Qref = 'model.quantity',
-                ACQref = 'model.costFunction.averageTotalCost(model.quantity)',
-                MCQref = 'model.costFunction.marginalCost(model.quantity)',
-                MC0ref = 'model.costFunction.marginalCost(0)';
+            var p = m.modelProperty('price'),
+                q = m.modelProperty('quantity'),
+                mcq = m.modelProperty('costFunction.marginalCost(' + q + ')'),
+                mc0 = m.modelProperty('costFunction.marginalCost(0)'),
+                acq = m.modelProperty('costFunction.averageCost(' + q + ')');
+
+            m.demandFunction = new EconGraphs[definition.demandType](definition.demandDef, this.modelPath + '.demandFunction');
+            m.costFunction = new EconGraphs[definition.costType](definition.costDef, this.modelPath + '.costFunction');
 
             m.producerSurplus = new KG.Area({
                 data: [
-                    {x: 0, y: Pref},
-                    {x: Qref, y: Pref},
-                    {x: Qref, y: MCQref},
-                    {x: 0, y: MC0ref}
+                    {x: 0, y: p},
+                    {x: q, y: p},
+                    {x: q, y: mcq},
+                    {x: 0, y: mc0}
                 ]
             });
 
             m.profit = new KG.Area({
                 data: [
-                    {x: 0, y: Pref},
-                    {x: Qref, y: Pref},
-                    {x: Qref, y: ACQref},
-                    {x: 0, y: ACQref}
-                ]
+                    {x: 0, y: p},
+                    {x: q, y: p},
+                    {x: q, y: acq},
+                    {x: 0, y: acq}
+                ],
+                label: {
+                    text: '\\pi'
+                }
             });
 
         }

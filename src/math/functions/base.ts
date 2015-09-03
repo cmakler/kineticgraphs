@@ -22,10 +22,14 @@ module KGMath.Functions {
 
         public level;
         public bases;
+        public yValue;
 
         constructor(definition) {
             definition.level = definition.level || 0;
             super(definition);
+            if(definition.hasOwnProperty('yValue')) {
+                this.yValue = definition.yValue;
+            }
         }
 
         // Returns the slope between (a,f(a)) and (b,f(b)).
@@ -78,14 +82,9 @@ module KGMath.Functions {
             return 0;   // overridden by subclass
         }
 
-        // Returns y value for given x, for a two-dimensional function
-        yValue(x) {
-            return 0;
-        }
-
         // Returns x value for given y, for a two-dimensional function
         xValue(y) {
-            return 0;
+            return null;
         }
 
         points(view, yIsIndependent, numSamplePoints) {
@@ -101,14 +100,14 @@ module KGMath.Functions {
             for(var i = 0; i < numSamplePoints; i++) {
                 var x = xSamplePoints[i];
                 var yOfX = fn.yValue(x);
-                if(view.yAxis.domain.contains(yOfX)) {
+                if(view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i-1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i+1])))) {
                     points.push({x: x, y: yOfX})
-                }
+                };
                 var y = ySamplePoints[i];
                 var xOfY = fn.xValue(y);
                 if(view.xAxis.domain.contains(xOfY)) {
                     points.push({x: xOfY, y: y})
-                }
+                };
             }
 
             if (yIsIndependent) {

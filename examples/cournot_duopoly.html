@@ -61,8 +61,8 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id:'firm1',
-                    xAxis: {min: 0, max: 100, title: '\\text{Firm 1 Quantity }(q_1)'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Firm 1 Quantity }(q_1)'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
                     objects: ['model.residualDemand1.curve','model.residualDemand1.priceLine','model.residualDemand1.quantityDemandedPoint']
                 }
             },
@@ -70,8 +70,8 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id:'firm2',
-                    xAxis: {min: 0, max: 100, title: '\\text{Firm 2 Quantity }(q_2)'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Firm 2 Quantity }(q_2)'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
                     objects: ['model.residualDemand2.curve','model.residualDemand2.priceLine','model.residualDemand2.quantityDemandedPoint']
                 }
             },
@@ -79,8 +79,8 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id:'market',
-                    xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
                     objects: ['model.marketDemand.curve','model.marketDemand.priceLine','model.marketDemand.quantityDemandedPoint']
                 }
             }

@@ -19,17 +19,19 @@
 <div ng-controller="KineticGraphCtrl">
     <h1>Cost Curves</h1>
     <p>Drag the endpoints of the demand curve to change its slope. Drag the price up and down to see how the price elasticity at point A changes.</p>
+    <div id="fcSlider"></div>
     <hr/>
     <div class="row">
         <div class="col-md-6">
-            <div id="graph"></div>
+            <h2>Total Costs</h2>
+            <hr/>
+            <div id="totalGraph"></div>
         </div>
-        <div class="col-md-6 big">
-            <p class="math displayMath">\color{ {{ color('demand') }} }{\frac{dQ^D}{dP} = \frac{ {{ params.demandQuantityIntercept | number:0 }} }{ {{ params.demandPriceIntercept | number:0}} } = {{ model.demandFunction.inverseSlope | number:2 }}}</p>
+        <div class="col-md-6">
+            <h2>Unit Costs</h2>
             <hr/>
-            <p class="math displayMath">\epsilon_{Q^D_A,P_A} = \frac{P_A}{Q^D_A} \times \color{ {{ color('demand') }} }{ \frac{dQ^D}{dP} } = \frac{ {{ params.price | number:0 }} }{ {{ model.quantityAtPrice(params.price) | number:1 }} } \times \color{ {{ color('demand') }} }{ {{ model.demandFunction.inverseSlope | number:2 }} } = {{ model.priceElasticity(params.price).elasticityNumber() | number:2 }}</p>
-            <hr/>
-            <p class="math displayMath">\left| \epsilon_{Q^D_A,P_A} \right| = {{ model.priceElasticity(params.price).elasticityComparator}} \Rightarrow \text{ {{ model.priceElasticity(params.price).elasticityWord }}}</p>
+            <div id="unitGraph"></div>
+
         </div>
     </div>
 </div>
@@ -44,19 +46,51 @@
 
         ],
         model: {
-            type: 'EconGraphs.ProductionCosts',
+            type: 'EconGraphs.ProductionCost',
             definition: {
-
+                costFunctionType: 'Polynomial',
+                costFunctionDef: {termDefs:[
+                    {
+                        coefficient: 0.1,
+                        powers: [2]
+                    },
+                    {
+                        coefficient: 1,
+                        powers: [1]
+                    },
+                    {
+                        coefficient: 'params.fc',
+                        powers: [0]
+                    }
+                ]}
             }
         },
         views: [
             {
                 type: 'KG.Graph',
                 definition: {
-                    element_id:'graph',
-                    xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice','model.consumerSurplus']
+                    element_id:'totalGraph',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(q)'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Total Costs (Dollars)}'},
+                    objects: ['model.totalCostCurve']
+                }
+            },
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id:'unitGraph',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(q)'},
+                    yAxisDef: {min: 0, max: 5, title: '\\text{Unit Costs (Dollars per Unit)}'},
+                    objects: []
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'fcSlider',
+                    param: 'fc',
+                    precision: '1',
+                    axisDef: {min: 0, max: 100, tickValues: [0, 50, 100]}
                 }
             }
         ]

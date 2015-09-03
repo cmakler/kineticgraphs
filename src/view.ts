@@ -180,10 +180,10 @@ module KG
 
                 // draw axes
                 if(view.xAxis) {
-                    view.xAxis.draw(axes, view.divs, axisDimensions, view.margins);
+                    view.xAxis.update(scope).draw(axes, view.divs, axisDimensions, view.margins);
                 }
                 if(view.yAxis) {
-                    view.yAxis.draw(axes, view.divs, axisDimensions, view.margins);
+                    view.yAxis.update(scope).draw(axes, view.divs, axisDimensions, view.margins);
                 }
 
             }
@@ -278,7 +278,7 @@ module KG
                         newY = yAxis.scale.invert(mouseY + yDelta);
                         if(newY < yAxis.domain.min) {
                             dragUpdate[yParam] = yAxis.domain.min;
-                        } else if(newY > xAxis.domain.max) {
+                        } else if(newY > yAxis.domain.max) {
                             dragUpdate[yParam] = yAxis.domain.max;
                         } else {
                             dragUpdate[yParam] = newY;

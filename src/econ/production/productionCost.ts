@@ -1,10 +1,13 @@
 /// <reference path="../eg.ts"/>
 
+'use strict';
+
 module EconGraphs {
 
     export interface ProductionCostDefinition extends KG.ModelDefinition
     {
-        costFunction?: KGMath.Functions.BaseDefinition;
+        costFunctionType?: string;
+        costFunctionDef?: KGMath.Functions.BaseDefinition;
     }
 
     export interface IProductionCost extends KG.IModel
@@ -27,12 +30,11 @@ module EconGraphs {
         averageVariableCostCurve: KG.FunctionPlot;
         marginalCostCurve: KG.FunctionPlot;
         averageMarginalCostCurve: KG.FunctionPlot;
-
-
     }
 
     export class ProductionCost extends KG.Model implements IProductionCost
     {
+        public totalCost;
         public fixedCost;
         public costFunction;
         public totalCostCurve;
@@ -47,27 +49,28 @@ module EconGraphs {
         constructor(definition:ProductionCostDefinition) {
             super(definition);
 
+            this.costFunction = new KGMath.Functions[definition.costFunctionType](definition.costFunctionDef);
+
             this.totalCostCurve = new KG.FunctionPlot({
-                fn: this.totalCost,
+                name: 'totalCostCurve',
+                fn: this.modelProperty('costFunction'),
                 className: 'totalCost',
+                numSamplePoints:201,
                 label: {
                     text: 'TC'
                 }
             })
+
+
+
         }
 
         _update(scope) {
 
             var productionCost = this;
-
+            productionCost.totalCost = function(quantity) {return productionCost.costFunction.yValue(quantity)};
             productionCost.fixedCost = productionCost.totalCost(0);
-
             return productionCost;
-
-        }
-
-        totalCost(quantity) {
-            return this.costFunction.yValue(quantity);
         }
 
         averageTotalCost(quantity) {

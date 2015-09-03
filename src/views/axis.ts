@@ -63,6 +63,12 @@ module KG
             // overridden by child class
         }
 
+        _update(scope) {
+            this.domain.min = this.min;
+            this.domain.max = this.max;
+            return this;
+        }
+
         scaleFunction(pixelLength, domain) {
             return d3.scale.linear(); // overridden by child class
         }

@@ -47,6 +47,9 @@ module EconGraphs {
         kdot: (k:number, c:number) => number;
         cdot: (k:number, c:number) => number;
 
+        kMax: number;
+        cMax: number;
+
     }
 
     export class RamseyCassKoopmans extends KG.Model implements IRamseyCassKoopmans
@@ -72,6 +75,8 @@ module EconGraphs {
         public steadyCapitalView;
         public steadyConsumptionView;
         public steadyStateView;
+        public cMax;
+        public kMax;
 
         constructor(definition:MidpointElasticityDefinition) {
             super(definition);
@@ -144,10 +149,7 @@ module EconGraphs {
                 name: 'balancedGrowthPath',
                 data: 'model.balancedGrowthPath',
                 className: 'growth dashed',
-                interpolation: 'basis',
-                label: {
-                    text: 'BGP'
-                }
+                interpolation: 'basis'
             })
         }
 
@@ -155,12 +157,12 @@ module EconGraphs {
             var model = this;
 
             model.steadyCapital.update(scope);
-            model.steadyStateK = Math.pow((model.delta + model.rho)/model.alpha,(1/(model.alpha - 1)));
+            model.steadyStateK = Math.pow((model.delta + model.rho + model.theta*model.g)/model.alpha,(1/(model.alpha - 1)));
             model.steadyStateC = model.steadyCapital.yValue(model.steadyStateK);
             model.growthPath = model.dynamicPath(model.initialK, model.initialC);
             model.balancedGrowthPath = model.generateBalancedGrowthPathData();
             model.positiveConsumption = (model.steadyStateC >= 0);
-            model.steadyStateOnGraph = (model.steadyStateK <= 2);
+            model.steadyStateOnGraph = (model.steadyStateK <= model.kMax) && (model.steadyStateC <= model.cMax);
 
             return model;
         }
@@ -182,7 +184,7 @@ module EconGraphs {
 
         cdot(k,c) {
             var model = this;
-            return (model.r(k) - model.rho)*c/model.theta;
+            return (model.r(k) - model.rho - model.theta * model.g)*c/model.theta;
         }
 
         normalizedNextPoint(k,c,distance) {
@@ -210,8 +212,8 @@ module EconGraphs {
                 var iterations = 0;
 
                 // follow the dynamic path as long as it's heading NE or SW
-                while(model.cdot(testK,testC)*model.kdot(testK,testC) > 0 && iterations < 800) {
-                    var next = model.normalizedNextPoint(testK,testC,0.005);
+                while(model.cdot(testK,testC)*model.kdot(testK,testC) > 0 && iterations < 10000) {
+                    var next = model.normalizedNextPoint(testK,testC, model.cMax*model.kMax/100);
                     testK = next.k;
                     testC = next.c;
                     iterations++;
@@ -226,25 +228,27 @@ module EconGraphs {
             var k = 0,
                 c = 0;
 
-            var edgeNotReached = true;
+            var edgeNotReached = true,
+                kIncrement = model.kMax*0.002,
+                cIncrement = model.cMax*0.002;
 
             while(edgeNotReached) {
-                k = k + 0.05;
-                while(!tendsToZeroCapital(k,c) && c < 2) {
-                    c += 0.01;
+                k = k + kIncrement;
+                while(!tendsToZeroCapital(k,c) && c < model.cMax) {
+                    c += cIncrement;
                 }
-                if(c < 2) {
-                    points.push({x: k, y: c});
+                if(c < model.cMax) {
+                    points.push({x: k, y: c - 0.5*cIncrement});
                 } else {
-                    c = 2;
-                    k = k - 0.05;
-                    while(tendsToZeroCapital(k,c) && k < 2) {
-                        k += 0.01;
+                    c = model.cMax;
+                    k = k - kIncrement;
+                    while(tendsToZeroCapital(k,c) && k < model.kMax) {
+                        k += kIncrement*0.1;
                     }
                     points.push({x: k, y: c});
                     edgeNotReached = false;
                 }
-                if(k >= 2) {
+                if(k >= model.kMax) {
                     edgeNotReached = false;
                 }
             }
@@ -264,7 +268,7 @@ module EconGraphs {
 
             var iterations = 0;
 
-            while(!steadyStateAchieved && !zeroConsumption && !zeroCapital && iterations < 500) {
+            while(!steadyStateAchieved && !zeroConsumption && !zeroCapital && iterations < 10000) {
 
                 iterations++;
 
