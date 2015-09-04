@@ -66,7 +66,7 @@ module KGMath.Functions {
         // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
         derivative(n) {
             var p = this;
-            return new Polynomial({terms: p.terms.map(
+            return new Polynomial({termDefs: p.terms.map(
                 function(term) { return term.derivative(n)}
             )});
         }

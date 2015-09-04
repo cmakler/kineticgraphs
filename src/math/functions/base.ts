@@ -1,7 +1,6 @@
 module KGMath.Functions {
 
     export interface BaseDefinition {
-        yValue? : () => number;
         level?: any;
     }
 
@@ -22,7 +21,6 @@ module KGMath.Functions {
 
         public level;
         public bases;
-        public yValue;
 
         constructor(definition) {
             definition.level = definition.level || 0;
@@ -82,6 +80,10 @@ module KGMath.Functions {
             return 0;   // overridden by subclass
         }
 
+        yValue(x) {
+            return null; // overridden by subclass
+        }
+
         // Returns x value for given y, for a two-dimensional function
         xValue(y) {
             return null;
@@ -100,14 +102,18 @@ module KGMath.Functions {
             for(var i = 0; i < numSamplePoints; i++) {
                 var x = xSamplePoints[i];
                 var yOfX = fn.yValue(x);
-                if(view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i-1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i+1])))) {
+                if(isNaN(yOfX) || yOfX == Infinity) {
+                    console.log(yOfX,' is not plottable')
+                } else if(view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i-1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i+1])))) {
                     points.push({x: x, y: yOfX})
-                };
+                }
                 var y = ySamplePoints[i];
                 var xOfY = fn.xValue(y);
-                if(view.xAxis.domain.contains(xOfY)) {
+                if(isNaN(xOfY) || xOfY == Infinity) {
+                    console.log(xOfY,' is not plottable')
+                } else if(view.xAxis.domain.contains(xOfY)) {
                     points.push({x: xOfY, y: y})
-                };
+                }
             }
 
             if (yIsIndependent) {

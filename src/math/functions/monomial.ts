@@ -32,8 +32,13 @@ module KGMath.Functions {
         public coefficient;
         public powers;
         public bases;
+        public monomialDefs: any;
 
         constructor(definition:MonomialDefinition) {
+            this.monomialDefs = {
+                coefficient: definition.coefficient.toString(),
+                powers: definition.powers.map(function(p) {return p.toString()})
+            }
             super(definition);
         }
 
@@ -82,11 +87,11 @@ module KGMath.Functions {
 
                 // the new coefficient is the old coefficient times
                 //the power of the variable whose derivative we're taking
-                coefficient: m.coefficient * m.powers[n],
+                coefficient: "(" + m.monomialDefs.coefficient + ")*(" + m.monomialDefs.powers[n] + ")",
 
-                powers: m.powers.map(function (p, index) {
+                powers: m.monomialDefs.powers.map(function (p, index) {
                     if (index == n) {
-                        return p - 1;
+                        return p + "-1";
                     } else {
                         return p
                     }
@@ -142,14 +147,25 @@ module KGMath.Functions {
 
         // returns the y value corresponding to the given x value for m(x,y) = m.level
         yValue(x) {
-            this.setBase(1,x);
-            return this.levelCurve(2).value();
+            var m = this;
+            if(m.powers.length == 1) {
+                return m.coefficient * Math.pow(x,m.powers[0]);
+            } else {
+                this.setBase(1,x);
+                return this.levelCurve(2).value();
+            }
+
         }
 
         // returns the x value corresponding to the given y value for m(x,y) = m.level
         xValue(y) {
-            this.setBase(2,y);
-            return this.levelCurve(1).value();
+            var m = this;
+            if(this.powers.length == 1) {
+                return Math.pow(y/m.coefficient,1/m.powers[0]);
+            } else {
+                this.setBase(2,y);
+                return this.levelCurve(1).value();
+            }
         }
 
     }

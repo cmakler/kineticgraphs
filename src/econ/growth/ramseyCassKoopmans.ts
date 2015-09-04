@@ -238,7 +238,7 @@ module EconGraphs {
                     c += cIncrement;
                 }
                 if(c < model.cMax) {
-                    points.push({x: k, y: c - 0.5*cIncrement});
+                    points.push({x: k, y: c});
                 } else {
                     c = model.cMax;
                     k = k - kIncrement;

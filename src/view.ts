@@ -9,8 +9,8 @@ module KG
         element_id?: string;
         maxDimensions?: IDimensions;
         margins?: IMargins;
-        xAxis?: AxisDefinition;
-        yAxis?: AxisDefinition;
+        xAxisDef?: AxisDefinition;
+        yAxisDef?: AxisDefinition;
         objects?: ViewObjectDefinition[];
         background?: string;
         mask?: boolean;
@@ -48,7 +48,7 @@ module KG
 
     export class View extends Model implements IView
     {
-        private element_id;
+        public element_id;
         public maxDimensions;
         public dimensions;
         public margins;
@@ -64,11 +64,11 @@ module KG
         constructor(definition:ViewDefinition) {
             definition = _.defaults(definition,{background:'white',mask:true});
             super(definition);
-            if(definition.hasOwnProperty('xAxis')){
-                this.xAxis = new XAxis(definition.xAxis);
+            if(definition.hasOwnProperty('xAxisDef')){
+                this.xAxis = new XAxis(definition.xAxisDef);
             }
-            if(definition.hasOwnProperty('yAxis')){
-                this.yAxis = new YAxis(definition.yAxis);
+            if(definition.hasOwnProperty('yAxisDef')){
+                this.yAxis = new YAxis(definition.yAxisDef);
             }
         }
 

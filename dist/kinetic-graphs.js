@@ -507,6 +507,9 @@ var KGMath;
             Base.prototype.value = function (bases) {
                 return 0; // overridden by subclass
             };
+            Base.prototype.yValue = function (x) {
+                return null; // overridden by subclass
+            };
             // Returns x value for given y, for a two-dimensional function
             Base.prototype.xValue = function (y) {
                 return null;
@@ -518,16 +521,20 @@ var KGMath;
                 for (var i = 0; i < numSamplePoints; i++) {
                     var x = xSamplePoints[i];
                     var yOfX = fn.yValue(x);
-                    if (view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i - 1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i + 1])))) {
+                    if (isNaN(yOfX) || yOfX == Infinity) {
+                        console.log(yOfX, ' is not plottable');
+                    }
+                    else if (view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i - 1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i + 1])))) {
                         points.push({ x: x, y: yOfX });
                     }
-                    ;
                     var y = ySamplePoints[i];
                     var xOfY = fn.xValue(y);
-                    if (view.xAxis.domain.contains(xOfY)) {
+                    if (isNaN(xOfY) || xOfY == Infinity) {
+                        console.log(xOfY, ' is not plottable');
+                    }
+                    else if (view.xAxis.domain.contains(xOfY)) {
                         points.push({ x: xOfY, y: y });
                     }
-                    ;
                 }
                 if (yIsIndependent) {
                     return points.sort(KG.sortObjects('y'));
@@ -558,6 +565,12 @@ var KGMath;
         var Monomial = (function (_super) {
             __extends(Monomial, _super);
             function Monomial(definition) {
+                this.monomialDefs = {
+                    coefficient: definition.coefficient.toString(),
+                    powers: definition.powers.map(function (p) {
+                        return p.toString();
+                    })
+                };
                 _super.call(this, definition);
             }
             // Establish setters
@@ -595,10 +608,10 @@ var KGMath;
                 return new Monomial({
                     // the new coefficient is the old coefficient times
                     //the power of the variable whose derivative we're taking
-                    coefficient: m.coefficient * m.powers[n],
-                    powers: m.powers.map(function (p, index) {
+                    coefficient: "(" + m.monomialDefs.coefficient + ")*(" + m.monomialDefs.powers[n] + ")",
+                    powers: m.monomialDefs.powers.map(function (p, index) {
                         if (index == n) {
-                            return p - 1;
+                            return p + "-1";
                         }
                         else {
                             return p;
@@ -641,13 +654,25 @@ var KGMath;
             };
             // returns the y value corresponding to the given x value for m(x,y) = m.level
             Monomial.prototype.yValue = function (x) {
-                this.setBase(1, x);
-                return this.levelCurve(2).value();
+                var m = this;
+                if (m.powers.length == 1) {
+                    return m.coefficient * Math.pow(x, m.powers[0]);
+                }
+                else {
+                    this.setBase(1, x);
+                    return this.levelCurve(2).value();
+                }
             };
             // returns the x value corresponding to the given y value for m(x,y) = m.level
             Monomial.prototype.xValue = function (y) {
-                this.setBase(2, y);
-                return this.levelCurve(1).value();
+                var m = this;
+                if (this.powers.length == 1) {
+                    return Math.pow(y / m.coefficient, 1 / m.powers[0]);
+                }
+                else {
+                    this.setBase(2, y);
+                    return this.levelCurve(1).value();
+                }
             };
             return Monomial;
         })(Functions.Base);
@@ -704,7 +729,7 @@ var KGMath;
             // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
             Polynomial.prototype.derivative = function (n) {
                 var p = this;
-                return new Polynomial({ terms: p.terms.map(function (term) {
+                return new Polynomial({ termDefs: p.terms.map(function (term) {
                     return term.derivative(n);
                 }) });
             };
@@ -1056,28 +1081,53 @@ var KG;
         }
         Point.prototype.createSubObjects = function (view) {
             var p = this;
-            if (p.labelDiv) {
-                view.addObject(p.labelDiv);
+            if (view instanceof KG.TwoVerticalGraphs) {
+                if (p.labelDiv) {
+                    view.topGraph.addObject(p.labelDiv);
+                }
+                if (p.verticalDropline) {
+                    var continuationDropLine = new KG.VerticalDropline({
+                        name: p.verticalDropline.name,
+                        coordinates: { x: p.verticalDropline.coordinates.x, y: view.bottomGraph.yAxis.domain.max },
+                        draggable: p.verticalDropline.xDrag,
+                        axisLabel: p.verticalDropline.labelDiv.definition.text
+                    });
+                    p.verticalDropline.labelDiv.definition.text = '';
+                    view.topGraph.addObject(p.verticalDropline);
+                    view.bottomGraph.addObject(continuationDropLine);
+                    p.verticalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                    continuationDropLine.createSubObjects(view.bottomGraph);
+                }
+                if (p.horizontalDropline) {
+                    view.topGraph.addObject(p.horizontalDropline);
+                    p.horizontalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                }
             }
-            if (p.verticalDropline) {
-                view.addObject(p.verticalDropline);
-                p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
-            }
-            if (p.horizontalDropline) {
-                view.addObject(p.horizontalDropline);
-                p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+            else {
+                if (p.labelDiv) {
+                    view.addObject(p.labelDiv);
+                }
+                if (p.verticalDropline) {
+                    view.addObject(p.verticalDropline);
+                    p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                }
+                if (p.horizontalDropline) {
+                    view.addObject(p.horizontalDropline);
+                    p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                }
             }
             return view;
         };
         Point.prototype.render = function (view) {
             var point = this, draggable = (point.xDrag || point.yDrag);
+            var subview = (view instanceof KG.TwoVerticalGraphs) ? view.topGraph : view;
             if (!point.hasOwnProperty('coordinates')) {
                 return view;
             }
             if (isNaN(point.coordinates.x) || isNaN(point.coordinates.y) || point.coordinates.x == Infinity || point.coordinates.y == Infinity) {
                 return view;
             }
-            var group = view.objectGroup(point.name, point.initGroupFn(), true);
+            var group = subview.objectGroup(point.name, point.initGroupFn(), true);
             if (point.symbol === 'none') {
                 point.show = false;
                 point.labelDiv.show = false;
@@ -1089,14 +1139,14 @@ var KG;
                     'class': point.classAndVisibility(),
                     'fill': point.color,
                     'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                    'transform': view.translateByCoordinates(point.coordinates)
+                    'transform': subview.translateByCoordinates(point.coordinates)
                 });
             }
             catch (error) {
                 console.log(error);
             }
             if (draggable) {
-                return point.setDragBehavior(view, pointSymbol);
+                return point.setDragBehavior(subview, pointSymbol);
             }
             else {
                 return view;
@@ -1234,12 +1284,18 @@ var KG;
                 var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
                 if (labelCoordinates.y > view.yAxis.domain.max) {
                     labelCoordinates.y = view.yAxis.domain.max;
+                    curve.labelDiv.align = 'center';
+                    curve.labelDiv.valign = 'bottom';
                 }
-                if (labelCoordinates.x > view.xAxis.domain.max) {
+                else if (labelCoordinates.x >= view.xAxis.domain.max) {
                     labelCoordinates.x = view.xAxis.domain.max;
+                    curve.labelDiv.align = 'left';
+                    curve.labelDiv.valign = 'middle';
                 }
-                curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
-                curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                else {
+                    curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
+                    curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                }
                 curve.labelDiv.coordinates = labelCoordinates;
             }
         };
@@ -1685,11 +1741,11 @@ var KG;
         function View(definition) {
             definition = _.defaults(definition, { background: 'white', mask: true });
             _super.call(this, definition);
-            if (definition.hasOwnProperty('xAxis')) {
-                this.xAxis = new KG.XAxis(definition.xAxis);
+            if (definition.hasOwnProperty('xAxisDef')) {
+                this.xAxis = new KG.XAxis(definition.xAxisDef);
             }
-            if (definition.hasOwnProperty('yAxis')) {
-                this.yAxis = new KG.YAxis(definition.yAxis);
+            if (definition.hasOwnProperty('yAxisDef')) {
+                this.yAxis = new KG.YAxis(definition.yAxisDef);
             }
         }
         View.prototype.render = function (scope, redraw) {
@@ -1913,7 +1969,7 @@ var KG;
             this.scale = this.scaleFunction(graph_dimensions.width, this.domain);
             var axis_vis = vis.append('g').attr('class', 'x axis').attr("transform", "translate(0," + graph_dimensions.height + ")");
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("bottom").ticks(this.ticks).tickValues(this.tickValues));
-            var title = divs.append("div").style('text-align', 'center').style('position', 'absolute').style('width', graph_dimensions.width + 'px').style('height', (margins.bottom - this.axisBuffer) + 'px').style('left', margins.left + 'px').style('top', (margins.top + graph_dimensions.height + this.axisBuffer) + 'px').attr('class', 'big');
+            var title = divs.append("div").style('text-align', 'center').style('position', 'absolute').style('width', graph_dimensions.width + 'px').style('height', (margins.bottom - this.axisBuffer) + 'px').style('left', margins.left + 'px').style('top', (margins.top + graph_dimensions.height + this.axisBuffer) + 'px').attr('class', 'medium');
             katex.render(this.title.toString(), title[0][0]);
         };
         return XAxis;
@@ -1931,7 +1987,7 @@ var KG;
             this.scale = this.scaleFunction(graph_dimensions.height, this.domain);
             var axis_vis = vis.append('g').attr('class', 'y axis');
             axis_vis.call(d3.svg.axis().scale(this.scale).orient("left").ticks(this.ticks).tickValues(this.tickValues));
-            var title = divs.append("div").style('text-align', 'center').style('position', 'absolute').style('width', graph_dimensions.height + 'px').style('height', (margins.left - this.axisBuffer) + 'px').style('left', 0.5 * (margins.left - graph_dimensions.height - this.axisBuffer) + 'px').style('top', margins.top + 0.5 * (graph_dimensions.height - margins.left + this.axisBuffer) + 'px').style('-webkit-transform', 'rotate(-90deg)').style('transform', 'rotate(-90deg)').attr('class', 'big');
+            var title = divs.append("div").style('text-align', 'center').style('position', 'absolute').style('width', graph_dimensions.height + 'px').style('height', (margins.left - this.axisBuffer) + 'px').style('left', 0.5 * (margins.left - graph_dimensions.height - this.axisBuffer) + 'px').style('top', margins.top + 0.5 * (graph_dimensions.height - margins.left + this.axisBuffer) + 'px').style('-webkit-transform', 'rotate(-90deg)').style('transform', 'rotate(-90deg)').attr('class', 'medium');
             katex.render(this.title.toString(), title[0][0]);
         };
         return YAxis;
@@ -1947,10 +2003,8 @@ var KG;
         function Graph(definition) {
             // ensure dimensions and margins are set; set any missing elements to defaults
             definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
-            definition.margins = _.defaults(definition.margins || {}, { top: 20, left: 80, bottom: 70, right: 20 });
+            definition.margins = _.defaults(definition.margins || {}, { top: 20, left: 100, bottom: 70, right: 20 });
             _super.call(this, definition);
-            this.xAxis = new KG.XAxis(definition.xAxisDef);
-            this.yAxis = new KG.YAxis(definition.yAxisDef);
         }
         // Check to see if a point is on the graph
         Graph.prototype.onGraph = function (coordinates) {
@@ -1988,6 +2042,77 @@ var KG;
         return Graph;
     })(KG.View);
     KG.Graph = Graph;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var TwoVerticalGraphs = (function (_super) {
+        __extends(TwoVerticalGraphs, _super);
+        function TwoVerticalGraphs(definition) {
+            // ensure dimensions and margins are set; set any missing elements to defaults
+            definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
+            _super.call(this, definition);
+            // if top and bottom graphs share a common x axis, create axis elements
+            if (definition.hasOwnProperty('xAxisDef')) {
+                definition.topGraph.xAxisDef = _.clone(definition.xAxisDef);
+                definition.topGraph.xAxisDef.title = '';
+                definition.topGraph.margins = _.defaults(definition.topGraph.margins || {}, { top: 20, left: 100, bottom: 20, right: 20 });
+                definition.bottomGraph.xAxisDef = _.clone(definition.xAxisDef);
+                definition.bottomGraph.margins = _.defaults(definition.bottomGraph.margins || {}, { top: 20, left: 100, bottom: 70, right: 20 });
+            }
+            // establish definition for top and bottom graphs
+            definition.topGraph.element_id = definition.element_id + '_top';
+            this.topGraph = new KG.Graph(definition.topGraph);
+            definition.bottomGraph.element_id = definition.element_id + '_bottom';
+            this.bottomGraph = new KG.Graph(definition.bottomGraph);
+        }
+        TwoVerticalGraphs.prototype.redraw = function (scope) {
+            var view = this;
+            // Establish dimensions of the view
+            var element = $('#' + view.element_id)[0];
+            view.dimensions = {
+                width: Math.min(view.maxDimensions.width, element.clientWidth),
+                height: Math.min(view.maxDimensions.height, window.innerHeight - (10 + $('#' + view.element_id).offset().top - $(window).scrollTop()))
+            };
+            var graphHeight = view.dimensions.height / 2;
+            var bottomGraphTranslation = KG.translateByPixelCoordinates({ x: 0, y: graphHeight });
+            d3.select(element).select('div').remove();
+            // Create new div element to contain SVG
+            var frame = d3.select(element).append('div');
+            frame.append('div').attr('id', view.topGraph.element_id);
+            frame.append('div').attr({ 'id': view.bottomGraph.element_id, 'style': bottomGraphTranslation });
+            view.topGraph.maxDimensions.height = graphHeight;
+            view.bottomGraph.maxDimensions.height = graphHeight;
+            view.topGraph.updateParams = view.updateParams;
+            view.bottomGraph.updateParams = view.updateParams;
+            view.bottomGraph.redraw(scope);
+            view.topGraph.redraw(scope);
+            return view.drawObjects(scope);
+        };
+        TwoVerticalGraphs.prototype.drawObjects = function (scope) {
+            var view = this;
+            view.topGraph.drawObjects(scope);
+            view.bottomGraph.drawObjects(scope);
+            if (view.hasOwnProperty('objects')) {
+                view.objects.forEach(function (object) {
+                    object.createSubObjects(view);
+                });
+                view.objects.forEach(function (object) {
+                    object.update(scope).render(view);
+                });
+                view.topGraph.objects.forEach(function (object) {
+                    object.update(scope).render(view.topGraph);
+                });
+                view.bottomGraph.objects.forEach(function (object) {
+                    object.update(scope).render(view.bottomGraph);
+                });
+            }
+            return view;
+        };
+        return TwoVerticalGraphs;
+    })(KG.View);
+    KG.TwoVerticalGraphs = TwoVerticalGraphs;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -3011,7 +3136,7 @@ var EconGraphs;
                     c += cIncrement;
                 }
                 if (c < model.cMax) {
-                    points.push({ x: k, y: c - 0.5 * cIncrement });
+                    points.push({ x: k, y: c });
                 }
                 else {
                     c = model.cMax;
@@ -3140,6 +3265,170 @@ var EconGraphs;
 /// <reference path="../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
+    var OneGoodUtility = (function (_super) {
+        __extends(OneGoodUtility, _super);
+        function OneGoodUtility(definition, modelPath) {
+            definition = _.defaults(definition, {
+                className: 'utility',
+                curveLabel: 'u(c)',
+                marginalCurveLabel: 'u\'(c)'
+            });
+            _super.call(this, definition, modelPath);
+            this.utilityFunction = new KGMath.Functions[definition.type](definition.def);
+            this.utilityFunctionView = new KG.FunctionPlot({
+                name: 'utilityFunction',
+                className: this.className,
+                fn: 'model.utilityFunction',
+                arrows: 'NONE',
+                label: {
+                    text: this.curveLabel
+                }
+            });
+            if (this.utilityFunction.derivative()) {
+                this.marginalUtilityFunction = this.utilityFunction.derivative();
+                this.marginalUtilityFunctionView = new KG.FunctionPlot({
+                    name: 'marginalUtilityFunction',
+                    className: this.className,
+                    fn: 'model.marginalUtilityFunction',
+                    arrows: 'NONE',
+                    label: {
+                        text: this.marginalCurveLabel
+                    }
+                });
+            }
+        }
+        OneGoodUtility.prototype._update = function (scope) {
+            var u = this;
+            u.utilityFunction.update(scope);
+            if (this.utilityFunction.derivative()) {
+                this.marginalUtilityFunction.update(scope);
+            }
+            return u;
+        };
+        OneGoodUtility.prototype.utilityAtQuantity = function (c) {
+            return this.utilityFunction.yValue(c);
+        };
+        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (q, label) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Line({
+                name: 'slopeLine',
+                type: 'PointSlopeLine',
+                className: 'demand dotted',
+                def: {
+                    p: { x: q, y: this.utilityFunction.yValue(q) },
+                    m: this.marginalUtilityFunction.yValue(q)
+                },
+                label: {
+                    text: 'u\'(c' + labelSubscript + ')'
+                }
+            });
+        };
+        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, label, dragParam) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Point({
+                name: 'utilityAtQ',
+                coordinates: { x: q, y: this.utilityFunction.yValue(q) },
+                size: 500,
+                class: 'utility',
+                xDrag: dragParam,
+                label: {
+                    text: label
+                },
+                droplines: {
+                    vertical: 'c' + labelSubscript,
+                    horizontal: 'u(c' + labelSubscript + ')'
+                }
+            });
+        };
+        OneGoodUtility.prototype.marginalUtilityAtQuantityPoint = function (q, label, dragParam) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Point({
+                name: 'marginalUtilityAtQ',
+                coordinates: { x: q, y: this.marginalUtilityFunction.yValue(q) },
+                size: 500,
+                class: 'utility',
+                xDrag: dragParam,
+                label: {
+                    text: label
+                },
+                droplines: {
+                    horizontal: 'u\'(c' + labelSubscript + ')'
+                }
+            });
+        };
+        return OneGoodUtility;
+    })(KG.Model);
+    EconGraphs.OneGoodUtility = OneGoodUtility;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var ConstantRRA = (function (_super) {
+        __extends(ConstantRRA, _super);
+        function ConstantRRA(definition, modelPath) {
+            definition.type = 'Polynomial';
+            if (typeof definition.rra == 'number') {
+                definition.def = {
+                    termDefs: [
+                        {
+                            coefficient: 1 / (1 - definition.rra),
+                            powers: [1 - definition.rra]
+                        },
+                        {
+                            coefficient: -1 / (1 - definition.rra),
+                            powers: [0]
+                        }
+                    ]
+                };
+            }
+            else if (typeof definition.rra == 'string') {
+                definition.def = {
+                    termDefs: [
+                        {
+                            coefficient: "1/(1-" + definition.rra + ")",
+                            powers: ["1 - " + definition.rra]
+                        },
+                        {
+                            coefficient: "-1/(1-" + definition.rra + ")",
+                            powers: [0]
+                        }
+                    ]
+                };
+            }
+            _super.call(this, definition, modelPath);
+        }
+        ConstantRRA.prototype.utilityFormula = function (c) {
+            var rra = this.rra;
+            if (c) {
+                if (rra == 0) {
+                    return c.toFixed(2) + '-1';
+                }
+                else if (rra.toFixed(2) == 1) {
+                    return '\\log ' + c.toFixed(2);
+                }
+                else {
+                    return "\\frac{" + c.toFixed(2) + "^{" + (1 - rra).toFixed(2) + "} - 1}{ " + (1 - rra).toFixed(2) + " } ";
+                }
+            }
+            else {
+                if (rra == 0) {
+                    return 'c - 1';
+                }
+                else if (rra.toFixed(2) == 1) {
+                    return '\\log c';
+                }
+                else {
+                    return "\\frac{c^{" + (1 - rra).toFixed(2) + "} - 1}{ " + (1 - rra).toFixed(2) + " } ";
+                }
+            }
+        };
+        return ConstantRRA;
+    })(EconGraphs.OneGoodUtility);
+    EconGraphs.ConstantRRA = ConstantRRA;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
     var Monopoly = (function (_super) {
         __extends(Monopoly, _super);
         function Monopoly(definition) {
@@ -3249,6 +3538,8 @@ var EconGraphs;
 /// <reference path="growth/ramseyCassKoopmans.ts"/>
 /// <reference path="production/productionCost.ts"/>
 /// <reference path="production/linearMarginalCost.ts"/>
+/// <reference path="utility/oneGoodUtility.ts"/>
+/// <reference path="utility/crra.ts"/>
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
@@ -3276,6 +3567,7 @@ var EconGraphs;
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />
+/// <reference path="views/twoVerticalGraphs.ts" />
 /// <reference path="views/slider.ts" />
 /// <reference path="controller.ts" />
 /// <reference path="sample/sample.ts" />

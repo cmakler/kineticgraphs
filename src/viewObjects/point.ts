@@ -75,17 +75,41 @@ module KG
 
         createSubObjects(view) {
             var p = this;
-            if(p.labelDiv) {
-                view.addObject(p.labelDiv);
+            if(view instanceof KG.TwoVerticalGraphs) {
+                if(p.labelDiv) {
+                    view.topGraph.addObject(p.labelDiv);
+                }
+                if(p.verticalDropline) {
+                    var continuationDropLine = new VerticalDropline({
+                        name: p.verticalDropline.name,
+                        coordinates: {x: p.verticalDropline.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
+                        draggable: p.verticalDropline.xDrag,
+                        axisLabel: p.verticalDropline.labelDiv.definition.text
+                    });
+                    p.verticalDropline.labelDiv.definition.text = '';
+                    view.topGraph.addObject(p.verticalDropline);
+                    view.bottomGraph.addObject(continuationDropLine);
+                    p.verticalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                    continuationDropLine.createSubObjects(view.bottomGraph);
+                }
+                if(p.horizontalDropline) {
+                    view.topGraph.addObject(p.horizontalDropline);
+                    p.horizontalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                }
+            } else {
+                if(p.labelDiv) {
+                    view.addObject(p.labelDiv);
+                }
+                if(p.verticalDropline) {
+                    view.addObject(p.verticalDropline);
+                    p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                }
+                if(p.horizontalDropline) {
+                    view.addObject(p.horizontalDropline);
+                    p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                }
             }
-            if(p.verticalDropline) {
-                view.addObject(p.verticalDropline);
-                p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
-            }
-            if(p.horizontalDropline) {
-                view.addObject(p.horizontalDropline);
-                p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
-            }
+
             return view;
         }
 
@@ -93,6 +117,8 @@ module KG
 
             var point = this,
                 draggable = (point.xDrag || point.yDrag);
+
+            var subview = (view instanceof KG.TwoVerticalGraphs) ? view.topGraph : view;
 
             if(!point.hasOwnProperty('coordinates')) {
                 return view;
@@ -102,7 +128,7 @@ module KG
                 return view;
             }
 
-            var group:D3.Selection = view.objectGroup(point.name, point.initGroupFn(), true);
+            var group:D3.Selection = subview.objectGroup(point.name, point.initGroupFn(), true);
 
             if (point.symbol === 'none') {
                 point.show = false;
@@ -117,14 +143,14 @@ module KG
                         'class': point.classAndVisibility(),
                         'fill': point.color,
                         'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                        'transform': view.translateByCoordinates(point.coordinates)
+                        'transform': subview.translateByCoordinates(point.coordinates)
                     });
             } catch(error) {
                 console.log(error);
             }
 
             if(draggable){
-                return point.setDragBehavior(view,pointSymbol);
+                return point.setDragBehavior(subview,pointSymbol);
             } else {
                 return view;
             }

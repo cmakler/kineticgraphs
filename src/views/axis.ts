@@ -7,8 +7,8 @@ module KG
 
     export interface AxisDefinition extends ModelDefinition
     {
-        min: number;
-        max: number;
+        min: any;
+        max: any;
         title: string;
         ticks: number;
         tickValues: number[];
@@ -17,6 +17,8 @@ module KG
 
     export interface IAxis extends IModel
     {
+        min: number;
+        max: number;
         scaleFunction: (pixelLength: number, domain: IDomain) => D3.Scale.LinearScale;
         scale: D3.Scale.LinearScale;
         draw: (vis: D3.Selection, divs: D3.Selection, graph_dimensions: IDimensions, margins: IMargins) => void;
@@ -32,6 +34,8 @@ module KG
     {
 
         public scale;
+        public min;
+        public max;
 
         public domain: IDomain;
         public title: string;
@@ -100,7 +104,7 @@ module KG
                 .style('height',(margins.bottom - this.axisBuffer) + 'px')
                 .style('left', margins.left + 'px')
                 .style('top',(margins.top + graph_dimensions.height + this.axisBuffer) + 'px')
-                .attr('class','big');
+                .attr('class','medium');
 
             katex.render(this.title.toString(),title[0][0]);
 
@@ -132,7 +136,7 @@ module KG
                 .style('top',margins.top + 0.5*(graph_dimensions.height - margins.left + this.axisBuffer) + 'px')
                 .style('-webkit-transform','rotate(-90deg)')
                 .style('transform','rotate(-90deg)')
-                .attr('class','big');
+                .attr('class','medium');
 
             katex.render(this.title.toString(),title[0][0]);
 

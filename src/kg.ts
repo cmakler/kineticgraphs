@@ -29,6 +29,7 @@
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />
+/// <reference path="views/twoVerticalGraphs.ts" />
 /// <reference path="views/slider.ts" />
 
 /// <reference path="controller.ts" />
