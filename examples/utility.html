@@ -47,6 +47,7 @@
             rra: 0.5,
             c: 5
         },
+        graphParams: ['rra'],
         restrictions: [
             {
                 expression: 'params.c',
@@ -69,7 +70,7 @@
                     element_id: 'utility',
                     xAxisDef: {min: 0, max: 10, title: '\\text{Consumption (units)}'},
                     topGraph: {
-                        yAxisDef: {min: 0, max: 5, title: '\\text{Total Utility (utils)}'},
+                        yAxisDef: {min: 0, max: 'model.utilityAtQuantity(10)', title: '\\text{Total Utility (utils)}'},
                         objects: ['model.utilityFunctionView','model.marginalUtilityAtQuantitySlope(params.c, "A")']
                     },
                     bottomGraph: {

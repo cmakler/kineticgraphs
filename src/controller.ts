@@ -8,6 +8,7 @@ module KG
 {
     export interface ScopeDefinition {
         params: {};
+        graphParams: string[];
         restrictions: RestrictionDefinition[];
         model: ModelDefinition;
         views: ViewDefinition[];
@@ -15,10 +16,11 @@ module KG
 
     export interface IScope extends ng.IScope
     {
-        params: {}; // parameters of the model (may change through user actions)
-        restrictions: Restriction[]; // restrictions on parameters or any expression
-        model: Model; // the base model (constant)
-        views: View[]; // array of interactive elements, indexed by element ID
+        params: {};                     // parameters of the model (may change through user actions)
+        graphParams: {};          // list of parameter names that should trigger graph redraw
+        restrictions: Restriction[];    // restrictions on parameters or any expression
+        model: Model;                   // the base model (constant)
+        views: View[];                  // array of interactive elements, indexed by element ID
         init: (definition: any) => void;
         updateParams: (params) => void;
         renderMath: () => void;
@@ -41,6 +43,14 @@ module KG
 
             $scope.init = function(definition:ScopeDefinition) {
                 $scope.params = definition.params;
+                $scope.graphParams = {};
+                if(definition.graphParams) {
+                    definition.graphParams.forEach(function(key) {
+                        if($scope.params.hasOwnProperty(key)) {
+                            $scope.graphParams[key] = $scope.params[key];
+                        }
+                    })
+                }
                 $scope.restrictions = definition.restrictions.map(function(restrictionDefinition) {
                     return new Restriction(restrictionDefinition);
                 });
@@ -124,6 +134,11 @@ module KG
                         $scope.error = r.error;
                     } else {
                         $scope.params = validParams;
+                        if($scope.graphParams) {
+                            for(var key in $scope.graphParams) {
+                                $scope.graphParams[key] = $scope.params[key];
+                            }
+                        }
                         $scope.$apply();
                         $scope.error = '';
                     }

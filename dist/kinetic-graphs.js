@@ -2177,6 +2177,14 @@ var KG;
             };
             $scope.init = function (definition) {
                 $scope.params = definition.params;
+                $scope.graphParams = {};
+                if (definition.graphParams) {
+                    definition.graphParams.forEach(function (key) {
+                        if ($scope.params.hasOwnProperty(key)) {
+                            $scope.graphParams[key] = $scope.params[key];
+                        }
+                    });
+                }
                 $scope.restrictions = definition.restrictions.map(function (restrictionDefinition) {
                     return new KG.Restriction(restrictionDefinition);
                 });
@@ -2263,6 +2271,11 @@ var KG;
                     }
                     else {
                         $scope.params = validParams;
+                        if ($scope.graphParams) {
+                            for (var key in $scope.graphParams) {
+                                $scope.graphParams[key] = $scope.params[key];
+                            }
+                        }
                         $scope.$apply();
                         $scope.error = '';
                     }
