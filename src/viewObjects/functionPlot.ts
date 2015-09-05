@@ -27,8 +27,17 @@ module KG {
             super(definition);
         }
 
+        _update(scope) {
+            var p = this;
+            p.fn.update(scope);
+            return p;
+        }
+
         updateDataForView(view) {
             var p = this;
+            if(typeof p.fn == 'function') {
+                p.fn = new KGMath.Functions.OneVariable({fn: p.fn})
+            }
             p.data = p.fn.points(view,p.yIsIndependent,p.numSamplePoints);
             return p;
         }

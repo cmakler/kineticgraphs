@@ -548,6 +548,23 @@ var KGMath;
         Functions.Base = Base;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var OneVariable = (function (_super) {
+            __extends(OneVariable, _super);
+            function OneVariable(definition) {
+                _super.call(this, definition);
+            }
+            OneVariable.prototype.yValue = function (x) {
+                return this.fn(x);
+            };
+            return OneVariable;
+        })(Functions.Base);
+        Functions.OneVariable = OneVariable;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
 /*
  A monomial function is a term of the form c(b1^p1)(b2^p2)...(bn^pn)
  where 'c' is the coefficient, 'bi' is the i'th base, and 'pi' is the i'th power.
@@ -617,6 +634,37 @@ var KGMath;
                             return p;
                         }
                     }),
+                    bases: m.bases
+                });
+            };
+            // Return the monomial that reduces the power of the n'th variable by 1
+            Monomial.prototype.average = function (n) {
+                var m = this;
+                // n is the index of the term; first term by default
+                n = n - 1 || 0;
+                return new Monomial({
+                    coefficient: m.monomialDefs.coefficient,
+                    // reduce the power of the n'th variable by 1
+                    powers: m.monomialDefs.powers.map(function (p, index) {
+                        if (index == n) {
+                            return p + " - 1";
+                        }
+                        else {
+                            return p;
+                        }
+                    }),
+                    bases: m.bases
+                });
+            };
+            // Return the monomial that multiplies the coefficient by x
+            Monomial.prototype.multiply = function (x) {
+                var m = this;
+                // n is the index of the term; first term by default
+                x = x || 1;
+                return new Monomial({
+                    // multiply the coefficient by x
+                    coefficient: "(" + m.monomialDefs.coefficient + ")*(" + x + ")",
+                    powers: m.monomialDefs.powers,
                     bases: m.bases
                 });
             };
@@ -729,9 +777,38 @@ var KGMath;
             // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
             Polynomial.prototype.derivative = function (n) {
                 var p = this;
-                return new Polynomial({ termDefs: p.terms.map(function (term) {
-                    return term.derivative(n);
-                }) });
+                return new Polynomial({
+                    termDefs: p.terms.map(function (term) {
+                        return term.derivative(n);
+                    })
+                });
+            };
+            // The average of a polynomial is a new polynomial, each of whose terms is the average of the original polynomial's terms
+            Polynomial.prototype.average = function (n) {
+                var p = this;
+                return new Polynomial({
+                    termDefs: p.terms.map(function (term) {
+                        return term.average(n);
+                    })
+                });
+            };
+            // Multiplying a polynomial by a constant means multiplying each monomial by that constant
+            Polynomial.prototype.multiply = function (x) {
+                var p = this;
+                return new Polynomial({
+                    termDefs: p.terms.map(function (term) {
+                        return term.multiply(x);
+                    })
+                });
+            };
+            // Adding a constant to a polynomial means appending a new constant term
+            Polynomial.prototype.add = function (x) {
+                var p = this;
+                var termDefs = p.terms;
+                termDefs.push(new Functions.Monomial({ coefficient: x, powers: [0] }));
+                return new Polynomial({
+                    termDefs: termDefs
+                });
             };
             // Assume all bases except the first have been set; replace the base of the first variable ('x') with the x value
             Polynomial.prototype.yValue = function (x) {
@@ -954,6 +1031,7 @@ var KGMath;
 })(KGMath || (KGMath = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
+/// <reference path="functions/oneVariable.ts"/>
 /// <reference path="functions/monomial.ts"/>
 /// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
@@ -1663,8 +1741,16 @@ var KG;
             definition = _.defaults(definition, { yIsIndependent: false, interpolation: 'linear', numSamplePoints: 51 });
             _super.call(this, definition);
         }
+        FunctionPlot.prototype._update = function (scope) {
+            var p = this;
+            p.fn.update(scope);
+            return p;
+        };
         FunctionPlot.prototype.updateDataForView = function (view) {
             var p = this;
+            if (typeof p.fn == 'function') {
+                p.fn = new KGMath.Functions.OneVariable({ fn: p.fn });
+            }
             p.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
             return p;
         };
@@ -3204,8 +3290,9 @@ var EconGraphs;
         __extends(ProductionCost, _super);
         function ProductionCost(definition) {
             _super.call(this, definition);
-            this.costFunction = new KGMath.Functions[definition.costFunctionType](definition.costFunctionDef);
-            this.totalCostCurve = new KG.FunctionPlot({
+            var productionCost = this;
+            productionCost.costFunction = new KGMath.Functions[definition.costFunctionType](definition.costFunctionDef);
+            productionCost.totalCostCurve = new KG.FunctionPlot({
                 name: 'totalCostCurve',
                 fn: this.modelProperty('costFunction'),
                 className: 'totalCost',
@@ -3214,39 +3301,28 @@ var EconGraphs;
                     text: 'TC'
                 }
             });
+            productionCost.marginalCostFunction = productionCost.costFunction.derivative();
+            productionCost.marginalCostCurve = new KG.FunctionPlot({
+                name: 'marginalCostFunction',
+                className: 'marginalCost',
+                fn: productionCost.modelProperty('marginalCostFunction'),
+                arrows: 'NONE',
+                label: {
+                    text: 'MC'
+                }
+            });
+            productionCost.averageCostFunction = productionCost.costFunction.average();
+            productionCost.averageCostCurve = new KG.FunctionPlot({
+                name: 'averageCostFunction',
+                className: 'averageCost',
+                fn: productionCost.modelProperty('averageCostFunction'),
+                arrows: 'NONE',
+                label: {
+                    text: 'ATC'
+                },
+                numSamplePoints: 501
+            });
         }
-        ProductionCost.prototype._update = function (scope) {
-            var productionCost = this;
-            productionCost.totalCost = function (quantity) {
-                return productionCost.costFunction.yValue(quantity);
-            };
-            productionCost.fixedCost = productionCost.totalCost(0);
-            return productionCost;
-        };
-        ProductionCost.prototype.averageTotalCost = function (quantity) {
-            return this.totalCost(quantity) / quantity;
-        };
-        ProductionCost.prototype.averageFixedCost = function (quantity) {
-            return this.fixedCost / quantity;
-        };
-        ProductionCost.prototype.variableCost = function (quantity) {
-            return this.totalCost(quantity) - this.fixedCost;
-        };
-        ProductionCost.prototype.averageVariableCost = function (quantity) {
-            return this.variableCost(quantity) / quantity;
-        };
-        ProductionCost.prototype.marginalCost = function (quantity) {
-            var costFunction = this.costFunction;
-            if (costFunction.hasOwnProperty('derivative')) {
-                return costFunction.derivative.yValue(quantity);
-            }
-            else {
-                return quantity > 0 ? costFunction.slopeBetweenPoints(quantity, 1.01 * quantity) : costFunction.slopeBetweenPoints(quantity, 0.01);
-            }
-        };
-        ProductionCost.prototype.averageMarginalCost = function (quantity) {
-            return this.marginalCost(quantity) / quantity;
-        };
         return ProductionCost;
     })(KG.Model);
     EconGraphs.ProductionCost = ProductionCost;
@@ -3258,19 +3334,7 @@ var EconGraphs;
         __extends(LinearMarginalCost, _super);
         function LinearMarginalCost(definition) {
             _super.call(this, definition);
-            this.totalCostCurve = new KG.FunctionPlot({
-                fn: this.totalCost,
-                className: 'totalCost',
-                label: {
-                    text: 'TC'
-                }
-            });
         }
-        LinearMarginalCost.prototype._update = function (scope) {
-            var linearMarginalCost = this;
-            linearMarginalCost.fixedCost = linearMarginalCost.totalCost(0);
-            return linearMarginalCost;
-        };
         return LinearMarginalCost;
     })(EconGraphs.ProductionCost);
     EconGraphs.LinearMarginalCost = LinearMarginalCost;
@@ -3321,6 +3385,9 @@ var EconGraphs;
         OneGoodUtility.prototype.utilityAtQuantity = function (c) {
             return this.utilityFunction.yValue(c);
         };
+        OneGoodUtility.prototype.marginalUtilityAtQuantity = function (c) {
+            return this.marginalUtilityFunction.yValue(c);
+        };
         OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (q, label) {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Line({
@@ -3328,8 +3395,8 @@ var EconGraphs;
                 type: 'PointSlopeLine',
                 className: 'demand dotted',
                 def: {
-                    p: { x: q, y: this.utilityFunction.yValue(q) },
-                    m: this.marginalUtilityFunction.yValue(q)
+                    p: { x: q, y: this.utilityAtQuantity(q) },
+                    m: this.marginalUtilityAtQuantity(q)
                 },
                 label: {
                     text: 'u\'(c' + labelSubscript + ')'
@@ -3340,7 +3407,7 @@ var EconGraphs;
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Point({
                 name: 'utilityAtQ',
-                coordinates: { x: q, y: this.utilityFunction.yValue(q) },
+                coordinates: { x: q, y: this.utilityAtQuantity(q) },
                 size: 500,
                 class: 'utility',
                 xDrag: dragParam,

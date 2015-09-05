@@ -25,6 +25,8 @@ module KGMath.Functions {
         value: (bases?: number[]) => number;
         levelCurve: (n:number, level?:number) => Monomial;
         derivative: (n:number) => Monomial;
+        average: (n:number) => Monomial;
+        multiply: (x: number) => Monomial;
     }
 
     export class Monomial extends Base implements IMonomial {
@@ -38,7 +40,7 @@ module KGMath.Functions {
             this.monomialDefs = {
                 coefficient: definition.coefficient.toString(),
                 powers: definition.powers.map(function(p) {return p.toString()})
-            }
+            };
             super(definition);
         }
 
@@ -97,6 +99,50 @@ module KGMath.Functions {
                     }
                 }),
 
+                bases: m.bases
+
+            })
+        }
+
+        // Return the monomial that reduces the power of the n'th variable by 1
+        average(n) {
+
+            var m = this;
+
+            // n is the index of the term; first term by default
+            n = n - 1 || 0;
+
+            return new Monomial({
+
+                coefficient: m.monomialDefs.coefficient,
+
+                // reduce the power of the n'th variable by 1
+                powers: m.monomialDefs.powers.map(function (p, index) {
+                    if (index == n) {
+                        return p + " - 1";
+                    } else {
+                        return p
+                    }
+                }),
+
+                bases: m.bases
+
+            })
+        }
+
+        // Return the monomial that multiplies the coefficient by x
+        multiply(x) {
+
+            var m = this;
+
+            // n is the index of the term; first term by default
+            x = x || 1;
+
+            return new Monomial({
+
+                // multiply the coefficient by x
+                coefficient: "(" + m.monomialDefs.coefficient + ")*(" + x + ")",
+                powers: m.monomialDefs.powers,
                 bases: m.bases
 
             })

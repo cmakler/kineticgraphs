@@ -21,23 +21,6 @@ module EconGraphs {
         constructor(definition:LinearMarginalCostDefinition) {
             super(definition);
 
-            this.totalCostCurve = new KG.FunctionPlot({
-                fn: this.totalCost,
-                className: 'totalCost',
-                label: {
-                    text: 'TC'
-                }
-            })
-        }
-
-        _update(scope) {
-
-            var linearMarginalCost = this;
-
-            linearMarginalCost.fixedCost = linearMarginalCost.totalCost(0);
-
-            return linearMarginalCost;
-
         }
 
     }

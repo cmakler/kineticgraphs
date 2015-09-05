@@ -16,29 +16,18 @@
     <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
 </head>
 <body>
+
+
 <div ng-controller="KineticGraphCtrl">
     <h1>Cost Curves</h1>
     <p>Drag the endpoints of the demand curve to change its slope. Drag the price up and down to see how the price elasticity at point A changes.</p>
-    <div id="fcSlider"></div>
     <hr/>
-    <div class="row">
-        <div class="col-md-6">
-            <h2>Total Costs</h2>
-            <hr/>
-            <div id="totalGraph"></div>
-        </div>
-        <div class="col-md-6">
-            <h2>Unit Costs</h2>
-            <hr/>
-            <div id="unitGraph"></div>
-
-        </div>
-    </div>
+    <div id="costs"></div>
 </div>
 <script>
     var scopeDefinition = {
         params: {
-            fc: 10,
+            fc: 100,
             mc_intercept: 40,
             demandQuantityIntercept: 80
         },
@@ -67,35 +56,25 @@
         },
         views: [
             {
-                type: 'KG.Graph',
+                type: 'KG.TwoVerticalGraphs',
                 definition: {
-                    element_id:'totalGraph',
-                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(q)'},
-                    yAxisDef: {min: 0, max: 100, title: '\\text{Total Costs (Dollars)}'},
-                    objects: ['model.totalCostCurve']
-                }
-            },
-            {
-                type: 'KG.Graph',
-                definition: {
-                    element_id:'unitGraph',
-                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(q)'},
-                    yAxisDef: {min: 0, max: 5, title: '\\text{Unit Costs (Dollars per Unit)}'},
-                    objects: []
-                }
-            },
-            {
-                type: 'KG.Slider',
-                definition: {
-                    element_id: 'fcSlider',
-                    param: 'fc',
-                    precision: '1',
-                    axisDef: {min: 0, max: 100, tickValues: [0, 50, 100]}
+                    element_id: 'costs',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity (q)}'},
+                    topGraph: {
+                        yAxisDef: {min: 0, max: 1000, title: '\\text{Total Costs (Dollars)}'},
+                        objects: ['model.totalCostCurve']
+                    },
+                    bottomGraph: {
+                        yAxisDef: {min: 0, max: 20, title: '\\text{Unit Costs (Dollars per Unit)}'},
+                        objects: ['model.marginalCostCurve','model.averageCostCurve']
+                    }
                 }
             }
         ]
     }
 </script>
+
+
 <script src="../dist/kinetic-graphs.js"></script>
 </body>
 </html>

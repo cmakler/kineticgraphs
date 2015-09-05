@@ -88,6 +88,10 @@ module EconGraphs {
             return this.utilityFunction.yValue(c)
         }
 
+        marginalUtilityAtQuantity(c) {
+            return this.marginalUtilityFunction.yValue(c)
+        }
+
 
         marginalUtilityAtQuantitySlope(q, label?) {
             var labelSubscript = label ? '_{' + label + '}' : '';
@@ -96,8 +100,8 @@ module EconGraphs {
                 type: 'PointSlopeLine',
                 className: 'demand dotted',
                 def: {
-                    p: {x: q, y: this.utilityFunction.yValue(q)},
-                    m: this.marginalUtilityFunction.yValue(q)
+                    p: {x: q, y: this.utilityAtQuantity(q)},
+                    m: this.marginalUtilityAtQuantity(q)
                 },
                 label: {
                     text: 'u\'(c'+ labelSubscript +')'
@@ -109,7 +113,7 @@ module EconGraphs {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Point({
                 name: 'utilityAtQ',
-                coordinates: {x: q, y: this.utilityFunction.yValue(q)},
+                coordinates: {x: q, y: this.utilityAtQuantity(q)},
                 size: 500,
                 class: 'utility',
                 xDrag: dragParam,

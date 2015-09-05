@@ -18,6 +18,9 @@ module KGMath.Functions {
         bases: number[];
         value: (bases?: number[]) => number;
         derivative: (n:number) => Polynomial;
+        average: (n:number) => Polynomial;
+        add: (x: number) => Polynomial;
+        multiply: (x: number) => Polynomial;
     }
 
     export class Polynomial extends Base implements IPolynomial {
@@ -30,6 +33,7 @@ module KGMath.Functions {
                 this.terms = definition.termDefs.map(function(termDef) { return new Monomial(termDef)});
             }
             this.bases = [0];
+
         }
 
         _update(scope) {
@@ -66,9 +70,47 @@ module KGMath.Functions {
         // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
         derivative(n) {
             var p = this;
-            return new Polynomial({termDefs: p.terms.map(
-                function(term) { return term.derivative(n)}
-            )});
+            return new Polynomial({
+                termDefs: p.terms.map(
+                    function (term) {
+                        return term.derivative(n)
+                    }
+                )
+            })
+        }
+
+        // The average of a polynomial is a new polynomial, each of whose terms is the average of the original polynomial's terms
+        average(n) {
+            var p = this;
+            return new Polynomial({
+                termDefs: p.terms.map(
+                    function (term) {
+                        return term.average(n)
+                    }
+                )
+            })
+        }
+
+        // Multiplying a polynomial by a constant means multiplying each monomial by that constant
+        multiply(x) {
+            var p = this;
+            return new Polynomial({
+                termDefs: p.terms.map(
+                    function (term) {
+                        return term.multiply(x)
+                    }
+                )
+            })
+        }
+
+        // Adding a constant to a polynomial means appending a new constant term
+        add(x) {
+            var p = this;
+            var termDefs = p.terms;
+            termDefs.push(new Monomial({coefficient: x, powers:[0]}))
+            return new Polynomial({
+                termDefs: termDefs
+            });
         }
 
         // Assume all bases except the first have been set; replace the base of the first variable ('x') with the x value
