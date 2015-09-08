@@ -56,7 +56,8 @@ module EconGraphs {
                 arrows: 'NONE',
                 label: {
                     text: this.curveLabel
-                }
+                },
+                numSamplePoints: 501
             });
 
             if(this.utilityFunction.derivative()) {
@@ -68,7 +69,8 @@ module EconGraphs {
                     arrows: 'NONE',
                     label: {
                         text: this.marginalCurveLabel
-                    }
+                    },
+                    numSamplePoints: 501
                 })
             }
 
@@ -96,15 +98,14 @@ module EconGraphs {
         marginalUtilityAtQuantitySlope(q, label?) {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Line({
-                name: 'slopeLine',
-                type: 'PointSlopeLine',
+                name: 'slopeLine' + label,
                 className: 'demand dotted',
-                def: {
-                    p: {x: q, y: this.utilityAtQuantity(q)},
-                    m: this.marginalUtilityAtQuantity(q)
+                lineDef: {
+                    point: {x: q, y: this.utilityAtQuantity(q)},
+                    slope: this.marginalUtilityAtQuantity(q)
                 },
                 label: {
-                    text: 'u\'(c'+ labelSubscript +')'
+                    text: "\\text{slope} = u\'(c"+ labelSubscript +")"
                 }
             });
         }
@@ -112,7 +113,7 @@ module EconGraphs {
         utilityAtQuantityPoint(q, label?, dragParam?) {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Point({
-                name: 'utilityAtQ',
+                name: 'utilityAtQ' + label,
                 coordinates: {x: q, y: this.utilityAtQuantity(q)},
                 size: 500,
                 class: 'utility',
@@ -130,7 +131,7 @@ module EconGraphs {
         marginalUtilityAtQuantityPoint(q, label?, dragParam?) {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Point({
-                name: 'marginalUtilityAtQ',
+                name: 'marginalUtilityAtQ' + label,
                 coordinates: {x: q, y: this.marginalUtilityFunction.yValue(q)},
                 size: 500,
                 class: 'utility',

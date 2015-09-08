@@ -50,12 +50,11 @@ module KG
 
             definition = _.defaults(definition,{
                 dimensions: {width: 100, height: 20},
-                text: ''
+                text: '',
+                color: KG.colorForClassName(definition.className)
             });
 
             super(definition);
-
-            //console.log('graphDiv ', this.text,' color is', this.color);
 
         }
 
@@ -73,6 +72,9 @@ module KG
                 x = view.margins.left - view.yAxis.textMargin;
                 divObj.align = 'right';
                 divObj.valign = 'middle';
+                if(!view.yAxis.domain.contains(divObj.coordinates.y)) {
+                    divObj.className = 'invisible';
+                }
             } else {
                 x = view.margins.left + view.xAxis.scale(divObj.coordinates.x);
             }
@@ -95,12 +97,12 @@ module KG
             div
                 .style('cursor','default')
                 .style('text-align','center')
-                .style('color',divObj.color)
                 .style('position','absolute')
                 .style('width',width + 'px')
                 .style('height',height + 'px')
                 .style('line-height',height + 'px')
                 .style('background-color',divObj.backgroundColor)
+                .attr('class',divObj.className);
 
             // Set left pixel margin; default to centered on x coordinate
             var alignDelta = width*0.5;

@@ -6,15 +6,20 @@
 
 module KGMath.Functions {
 
-    export interface LinearDefinition {
-        //entirely determined by subclass
+    export interface LinearDefinition extends BaseDefinition {
+        coefficients?: LinearCoefficients;
+        slope?: any;
+        intercept?: any;
+        point?: any;
+        point1?: any;
+        point2?: any;
     }
 
     // a line is defined by the equation ax + by + c = 0
     export interface LinearCoefficients {
-        a: number;
-        b: number;
-        c: number;
+        a: any;
+        b: any;
+        c: any;
     }
 
     export interface ILinear extends IBase {
@@ -26,6 +31,7 @@ module KGMath.Functions {
         yIntercept: number;
         isVertical: boolean;
         isHorizontal: boolean;
+        point?: KG.ICoordinates;
     }
 
     export class Linear extends Base implements ILinear {
@@ -37,10 +43,32 @@ module KGMath.Functions {
         public yIntercept;
         public isVertical;
         public isHorizontal;
+        public point;
 
         constructor(definition:LinearDefinition) {
+
             super(definition);
-            this._calculateValues();
+
+            definition.coefficients = definition.coefficients || {a: 0, b: -1, c: 0};
+
+            if(definition.hasOwnProperty('point1') && definition.hasOwnProperty('point2')) {
+                var p1 = KG.getCoordinates(definition.point1),
+                    p2 = KG.getCoordinates(definition.point2),
+                    rise = KG.subtractDefs(p2.y,p1.y),
+                    run = KG.subtractDefs(p2.x,p1.x);
+                definition.slope = KG.divideDefs(rise,run);
+                definition.point = p1;
+            }
+
+            if(definition.hasOwnProperty('slope') && definition.slope != undefined) {
+                definition.coefficients.a = definition.slope;
+                if(definition.hasOwnProperty('intercept')) {
+                    definition.coefficients.c = definition.intercept;
+                } else if(definition.hasOwnProperty('point') && definition.point != undefined) {
+                    var mx = KG.multiplyDefs(definition.slope,definition.point.x);
+                    definition.coefficients.c = KG.subtractDefs(definition.point.y,mx);
+                }
+            }
         }
 
         _update(scope) {
@@ -55,13 +83,13 @@ module KGMath.Functions {
                 b = l.coefficients.b,
                 c = l.coefficients.c;
 
-            l.isVertical = (b === 0);
+            l.isVertical = (b === 0) || (a === Infinity);
             l.isHorizontal = (a === 0);
 
             l.slope = l.isVertical ? Infinity : -a/b;
             l.inverseSlope = l.isHorizontal ? Infinity : -b/a;
 
-            l.xIntercept = l.isHorizontal ? null : -c/a;
+            l.xIntercept = l.isHorizontal ? null : (l.isVertical && l.hasOwnProperty('point')) ? l.point.x : -c/a;
             l.yIntercept = l.isVertical ? null : -c/b;
 
             return l;
@@ -155,131 +183,6 @@ module KGMath.Functions {
 
     }
 
-    // Standard definition: define the line by ax + by + c = 0.
-    export interface StandardLineDefinition extends LinearDefinition {
-        coefficients: LinearCoefficients;
-    }
-
-    export class StandardLine extends Linear {
-        constructor(definition:StandardLineDefinition) {
-            super(definition);
-        }
-    }
-
-    // Slope-intercept definition: define the line by y = mx + b.
-    export interface SlopeInterceptLineDefinition extends LinearDefinition {
-        m: any;
-        b: any;
-    }
-
-    export class SlopeInterceptLine extends Linear {
-
-        private m: number;
-        private b: number;
-
-        constructor(definition:SlopeInterceptLineDefinition) {
-            super(definition)
-        }
-
-        // Given y = m*x + b => m*x + (-1)y + b = 0
-        _calculateValues() {
-
-            var l = this;
-
-            l.coefficients = {
-                a: l.m,
-                b: -1,
-                c: l.b
-            };
-
-            return l.updateLine();
-
-        }
-    }
-
-    // Point-slope definition: define the line by a single point and a slope m.
-
-    export interface PointSlopeLineDefinition extends LinearDefinition {
-        p: KG.ICoordinates;
-        m: any;
-    }
-
-    export class PointSlopeLine extends Linear {
-
-        private p: KG. ICoordinates;
-        private m: number;
-
-        constructor(definition:PointSlopeLineDefinition) {
-            definition.p = KG.getCoordinates(definition.p);
-            super(definition)
-        }
-
-        // Given Y - y = slope(X - x) => slope*X - Y + (y - slope*x)
-        _calculateValues() {
-
-            var l = this;
-
-            l.coefficients = {
-                a: l.m,
-                b: -1,
-                c: l.p.y - l.m*l.p.x
-            };
-
-            return l.updateLine();
-        }
-
-    }
-
-    // Point-point definition: define the line by a two points.
-
-    export interface TwoPointLineDefinition extends LinearDefinition {
-        p1: KG.ICoordinates;
-        p2: KG.ICoordinates;
-    }
-
-    export class TwoPointLine extends Linear {
-
-        private p1: KG.ICoordinates;
-        private p2: KG.ICoordinates;
-
-        constructor(definition:TwoPointLineDefinition) {
-            definition.p1 = KG.getCoordinates(definition.p1);
-            definition.p2 = KG.getCoordinates(definition.p2);
-            super(definition)
-        }
-
-        _calculateValues() {
-
-            var l = this;
-
-            var x1 = l.p1.x,
-                x2 = l.p2.x,
-                y1 = l.p1.y,
-                y2 = l.p2.y,
-                rise = y2 - y1,
-                run = x2 - x1;
-
-            // If x2 = x1, then it's a vertical line
-            if (run == 0) {
-                l.coefficients = {
-                    a: 1,
-                    b: 0,
-                    c: -x1
-                }
-            } else {
-                var slope = rise/run;
-                l.coefficients = {
-                    a: slope,
-                    b: -1,
-                    c: y1 - slope*x1
-                }
-            }
-
-            return l.updateLine();
-        }
-
-    }
-
     // Horizontal line definition: define the line by a single y coordinate.
 
     export interface HorizontalLineDefinition extends LinearDefinition {
@@ -290,22 +193,13 @@ module KGMath.Functions {
 
         public y;
 
-        constructor(definition:PointSlopeLineDefinition) {
-            super(definition)
-        }
-
-        // A horizontal line at y = Y may be written 0x - y + Y = 0
-        _calculateValues() {
-
-            var l=this;
-
-            l.coefficients = {
+        constructor(definition:HorizontalLineDefinition) {
+            definition.coefficients = {
                 a: 0,
                 b: -1,
-                c: l.y
-            };
-
-            return l.updateLine();
+                c: definition.y
+            }
+            super(definition)
         }
 
     }
@@ -320,22 +214,13 @@ module KGMath.Functions {
 
         public x;
 
-        constructor(definition:PointSlopeLineDefinition) {
-            super(definition)
-        }
-
-        // A vertical line at x = X may be written -x + 0y + X = 0
-        _calculateValues() {
-
-            var l=this;
-
-            l.coefficients = {
+        constructor(definition:VerticalLineDefinition) {
+            definition.coefficients = {
                 a: -1,
                 b: 0,
-                c: l.x
+                c: definition.x
             };
-
-            return l.updateLine();
+            super(definition)
         }
 
     }

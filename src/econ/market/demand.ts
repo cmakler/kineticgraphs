@@ -62,15 +62,12 @@ module EconGraphs {
 
             var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.','') : false;
 
-            this.priceLine = new KG.Line({
+            this.priceLine = new KG.HorizontalLine({
                 name: 'priceLine',
                 color: 'grey',
                 arrows: 'NONE',
-                type: 'HorizontalLine',
                 yDrag: definition.priceDrag,
-                def: {
-                    y: definition.price
-                }
+                y: definition.price
             });
 
             this.quantityDemandedPoint = new KG.Point({

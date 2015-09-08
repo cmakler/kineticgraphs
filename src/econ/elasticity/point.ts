@@ -38,9 +38,9 @@ module EconGraphs {
                     vertical: 'Q'
                 }
             });
-            this.line = new KGMath.Functions.PointSlopeLine({
-                p: definition.point,
-                m: definition.slope
+            this.line = new KGMath.Functions.Linear({
+                point: definition.point,
+                slope: definition.slope
             })
         }
 

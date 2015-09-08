@@ -5,7 +5,8 @@
 /// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
 
 /// <reference path="constants.ts" />
-/// <reference path="helpers.ts" />
+/// <reference path="helpers/helpers.ts" />
+/// <reference path="helpers/definitions.ts" />
 
 /// <reference path="model.ts" />
 /// <reference path="restriction.ts" />

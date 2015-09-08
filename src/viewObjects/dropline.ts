@@ -35,29 +35,31 @@ module KG {
             });
             super(definition);
 
-            var labelDef:GraphDivDefinition = {
-                name: definition.name + '_label',
-                color: 'black',
-                text: definition.axisLabel,
-                dimensions: {width: 30, height:20},
-                backgroundColor: 'white'
-            };
+            if(definition.axisLabel.length > 0) {
+                var labelDef:GraphDivDefinition = {
+                    name: definition.name + '_label',
+                    className: definition.className,
+                    text: definition.axisLabel,
+                    dimensions: {width: 60, height:20},
+                    backgroundColor: 'white'
+                };
 
-            if(definition.horizontal) {
-                labelDef.coordinates = {
-                    x: KG.GraphDiv.AXIS_COORDINATE_INDICATOR,
-                    y: definition.coordinates.y
-                };
-                labelDef.yDrag = definition.draggable;
-            } else {
-                labelDef.coordinates = {
-                    x: definition.coordinates.x,
-                    y: KG.GraphDiv.AXIS_COORDINATE_INDICATOR
-                };
-                labelDef.xDrag = definition.draggable;
+                if(definition.horizontal) {
+                    labelDef.coordinates = {
+                        x: KG.GraphDiv.AXIS_COORDINATE_INDICATOR,
+                        y: definition.coordinates.y
+                    };
+                    labelDef.yDrag = definition.draggable;
+                } else {
+                    labelDef.coordinates = {
+                        x: definition.coordinates.x,
+                        y: KG.GraphDiv.AXIS_COORDINATE_INDICATOR
+                    };
+                    labelDef.xDrag = definition.draggable;
+                }
+
+                this.labelDiv = new GraphDiv(labelDef);
             }
-
-            this.labelDiv = new GraphDiv(labelDef);
 
             this.viewObjectSVGtype = 'line';
             this.viewObjectClass = 'dropline';

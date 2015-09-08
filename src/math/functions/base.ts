@@ -25,9 +25,6 @@ module KGMath.Functions {
         constructor(definition) {
             definition.level = definition.level || 0;
             super(definition);
-            if(definition.hasOwnProperty('yValue')) {
-                this.yValue = definition.yValue;
-            }
         }
 
         // Returns the slope between (a,f(a)) and (b,f(b)).

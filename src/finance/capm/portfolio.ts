@@ -101,10 +101,9 @@ module FinanceGraphs
                 name: 'twoPointSegment',
                 className: 'risk-free',
                 arrows: 'OPEN',
-                type: 'TwoPointLine',
-                def: {
-                    p1: p.riskFreeAsset,
-                    p2: p.optimalPortfolio,
+                lineDef: {
+                    point1: p.riskFreeAsset,
+                    point2: p.optimalPortfolio,
                 }
             });
             p.optimalPortfolioMean = 0;

@@ -68,13 +68,13 @@
             definition: {
                 elasticityMethod: 'point',
                 price: 'params.price',
-                type: 'TwoPointLine',
+                type: 'Linear',
                 def: {
-                    p1: {
+                    point1: {
                         x: 0,
                         y: 'params.demandPriceIntercept'
                     },
-                    p2: {
+                    point2: {
                         x: 'params.demandQuantityIntercept',
                         y: 0
                     }

@@ -99,13 +99,10 @@ module EconGraphs {
                     text: '\\dot k = 0'
                 }
             });
-            this.steadyConsumptionView = new KG.Line({
+            this.steadyConsumptionView = new KG.VerticalLine({
                 name: 'steadyConsumption',
                 className: 'consumption',
-                type: 'VerticalLine',
-                def: {
-                    x: 'model.steadyStateK'
-                },
+                x: 'model.steadyStateK',
                 label: {
                     text: '\\dot c = 0'
                 }

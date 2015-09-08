@@ -35,7 +35,16 @@ module KG
 
         constructor(definition:PointDefinition) {
 
-            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle'});
+            var defaultSize = 100;
+            if(definition.hasOwnProperty('label')) {
+                if(definition.label.hasOwnProperty('text')) {
+                    if(definition.label.text.length > 0) {
+                        defaultSize = 500;
+                    }
+                }
+            }
+
+            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: defaultSize, symbol: 'circle'});
             super(definition);
 
             if(definition.label) {
@@ -45,7 +54,9 @@ module KG
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag
                 });
-                labelDef.color = (labelDef.hasOwnProperty('align')) ? this.color : 'white';
+                if(!labelDef.hasOwnProperty('align')) {
+                    labelDef.className = 'pointLabel'
+                }
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
@@ -56,7 +67,7 @@ module KG
                         coordinates: definition.coordinates,
                         draggable: definition.yDrag,
                         axisLabel: definition.droplines.horizontal,
-
+                        className: definition.className,
                     });
                 }
                 if(definition.droplines.hasOwnProperty('vertical')) {
@@ -64,7 +75,8 @@ module KG
                         name: definition.name,
                         coordinates: definition.coordinates,
                         draggable: definition.xDrag,
-                        axisLabel: definition.droplines.vertical
+                        axisLabel: definition.droplines.vertical,
+                        className: definition.className,
                     });
                 }
             }
@@ -83,10 +95,10 @@ module KG
                     var continuationDropLine = new VerticalDropline({
                         name: p.verticalDropline.name,
                         coordinates: {x: p.verticalDropline.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
-                        draggable: p.verticalDropline.xDrag,
+                        draggable: p.verticalDropline.draggable,
                         axisLabel: p.verticalDropline.labelDiv.definition.text
                     });
-                    p.verticalDropline.labelDiv.definition.text = '';
+                    p.verticalDropline.labelDiv = null;
                     view.topGraph.addObject(p.verticalDropline);
                     view.bottomGraph.addObject(continuationDropLine);
                     p.verticalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default

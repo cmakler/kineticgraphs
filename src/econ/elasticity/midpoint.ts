@@ -93,13 +93,12 @@ module EconGraphs {
                 name: 'demand',
                 className: 'demand',
                 arrows: 'NONE',
-                type: 'TwoPointLine',
-                def: {
-                    p1: {
+                lineDef: {
+                    point1: {
                         x: 'params.x1',
                         y: 'params.y1'
                     },
-                    p2: {
+                    point2: {
                         x: 'params.x2',
                         y: 'params.y2'
                     }

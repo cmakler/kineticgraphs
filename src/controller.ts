@@ -145,7 +145,7 @@ module KG
                 });
                 if(!validChange) {
                     $scope.params = oldParams;
-                    $scope.$apply();
+                    $scope.$apply(redrawObjects);
                 }
 
             };

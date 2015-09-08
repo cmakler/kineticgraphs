@@ -105,6 +105,10 @@ a {
   stroke-width: 2;
   stroke-dasharray: 2, 2;
 }
+.pointLabel {
+  color: white;
+  font-size: 10pt;
+}
 .demand {
   color: #1f77b4;
   stroke: #1f77b4;
@@ -121,24 +125,32 @@ a {
 .capital {
   color: #ff7f0e;
   stroke: #ff7f0e;
+  fill: #ff7f0e;
 }
 .consumption {
   color: #1f77b4;
   stroke: #1f77b4;
+  fill: #1f77b4;
 }
 .totalCost {
-  color: #1f77b4;
-  stroke: #1f77b4;
+  color: #d62728;
+  stroke: #d62728;
+  fill: #d62728;
 }
 .marginalCost {
   color: #ff7f0e;
   stroke: #ff7f0e;
+  fill: #ff7f0e;
 }
 .averageCost {
   color: #9467bd;
   stroke: #9467bd;
+  fill: #9467bd;
 }
 .utility {
   color: #1f77b4;
   stroke: #1f77b4;
+}
+.curve {
+  fill: none;
 }

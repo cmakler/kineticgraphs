@@ -4,7 +4,7 @@ module EconGraphs {
 
     export interface PointSlopeDemandDefinition extends DemandDefinition
     {
-        def: KGMath.Functions.PointSlopeLineDefinition;
+        def: KGMath.Functions.LinearDefinition;
     }
 
     export interface LinearDemandDefinition extends DemandDefinition
@@ -35,7 +35,7 @@ module EconGraphs {
 
         constructor(definition:LinearDemandDefinition) {
             super(definition);
-            this.marginalRevenue = new KGMath.Functions.TwoPointLine({p1: {x:0, y:0}, p2: {x:0,y:0}});
+            this.marginalRevenue = new KGMath.Functions.Linear({point1: {x:0, y:0}, point2: {x:0,y:0}});
             this.priceInterceptPoint = new KG.Point({
                 name: 'demandPriceIntercept',
                 coordinates: {x: 0, y: this.modelProperty('priceIntercept')},
@@ -54,8 +54,7 @@ module EconGraphs {
                 name: 'demand',
                 className: 'demand',
                 arrows: 'NONE',
-                type: definition.type,
-                def: definition.def,
+                lineDef: definition.def,
                 label: {
                     text: definition.curveLabel
                 }
