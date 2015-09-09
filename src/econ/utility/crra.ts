@@ -73,6 +73,11 @@ module EconGraphs {
             }
         }
 
+        consumptionYieldingUtility(u) {
+            var oneMinusRho = 1 - this.rra;
+            return Math.pow(1 + oneMinusRho*u,1/oneMinusRho);
+        }
+
     }
 
 }

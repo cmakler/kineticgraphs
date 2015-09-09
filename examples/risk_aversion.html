@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html ng-app="KineticGraphs">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Risk Aversion and Certainty Equivalence</title>
+    <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../dist/econ-graphs.css">
+    <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
+    <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
+    <script type="text/javascript" src="../lib/color_mixer.js"></script>
+    <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
+</head>
+<body>
+<div ng-controller="KineticGraphCtrl">
+    <h1>Risk Aversion and Certainty Equivalence</h1>
+    <hr/>
+    <div class="row">
+        <div class="col-md-8">
+            <div id="utility"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="well">
+                <div class="row">
+                    <div class="col-xs-3" style="text-align:right;font-size:12pt;padding-top:10px">Risk Aversion:
+                    </div>
+                    <div class="col-xs-9" id="rraSlider"></div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-3" style="text-align:right;font-size:12pt;padding-top:10px">Probability of <span class="math">c_L</span>:
+                    </div>
+                    <div class="col-xs-9" id="pLowSlider"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+    var scopeDefinition = {
+        params: {
+            rra: 0.8,
+            pLow: 0.5,
+            ca: 20,
+            cb: 80
+        },
+        graphParams: ['rra'],
+        restrictions: [
+            {
+                expression: 'params.ca',
+                restrictionType: 'range',
+                min: 1,
+                max: 'params.cb'
+            },
+            {
+                expression: 'params.cb',
+                restrictionType: 'range',
+                min: 'params.ca',
+                max: 100
+            }
+        ],
+        model: {
+            type: 'EconGraphs.RiskAversion',
+            definition: {
+                ca: 'params.ca',
+                cb: 'params.cb',
+                pLow: 'params.pLow',
+                utilityType: 'ConstantRRA',
+                utilityDef: {
+                    rra: 'params.rra'
+                }
+            }
+
+        },
+        views: [
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id: 'utility',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Consumption (units)}', ticks: 0},
+                    yAxisDef: {min: 0, max: 'model.utility.utilityAtQuantity(100)', title: '\\text{Total Utility (utils)}', ticks: 0},
+                    objects: [
+                        'model.utility.utilityFunctionView',
+                        'model.utility.utilityAtQuantityPoint(params.ca, "L","params.ca")',
+                        'model.utility.utilityAtQuantityPoint(params.cb, "H","params.cb")',
+                        'model.expectedUtilityPoint',
+                        'model.certaintyEquivalentPoint',
+                        'model.expectedConsumptionPoint',
+                            'model.expectationSegment',
+                            'model.riskPremiumSegment'
+                    ]
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'rraSlider',
+                    param: 'rra',
+                    precision: '0.01',
+                    axisDef: {min: 0, max: 2, ticks: 0}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'pLowSlider',
+                    param: 'pLow',
+                    precision: '0.01',
+                    axisDef: {min: 0, max: 1, tickValues: [0, 0.5, 1]}
+                }
+            }
+
+        ]
+    }
+</script>
+<script src="../dist/kinetic-graphs.js"></script>
+</body>
+</html>

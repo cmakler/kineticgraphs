@@ -12,6 +12,7 @@
 
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
+/// <reference path="utility/risk_aversion.ts"/>
 
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/>

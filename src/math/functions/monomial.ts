@@ -89,11 +89,39 @@ module KGMath.Functions {
 
                 // the new coefficient is the old coefficient times
                 //the power of the variable whose derivative we're taking
-                coefficient: "(" + m.monomialDefs.coefficient + ")*(" + m.monomialDefs.powers[n] + ")",
+                coefficient: KG.multiplyDefs(m.monomialDefs.coefficient, m.monomialDefs.powers[n]),
 
                 powers: m.monomialDefs.powers.map(function (p, index) {
                     if (index == n) {
-                        return p + "-1";
+                        return KG.subtractDefs(p,1);
+                    } else {
+                        return p
+                    }
+                }),
+
+                bases: m.bases
+
+            })
+        }
+
+        // Return the monomial that is the integral of this monomial
+        // with respect to the n'th variable, with no constant of integration
+        integral(n) {
+
+            var m = this;
+
+            // n is the index of the term; first term by default
+            n = n - 1 || 0;
+
+            return new Monomial({
+
+                // the new coefficient is the old coefficient times
+                //the power of the variable whose derivative we're taking
+                coefficient: KG.divideDefs(m.monomialDefs.coefficient, KG.addDefs(m.monomialDefs.powers[n],1)),
+
+                powers: m.monomialDefs.powers.map(function (p, index) {
+                    if (index == n) {
+                        return KG.addDefs(p,1);
                     } else {
                         return p
                     }

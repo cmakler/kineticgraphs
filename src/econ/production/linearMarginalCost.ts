@@ -9,6 +9,8 @@ module EconGraphs {
         fixedCost: any;
         marginalCostLineType: any;
         marginalCostLineDef: any;
+        marginalCostSlope: any;
+        marginalCostIntercept: any;
     }
 
     export interface ILinearMarginalCost extends IProductionCost

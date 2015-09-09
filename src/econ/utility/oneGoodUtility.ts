@@ -17,6 +17,8 @@ module EconGraphs {
         utilityFunction: KGMath.Functions.Base;
         marginalUtilityFunction: KGMath.Functions.Base;
 
+        consumptionYieldingUtility: (number) => number;
+
         utilityAtQuantity: (quantity:number, label?: string, dragParam?: string) => KG.Point;
 
         utilityFunctionView: KG.Curve;
@@ -52,7 +54,7 @@ module EconGraphs {
             this.utilityFunctionView = new KG.FunctionPlot({
                 name: 'utilityFunction',
                 className: this.className,
-                fn: 'model.utilityFunction',
+                fn: this.modelProperty('utilityFunction'),
                 arrows: 'NONE',
                 label: {
                     text: this.curveLabel
@@ -65,7 +67,7 @@ module EconGraphs {
                 this.marginalUtilityFunctionView = new KG.FunctionPlot({
                     name: 'marginalUtilityFunction',
                     className: this.className,
-                    fn: 'model.marginalUtilityFunction',
+                    fn: this.modelProperty('marginalUtilityFunction'),
                     arrows: 'NONE',
                     label: {
                         text: this.marginalCurveLabel
@@ -143,6 +145,10 @@ module EconGraphs {
                     horizontal: 'u\'(c'+ labelSubscript +')'
                 }
             })
+        }
+
+        consumptionYieldingUtility(u) {
+            return this.utilityFunction.xValue(u);
         }
 
     }

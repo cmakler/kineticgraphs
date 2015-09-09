@@ -701,10 +701,31 @@ var KGMath;
                 return new Monomial({
                     // the new coefficient is the old coefficient times
                     //the power of the variable whose derivative we're taking
-                    coefficient: "(" + m.monomialDefs.coefficient + ")*(" + m.monomialDefs.powers[n] + ")",
+                    coefficient: KG.multiplyDefs(m.monomialDefs.coefficient, m.monomialDefs.powers[n]),
                     powers: m.monomialDefs.powers.map(function (p, index) {
                         if (index == n) {
-                            return p + "-1";
+                            return KG.subtractDefs(p, 1);
+                        }
+                        else {
+                            return p;
+                        }
+                    }),
+                    bases: m.bases
+                });
+            };
+            // Return the monomial that is the integral of this monomial
+            // with respect to the n'th variable, with no constant of integration
+            Monomial.prototype.integral = function (n) {
+                var m = this;
+                // n is the index of the term; first term by default
+                n = n - 1 || 0;
+                return new Monomial({
+                    // the new coefficient is the old coefficient times
+                    //the power of the variable whose derivative we're taking
+                    coefficient: KG.divideDefs(m.monomialDefs.coefficient, KG.addDefs(m.monomialDefs.powers[n], 1)),
+                    powers: m.monomialDefs.powers.map(function (p, index) {
+                        if (index == n) {
+                            return KG.addDefs(p, 1);
                         }
                         else {
                             return p;
@@ -850,7 +871,8 @@ var KGMath;
                 }
                 return result;
             };
-            // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
+            // The derivative of a polynomial is a new polynomial,
+            // each of whose terms is the derivative of the original polynomial's terms
             Polynomial.prototype.derivative = function (n) {
                 var p = this;
                 return new Polynomial({
@@ -859,7 +881,24 @@ var KGMath;
                     })
                 });
             };
-            // The average of a polynomial is a new polynomial, each of whose terms is the average of the original polynomial's terms
+            // The derivative of a polynomial is a new polynomial,
+            // each of whose terms is the integral of the original polynomial's terms,
+            // plus the constant of integration c
+            Polynomial.prototype.integral = function (n, c) {
+                var p = this;
+                if (!c) {
+                    c = 0;
+                }
+                var termDefs = p.terms.map(function (term) {
+                    return term.integral(n);
+                });
+                termDefs.push(new Functions.Monomial({ coefficient: c, powers: [0] }));
+                return new Polynomial({
+                    termDefs: termDefs
+                });
+            };
+            // The average of a polynomial is a new polynomial,
+            // each of whose terms is the average of the original polynomial's terms
             Polynomial.prototype.average = function (n) {
                 var p = this;
                 return new Polynomial({
@@ -3635,7 +3674,7 @@ var EconGraphs;
             this.utilityFunctionView = new KG.FunctionPlot({
                 name: 'utilityFunction',
                 className: this.className,
-                fn: 'model.utilityFunction',
+                fn: this.modelProperty('utilityFunction'),
                 arrows: 'NONE',
                 label: {
                     text: this.curveLabel
@@ -3647,7 +3686,7 @@ var EconGraphs;
                 this.marginalUtilityFunctionView = new KG.FunctionPlot({
                     name: 'marginalUtilityFunction',
                     className: this.className,
-                    fn: 'model.marginalUtilityFunction',
+                    fn: this.modelProperty('marginalUtilityFunction'),
                     arrows: 'NONE',
                     label: {
                         text: this.marginalCurveLabel
@@ -3717,6 +3756,9 @@ var EconGraphs;
                 }
             });
         };
+        OneGoodUtility.prototype.consumptionYieldingUtility = function (u) {
+            return this.utilityFunction.xValue(u);
+        };
         return OneGoodUtility;
     })(KG.Model);
     EconGraphs.OneGoodUtility = OneGoodUtility;
@@ -3783,9 +3825,100 @@ var EconGraphs;
                 }
             }
         };
+        ConstantRRA.prototype.consumptionYieldingUtility = function (u) {
+            var oneMinusRho = 1 - this.rra;
+            return Math.pow(1 + oneMinusRho * u, 1 / oneMinusRho);
+        };
         return ConstantRRA;
     })(EconGraphs.OneGoodUtility);
     EconGraphs.ConstantRRA = ConstantRRA;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var RiskAversion = (function (_super) {
+        __extends(RiskAversion, _super);
+        function RiskAversion(definition, modelPath) {
+            definition.pLow = definition.pLow || 0.5;
+            _super.call(this, definition, modelPath);
+            this.utility = new EconGraphs[definition.utilityType](definition.utilityDef, this.modelPath + '.utility');
+            this.expectedUtilityPoint = new KG.Point({
+                name: 'expectedUtilityPoint',
+                className: 'riskPremium',
+                coordinates: {
+                    x: this.modelProperty('expectedC'),
+                    y: this.modelProperty('expectedU')
+                },
+                droplines: {
+                    horizontal: "\\mathbb{E}[u(c)]"
+                }
+            });
+            this.expectedConsumptionPoint = new KG.Point({
+                name: 'expectedConsumptionPoint',
+                className: 'expectedUtility',
+                coordinates: {
+                    x: this.modelProperty('expectedC'),
+                    y: this.modelProperty('utilityOfExpectedC')
+                },
+                droplines: {
+                    vertical: "\\mathbb{E}[c]",
+                    horizontal: 'u(\\mathbb{E}[c])'
+                }
+            });
+            this.certaintyEquivalentPoint = new KG.Point({
+                name: 'certaintyEquivalentPoint',
+                className: 'riskPremium',
+                coordinates: {
+                    x: this.modelProperty('certaintyEquivalent'),
+                    y: this.modelProperty('expectedU')
+                },
+                droplines: {
+                    vertical: "CE"
+                }
+            });
+            this.expectationSegment = new KG.Segment({
+                name: 'expectationSegment',
+                className: 'growth dotted',
+                a: {
+                    x: this.modelProperty('ca'),
+                    y: this.modelProperty('ua')
+                },
+                b: {
+                    x: this.modelProperty('cb'),
+                    y: this.modelProperty('ub')
+                }
+            });
+            this.riskPremiumSegment = new KG.Segment({
+                name: 'xDiffSegment',
+                className: 'riskPremium',
+                a: {
+                    x: this.modelProperty('expectedC'),
+                    y: this.modelProperty('expectedU')
+                },
+                b: {
+                    x: this.modelProperty('certaintyEquivalent'),
+                    y: this.modelProperty('expectedU')
+                },
+                label: {
+                    text: 'RP',
+                    valign: 'top'
+                }
+            });
+        }
+        RiskAversion.prototype._update = function (scope) {
+            var ra = this;
+            ra.utility = ra.utility.update(scope);
+            ra.ua = ra.utility.utilityFunction.yValue(ra.ca);
+            ra.ub = ra.utility.utilityFunction.yValue(ra.cb);
+            ra.expectedC = ra.pLow * ra.ca + (1 - ra.pLow) * ra.cb;
+            ra.expectedU = ra.pLow * ra.ua + (1 - ra.pLow) * ra.ub;
+            ra.utilityOfExpectedC = ra.utility.utilityFunction.yValue(ra.expectedC);
+            ra.certaintyEquivalent = ra.utility.consumptionYieldingUtility(ra.expectedU);
+            return ra;
+        };
+        return RiskAversion;
+    })(KG.Model);
+    EconGraphs.RiskAversion = RiskAversion;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
 var EconGraphs;
@@ -3901,6 +4034,7 @@ var EconGraphs;
 /// <reference path="production/linearMarginalCost.ts"/>
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
+/// <reference path="utility/risk_aversion.ts"/>
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/> 
 /// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />

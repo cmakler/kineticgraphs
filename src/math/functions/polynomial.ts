@@ -67,7 +67,8 @@ module KGMath.Functions {
             return result;
         }
 
-        // The derivative of a polynomial is a new polynomial, each of whose terms is the derivative of the original polynomial's terms
+        // The derivative of a polynomial is a new polynomial,
+        // each of whose terms is the derivative of the original polynomial's terms
         derivative(n) {
             var p = this;
             return new Polynomial({
@@ -79,7 +80,27 @@ module KGMath.Functions {
             })
         }
 
-        // The average of a polynomial is a new polynomial, each of whose terms is the average of the original polynomial's terms
+        // The derivative of a polynomial is a new polynomial,
+        // each of whose terms is the integral of the original polynomial's terms,
+        // plus the constant of integration c
+        integral(n,c?) {
+            var p = this;
+            if(!c) {
+                c = 0;
+            }
+            var termDefs = p.terms.map(
+                function (term) {
+                    return term.integral(n)
+                }
+            );
+            termDefs.push(new Monomial({coefficient: c, powers: [0]}))
+            return new Polynomial({
+                termDefs: termDefs
+            });
+        }
+
+        // The average of a polynomial is a new polynomial,
+        // each of whose terms is the average of the original polynomial's terms
         average(n) {
             var p = this;
             return new Polynomial({
