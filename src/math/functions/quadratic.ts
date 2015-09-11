@@ -27,8 +27,8 @@ module KGMath.Functions {
         discriminant: number;
         derivative: () => Linear;
         integral: () => Polynomial;
-        average: () => Polynomial;
-        multiply: () => Quadratic;
+        add: (x: number) => Quadratic;
+        multiply: (x: number) => Quadratic;
     }
 
     export class Quadratic extends Base implements IQuadratic {
@@ -40,10 +40,10 @@ module KGMath.Functions {
         public discriminant;
 
         constructor(definition:QuadraticDefinition, modelPath?) {
-            super(definition);
+            super(definition, modelPath);
             definition.coefficients = definition.coefficients || {a: 1, b: 1, c: 1};
 
-            if(!definition.hasOwnProperty('vertex')) {
+            if(!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
                 var negativeB = KG.multiplyDefs(-1,definition.coefficients.b),
                     twoA = KG.multiplyDefs(2,definition.coefficients.a),
                     vertexX = KG.divideDefs(negativeB,twoA),
@@ -139,10 +139,17 @@ module KGMath.Functions {
 
         // for xValue, use higher real root of ax^2 + bx + c - y
         xValue(y) {
+            var q = this;
             if(q.coefficients.a < 0) {
                 // downward facing parabola; real roots exist if y < vertex Y
                 if(y > q.vertex.y) {
                     return null;
+                }
+            } else if(q.coefficients.a == 0) {
+                if(q.coefficients.b == 0) {
+                    return null;
+                } else {
+                    return (y - q.coefficients.c)/q.coefficients.b;
                 }
             } else {
                 if(y < q.vertex.y) {
@@ -159,12 +166,23 @@ module KGMath.Functions {
 
             numSamplePoints = numSamplePoints || 51;
 
+            if(q.coefficients.a == 0) {
+                var l = new KGMath.Functions.Linear({
+                    coefficients: {
+                        a: q.coefficients.b,
+                        b: -1,
+                        c: q.coefficients.c
+                    }
+                });
+                return l.points(view);
+            }
+
             var inverse = (q.coefficients.a < 0);
 
-            var xDomain, yDomain
+            var xDomain, yDomain;
 
             if(yIsIndependent) {
-                xDomain = inverse ? new KG.Domain(view.xAxis.min, q.vertex.y) : new KG.DOmain(q.vertex.y, view.xAxis.max);
+                xDomain = inverse ? new KG.Domain(view.xAxis.min, q.vertex.y) : new KG.Domain(q.vertex.y, view.xAxis.max);
                 yDomain = view.yAxis.domain;
             } else {
                 xDomain = view.xAxis.domain;
@@ -178,20 +196,21 @@ module KGMath.Functions {
                 var x = xSamplePoints[i];
                 var y = ySamplePoints[i];
                 if(yIsIndependent) {
-                    xOfY = q.yValue(y);
+                    var xOfY = q.yValue(y);
                     if(view.onGraph({x: xOfY, y: y})) {points.push({x: xOfY, y: y})};
-                    yLow = q.vertex.x - differenceFromVertex(x);
+                    var yLow = q.vertex.x - q.differenceFromVertex(x);
                     if(view.onGraph({x: x, y: yLow})) {points.push({x: x, y: yLow})};
-                    yHigh = q.vertex.x + differenceFromVertex(x);
+                    var yHigh = q.vertex.x + q.differenceFromVertex(x);
                     if(view.onGraph({x: x, y: yHigh})) {points.push({x: x, y: yHigh})};
                 } else {
-                    yOfX = q.yValue(x);
+                    var yOfX = q.yValue(x);
                     if(view.onGraph({x: x, y: yOfX})) {points.push({x: x, y: yOfX})};
-                    xLow = q.vertex.x - differenceFromVertex(y);
+                    var xLow = q.vertex.x - q.differenceFromVertex(y);
                     if(view.onGraph({x: xLow, y: y})) {points.push({x: xLow, y: y})};
-                    xHigh = q.vertex.x + differenceFromVertex(y);
+                    var xHigh = q.vertex.x + q.differenceFromVertex(y);
                     if(view.onGraph({x: xHigh, y: y})) {points.push({x: xHigh, y: y})};
                 }
+                points.push({x: q.vertex.x, y:q.vertex.y})
             }
 
             if (yIsIndependent) {

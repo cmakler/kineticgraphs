@@ -83,6 +83,9 @@ module KG
                 y = view.dimensions.height - view.margins.bottom + view.xAxis.textMargin;
                 divObj.align = 'center';
                 divObj.valign = 'top';
+                if(!view.xAxis.domain.contains(divObj.coordinates.x)) {
+                    divObj.className = 'invisible';
+                }
             } else {
                 y = view.margins.top + view.yAxis.scale(divObj.coordinates.y);
             }

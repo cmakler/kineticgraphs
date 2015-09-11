@@ -94,9 +94,9 @@ module KG
                 if(p.verticalDropline) {
                     var continuationDropLine = new VerticalDropline({
                         name: p.verticalDropline.name,
-                        coordinates: {x: p.verticalDropline.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
+                        coordinates: {x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
                         draggable: p.verticalDropline.draggable,
-                        axisLabel: p.verticalDropline.labelDiv.definition.text
+                        axisLabel: p.verticalDropline.axisLabel
                     });
                     p.verticalDropline.labelDiv = null;
                     view.topGraph.addObject(p.verticalDropline);
@@ -136,11 +136,17 @@ module KG
                 return view;
             }
 
+
+
             if(isNaN(point.coordinates.x) || isNaN(point.coordinates.y) || point.coordinates.x == Infinity || point.coordinates.y == Infinity) {
                 return view;
             }
 
             var group:D3.Selection = subview.objectGroup(point.name, point.initGroupFn(), true);
+
+            if(!subview.onGraph(point.coordinates)) {
+                point.show = false;
+            }
 
             if (point.symbol === 'none') {
                 point.show = false;

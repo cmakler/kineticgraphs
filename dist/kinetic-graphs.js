@@ -537,9 +537,9 @@ var KGMath;
     (function (Functions) {
         var Base = (function (_super) {
             __extends(Base, _super);
-            function Base(definition) {
+            function Base(definition, modelPath) {
                 definition.level = definition.level || 0;
-                _super.call(this, definition);
+                _super.call(this, definition, modelPath);
             }
             // Returns the slope between (a,f(a)) and (b,f(b)).
             // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
@@ -953,8 +953,8 @@ var KGMath;
     (function (Functions) {
         var Linear = (function (_super) {
             __extends(Linear, _super);
-            function Linear(definition) {
-                _super.call(this, definition);
+            function Linear(definition, modelPath) {
+                _super.call(this, definition, modelPath);
                 this.linearIntersection = function (otherLine, delta) {
                     var thisLine = this;
                     delta = delta || 0;
@@ -969,6 +969,7 @@ var KGMath;
                     return { x: x, y: y };
                 };
                 definition.coefficients = definition.coefficients || { a: 0, b: -1, c: 0 };
+                var l = this;
                 if (definition.hasOwnProperty('point1') && definition.hasOwnProperty('point2')) {
                     var p1 = KG.getCoordinates(definition.point1), p2 = KG.getCoordinates(definition.point2), rise = KG.subtractDefs(p2.y, p1.y), run = KG.subtractDefs(p2.x, p1.x);
                     definition.slope = KG.divideDefs(rise, run);
@@ -978,12 +979,18 @@ var KGMath;
                     definition.coefficients.a = definition.slope;
                     if (definition.hasOwnProperty('intercept')) {
                         definition.coefficients.c = definition.intercept;
+                        l.interceptDef = definition.intercept;
                     }
                     else if (definition.hasOwnProperty('point') && definition.point != undefined) {
                         var mx = KG.multiplyDefs(definition.slope, definition.point.x);
                         definition.coefficients.c = KG.subtractDefs(definition.point.y, mx);
                     }
                 }
+                else {
+                    definition.slope = KG.multiplyDefs(-1, KG.divideDefs(definition.coefficients.a, definition.coefficients.b));
+                }
+                l.slopeDef = definition.slope;
+                l.interceptDef = l.interceptDef || KG.multiplyDefs(-1, KG.divideDefs(definition.coefficients.c, definition.coefficients.b));
             }
             Linear.prototype._update = function (scope) {
                 return this.updateLine();
@@ -998,6 +1005,32 @@ var KGMath;
                 l.xIntercept = l.isHorizontal ? null : (l.isVertical && l.hasOwnProperty('point')) ? l.point.x : -c / a;
                 l.yIntercept = l.isVertical ? null : -c / b;
                 return l;
+            };
+            // The derivative of ax^2 + bx + c is 2ax + b
+            Linear.prototype.derivative = function (n) {
+                var m = this.slopeDef || this.slope || 0;
+                return new HorizontalLine({
+                    y: m
+                });
+            };
+            // The integral of mx + b is (m/2)x^2 + bx + c
+            Linear.prototype.integral = function (n, c, name) {
+                var m = this, name = name ? m.modelProperty(name) : null;
+                if (m instanceof HorizontalLine) {
+                    return new Linear({
+                        slope: m.y,
+                        intercept: c
+                    }, name);
+                }
+                else {
+                    return new Functions.Quadratic({
+                        coefficients: {
+                            a: KG.multiplyDefs(0.5, m.slopeDef),
+                            b: m.interceptDef,
+                            c: c
+                        }
+                    }, name);
+                }
             };
             Linear.prototype.yValue = function (x) {
                 var l = this.updateLine();
@@ -1073,12 +1106,207 @@ var KGMath;
         Functions.VerticalLine = VerticalLine;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
+/*
+ A quadratic function is a special polynomial defined either with two points or a point and a slope.
+ This function takes either of those and returns a polynomial of the form ax + by + c.
+ The params object is of the form: { definitionType: '', param1: foo, param2: bar }
+ */
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Quadratic = (function (_super) {
+            __extends(Quadratic, _super);
+            function Quadratic(definition, modelPath) {
+                _super.call(this, definition, modelPath);
+                definition.coefficients = definition.coefficients || { a: 1, b: 1, c: 1 };
+                if (!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
+                    var negativeB = KG.multiplyDefs(-1, definition.coefficients.b), twoA = KG.multiplyDefs(2, definition.coefficients.a), vertexX = KG.divideDefs(negativeB, twoA), vertexY = this.modelProperty('yValue(' + vertexX + ')');
+                    definition.vertex = {
+                        x: vertexX,
+                        y: vertexY
+                    };
+                }
+            }
+            Quadratic.prototype._update = function (scope) {
+                var q = this;
+                q.discriminant = q.coefficients.b * q.coefficients.b - 4 * q.coefficients.a * q.coefficients.c;
+                return q;
+            };
+            // The derivative of ax^2 + bx + c is 2ax + b
+            Quadratic.prototype.derivative = function (n) {
+                var coefficients = this.coefficients;
+                return new Functions.Linear({
+                    slope: KG.multiplyDefs(coefficients.a, 2),
+                    intercept: coefficients.b
+                });
+            };
+            // The integral of ax^2 + bx + c is (a/3)x^3 + (b/2)x^2 + cx + C
+            Quadratic.prototype.integral = function (n, c) {
+                var coefficients = this.coefficients;
+                if (!c) {
+                    c = 0;
+                }
+                return new Functions.Polynomial({
+                    termDefs: [
+                        {
+                            coefficient: KG.divideDefs(coefficients.a, 3),
+                            powers: [3]
+                        },
+                        {
+                            coefficient: KG.divideDefs(coefficients.b, 2),
+                            powers: [2]
+                        },
+                        {
+                            coefficient: coefficients.c,
+                            powers: [1]
+                        },
+                        {
+                            coefficient: c,
+                            powers: [0]
+                        }
+                    ]
+                });
+            };
+            Quadratic.prototype.multiply = function (x) {
+                var q = this;
+                return new Quadratic({
+                    coefficients: {
+                        a: KG.multiplyDefs(q.coefficients.a, x),
+                        b: KG.multiplyDefs(q.coefficients.b, x),
+                        c: KG.multiplyDefs(q.coefficients.c, x)
+                    }
+                });
+            };
+            Quadratic.prototype.add = function (x) {
+                var q = this;
+                return new Quadratic({
+                    coefficients: {
+                        a: q.coefficients.a,
+                        b: q.coefficients.b,
+                        c: KG.addDefs(q.coefficients.c, x)
+                    }
+                });
+            };
+            Quadratic.prototype.yValue = function (x) {
+                var coefficients = this.coefficients;
+                return coefficients.a * x * x + coefficients.b * x + coefficients.c;
+            };
+            Quadratic.prototype.differenceFromVertex = function (y) {
+                var q = this, a = q.coefficients.a, b = q.coefficients.b, c = q.coefficients.c - y;
+                if (b * b > 4 * a * c) {
+                    return Math.abs(1 / (2 * a)) * Math.sqrt(b * b - 4 * a * c);
+                }
+                else {
+                    return null;
+                }
+            };
+            // for xValue, use higher real root of ax^2 + bx + c - y
+            Quadratic.prototype.xValue = function (y) {
+                var q = this;
+                if (q.coefficients.a < 0) {
+                    // downward facing parabola; real roots exist if y < vertex Y
+                    if (y > q.vertex.y) {
+                        return null;
+                    }
+                }
+                else if (q.coefficients.a == 0) {
+                    if (q.coefficients.b == 0) {
+                        return null;
+                    }
+                    else {
+                        return (y - q.coefficients.c) / q.coefficients.b;
+                    }
+                }
+                else {
+                    if (y < q.vertex.y) {
+                        return null;
+                    }
+                }
+                return q.vertex.x + this.differenceFromVertex(y);
+            };
+            Quadratic.prototype.points = function (view, yIsIndependent, numSamplePoints) {
+                var q = this, points = [];
+                numSamplePoints = numSamplePoints || 51;
+                if (q.coefficients.a == 0) {
+                    var l = new KGMath.Functions.Linear({
+                        coefficients: {
+                            a: q.coefficients.b,
+                            b: -1,
+                            c: q.coefficients.c
+                        }
+                    });
+                    return l.points(view);
+                }
+                var inverse = (q.coefficients.a < 0);
+                var xDomain, yDomain;
+                if (yIsIndependent) {
+                    xDomain = inverse ? new KG.Domain(view.xAxis.min, q.vertex.y) : new KG.Domain(q.vertex.y, view.xAxis.max);
+                    yDomain = view.yAxis.domain;
+                }
+                else {
+                    xDomain = view.xAxis.domain;
+                    yDomain = inverse ? new KG.Domain(view.yAxis.min, q.vertex.y) : new KG.Domain(q.vertex.y, view.yAxis.max);
+                }
+                var xSamplePoints = xDomain.samplePoints(numSamplePoints), ySamplePoints = yDomain.samplePoints(numSamplePoints);
+                for (var i = 0; i < numSamplePoints; i++) {
+                    var x = xSamplePoints[i];
+                    var y = ySamplePoints[i];
+                    if (yIsIndependent) {
+                        var xOfY = q.yValue(y);
+                        if (view.onGraph({ x: xOfY, y: y })) {
+                            points.push({ x: xOfY, y: y });
+                        }
+                        ;
+                        var yLow = q.vertex.x - q.differenceFromVertex(x);
+                        if (view.onGraph({ x: x, y: yLow })) {
+                            points.push({ x: x, y: yLow });
+                        }
+                        ;
+                        var yHigh = q.vertex.x + q.differenceFromVertex(x);
+                        if (view.onGraph({ x: x, y: yHigh })) {
+                            points.push({ x: x, y: yHigh });
+                        }
+                        ;
+                    }
+                    else {
+                        var yOfX = q.yValue(x);
+                        if (view.onGraph({ x: x, y: yOfX })) {
+                            points.push({ x: x, y: yOfX });
+                        }
+                        ;
+                        var xLow = q.vertex.x - q.differenceFromVertex(y);
+                        if (view.onGraph({ x: xLow, y: y })) {
+                            points.push({ x: xLow, y: y });
+                        }
+                        ;
+                        var xHigh = q.vertex.x + q.differenceFromVertex(y);
+                        if (view.onGraph({ x: xHigh, y: y })) {
+                            points.push({ x: xHigh, y: y });
+                        }
+                        ;
+                    }
+                    points.push({ x: q.vertex.x, y: q.vertex.y });
+                }
+                if (yIsIndependent) {
+                    return points.sort(KG.sortObjects('y'));
+                }
+                else {
+                    return points.sort(KG.sortObjects('x'));
+                }
+            };
+            return Quadratic;
+        })(Functions.Base);
+        Functions.Quadratic = Quadratic;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
 /// <reference path="functions/oneVariable.ts"/>
 /// <reference path="functions/monomial.ts"/>
 /// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
+/// <reference path="functions/quadratic.ts"/>
 /// <reference path="../kg.ts"/>
 'use strict';
 var KG;
@@ -1222,9 +1450,9 @@ var KG;
                 if (p.verticalDropline) {
                     var continuationDropLine = new KG.VerticalDropline({
                         name: p.verticalDropline.name,
-                        coordinates: { x: p.verticalDropline.coordinates.x, y: view.bottomGraph.yAxis.domain.max },
+                        coordinates: { x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max },
                         draggable: p.verticalDropline.draggable,
-                        axisLabel: p.verticalDropline.labelDiv.definition.text
+                        axisLabel: p.verticalDropline.axisLabel
                     });
                     p.verticalDropline.labelDiv = null;
                     view.topGraph.addObject(p.verticalDropline);
@@ -1262,6 +1490,9 @@ var KG;
                 return view;
             }
             var group = subview.objectGroup(point.name, point.initGroupFn(), true);
+            if (!subview.onGraph(point.coordinates)) {
+                point.show = false;
+            }
             if (point.symbol === 'none') {
                 point.show = false;
                 point.labelDiv.show = false;
@@ -1721,6 +1952,9 @@ var KG;
                 y = view.dimensions.height - view.margins.bottom + view.xAxis.textMargin;
                 divObj.align = 'center';
                 divObj.valign = 'top';
+                if (!view.xAxis.domain.contains(divObj.coordinates.x)) {
+                    divObj.className = 'invisible';
+                }
             }
             else {
                 y = view.margins.top + view.yAxis.scale(divObj.coordinates.y);
@@ -2304,6 +2538,9 @@ var KG;
         Slider.prototype._update = function (scope) {
             this.xAxis.update(scope);
             return this;
+        };
+        Slider.prototype.onGraph = function (coordinates) {
+            return true;
         };
         return Slider;
     })(KG.View);
@@ -3862,7 +4099,7 @@ var EconGraphs;
                 },
                 droplines: {
                     vertical: "\\mathbb{E}[c]",
-                    horizontal: 'u(\\mathbb{E}[c])'
+                    horizontal: "u(\\mathbb{E}[c])"
                 }
             });
             this.certaintyEquivalentPoint = new KG.Point({
@@ -4037,11 +4274,90 @@ var EconGraphs;
 /// <reference path="utility/risk_aversion.ts"/>
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/> 
-/// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
-/// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
-/// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
-/// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
-/// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
+/**
+ * Created by cmakler on 9/10/15.
+ */
+var PhysicsGraphs;
+(function (PhysicsGraphs) {
+    var Acceleration = (function (_super) {
+        __extends(Acceleration, _super);
+        function Acceleration(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+            var model = this;
+            /*
+            model.accelerationFunction = new KGMath.Functions.HorizontalLine({y: definition.acceleration});
+            model.velocityFunction = model.accelerationFunction.integral(0,definition.initialVelocity);
+            model.positionFunction = model.velocityFunction.integral(0,definition.initialPosition,'positionFunction');
+            */
+            model.positionFunction = new KGMath.Functions.Quadratic({
+                coefficients: {
+                    a: definition.acceleration,
+                    b: definition.initialVelocity,
+                    c: definition.initialPosition
+                }
+            }, model.modelProperty('positionFunction'));
+            model.velocityFunction = model.positionFunction.derivative();
+            model.accelerationFunction = model.velocityFunction.derivative();
+            model.accelerationView = new KG.HorizontalLine({
+                name: 'accelerationView',
+                className: 'growth',
+                y: definition.acceleration
+            });
+            model.velocityView = new KG.Line({
+                name: 'velocityView',
+                className: 'totalCost',
+                lineDef: model.velocityFunction.definition
+            });
+            model.positionView = new KG.FunctionPlot({
+                name: 'positionView',
+                className: 'growth',
+                fn: model.modelProperty('positionFunction')
+            });
+            model.initialPositionPoint = new KG.Point({
+                name: 'initialPositionPoint',
+                className: 'growth',
+                coordinates: {
+                    x: 0,
+                    y: definition.initialPosition
+                },
+                yDrag: definition.initialPosition,
+                label: {
+                    text: 'x_0'
+                }
+            });
+            model.initialVelocityPoint = new KG.Point({
+                name: 'initialVelocityPoint',
+                className: 'totalCost',
+                coordinates: {
+                    x: 0,
+                    y: definition.initialVelocity
+                },
+                yDrag: definition.initialVelocity,
+                label: {
+                    text: 'v_0'
+                }
+            });
+            model.positionVertexPoint = new KG.Point({
+                name: 'positionVertexPoint',
+                className: 'growth',
+                coordinates: {
+                    x: model.positionFunction.definition.vertex.x,
+                    y: model.positionFunction.definition.vertex.y
+                },
+                droplines: {
+                    vertical: "x"
+                }
+            });
+            model.zeroVelocityLine = new KG.HorizontalLine({ y: 0, name: 'zeroVelocity', className: 'dotted totalCost' });
+        }
+        return Acceleration;
+    })(KG.Model);
+    PhysicsGraphs.Acceleration = Acceleration;
+})(PhysicsGraphs || (PhysicsGraphs = {}));
+/// <reference path="../kg.ts"/>
+/// <reference path="movement/acceleration.ts"/>
+/// <reference path="../typings/tsd.d.ts"/>
+/// <reference path="../bower_components/dt-d3/d3.d.ts"/>
 /// <reference path="constants.ts" />
 /// <reference path="helpers/helpers.ts" />
 /// <reference path="helpers/definitions.ts" />
@@ -4069,6 +4385,7 @@ var EconGraphs;
 /// <reference path="sample/sample.ts" />
 /// <reference path="finance/fg.ts" />
 /// <reference path="econ/eg.ts" />
+/// <reference path="physics/pg.ts"/>
 'use strict';
 angular.module('KineticGraphs', []).controller('KineticGraphCtrl', ['$scope', '$interpolate', '$window', KG.Controller]).filter('percentage', ['$filter', function ($filter) {
     return function (input, decimals) {

@@ -39,6 +39,10 @@ module KG
             return this;
         }
 
+        onGraph(coordinates) {
+            return true;
+        }
+
 
 
     }

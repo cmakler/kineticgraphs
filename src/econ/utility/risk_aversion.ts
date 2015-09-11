@@ -78,7 +78,7 @@ module EconGraphs {
                 },
                 droplines: {
                     vertical: "\\mathbb{E}[c]",
-                    horizontal: 'u(\\mathbb{E}[c])'
+                    horizontal: "u(\\mathbb{E}[c])"
                 }
             });
 

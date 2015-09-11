@@ -22,9 +22,9 @@ module KGMath.Functions {
         public level;
         public bases;
 
-        constructor(definition) {
+        constructor(definition,modelPath?) {
             definition.level = definition.level || 0;
-            super(definition);
+            super(definition,modelPath);
         }
 
         // Returns the slope between (a,f(a)) and (b,f(b)).

@@ -32,11 +32,15 @@ module KGMath.Functions {
         isVertical: boolean;
         isHorizontal: boolean;
         point?: KG.ICoordinates;
+        derivative: () => HorizontalLine;
+        integral: (n?: number, c?: number) => Linear | Quadratic;
     }
 
     export class Linear extends Base implements ILinear {
 
         public slope;
+        public slopeDef;
+        public interceptDef;
         public inverseSlope;
         public coefficients;
         public xIntercept;
@@ -45,11 +49,13 @@ module KGMath.Functions {
         public isHorizontal;
         public point;
 
-        constructor(definition:LinearDefinition) {
+        constructor(definition:LinearDefinition, modelPath?: string) {
 
-            super(definition);
+            super(definition, modelPath);
 
             definition.coefficients = definition.coefficients || {a: 0, b: -1, c: 0};
+
+            var l = this;
 
             if(definition.hasOwnProperty('point1') && definition.hasOwnProperty('point2')) {
                 var p1 = KG.getCoordinates(definition.point1),
@@ -64,11 +70,17 @@ module KGMath.Functions {
                 definition.coefficients.a = definition.slope;
                 if(definition.hasOwnProperty('intercept')) {
                     definition.coefficients.c = definition.intercept;
+                    l.interceptDef = definition.intercept;
                 } else if(definition.hasOwnProperty('point') && definition.point != undefined) {
                     var mx = KG.multiplyDefs(definition.slope,definition.point.x);
                     definition.coefficients.c = KG.subtractDefs(definition.point.y,mx);
                 }
+            } else {
+                definition.slope = KG.multiplyDefs(-1,KG.divideDefs(definition.coefficients.a,definition.coefficients.b));
             }
+
+            l.slopeDef = definition.slope;
+            l.interceptDef = l.interceptDef || KG.multiplyDefs(-1,KG.divideDefs(definition.coefficients.c,definition.coefficients.b));
         }
 
         _update(scope) {
@@ -93,6 +105,36 @@ module KGMath.Functions {
             l.yIntercept = l.isVertical ? null : -c/b;
 
             return l;
+
+        }
+
+        // The derivative of ax^2 + bx + c is 2ax + b
+        derivative(n?) {
+            var m = this.slopeDef || this.slope || 0;
+            return new HorizontalLine({
+                y: m
+            });
+        }
+
+        // The integral of mx + b is (m/2)x^2 + bx + c
+        integral(n?,c?,name?:string): (Linear | Quadratic) {
+            var m = this,
+                name = name ? m.modelProperty(name) : null;
+            if(m instanceof HorizontalLine) {
+                return new Linear({
+                    slope: m.y,
+                    intercept: c
+                },name)
+            } else {
+                return new Quadratic({
+                    coefficients: {
+                        a: KG.multiplyDefs(0.5,m.slopeDef),
+                        b: m.interceptDef,
+                        c: c
+                    }
+                },name)
+            }
+
 
         }
 
