@@ -118,8 +118,10 @@ module KGMath.Functions {
 
         // The integral of mx + b is (m/2)x^2 + bx + c
         integral(n?,c?,name?:string): (Linear | Quadratic) {
-            var m = this,
-                name = name ? m.modelProperty(name) : null;
+            var m = this;
+            if(!c) {
+                c = 0;
+            }
             if(m instanceof HorizontalLine) {
                 return new Linear({
                     slope: m.y,
@@ -235,13 +237,13 @@ module KGMath.Functions {
 
         public y;
 
-        constructor(definition:HorizontalLineDefinition) {
+        constructor(definition:HorizontalLineDefinition, modelPath?: string) {
             definition.coefficients = {
                 a: 0,
                 b: -1,
                 c: definition.y
-            }
-            super(definition)
+            };
+            super(definition,modelPath);
         }
 
     }
@@ -256,13 +258,13 @@ module KGMath.Functions {
 
         public x;
 
-        constructor(definition:VerticalLineDefinition) {
+        constructor(definition:VerticalLineDefinition, modelPath?: string) {
             definition.coefficients = {
                 a: -1,
                 b: 0,
                 c: definition.x
             };
-            super(definition)
+            super(definition,modelPath);
         }
 
     }

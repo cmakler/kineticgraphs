@@ -26,12 +26,12 @@ module KG
 
     export class Graph extends View implements IGraph
     {
-        constructor(definition:GraphDefinition) {
+        constructor(definition:GraphDefinition, modelPath?: string) {
 
             // ensure dimensions and margins are set; set any missing elements to defaults
             definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
             definition.margins = _.defaults(definition.margins || {}, {top: 20, left: 100, bottom: 70, right: 20});
-            super(definition);
+            super(definition, modelPath);
         }
 
         // Check to see if a point is on the graph

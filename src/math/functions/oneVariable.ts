@@ -12,8 +12,8 @@ module KGMath.Functions {
 
         public fn;
 
-        constructor(definition:OneVariableDefinition) {
-            super(definition);
+        constructor(definition:OneVariableDefinition, modelPath?: string) {
+            super(definition, modelPath);
         }
 
         yValue(x) {

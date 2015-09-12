@@ -49,8 +49,8 @@ module EconGraphs {
         public quantityDemandedAtPrice;
         public consumerSurplus;
 
-        constructor(definition:CournotDuopolyDefinition) {
-            super(definition);
+        constructor(definition:CournotDuopolyDefinition, modelPath?: string) {
+            super(definition, modelPath);
             this.marketDemand = new LinearDemand({
                 type: 'SlopeInterceptLine',
                 def: {

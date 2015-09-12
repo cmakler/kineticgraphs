@@ -22,9 +22,9 @@ module KG {
         public yIsIndependent;
         public numSamplePoints;
 
-        constructor(definition:FunctionPlotDefinition) {
+        constructor(definition:FunctionPlotDefinition, modelPath?: string) {
             definition = _.defaults(definition, {yIsIndependent: false, interpolation: 'linear', numSamplePoints: 51});
-            super(definition);
+            super(definition, modelPath);
         }
 
         _update(scope) {

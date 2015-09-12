@@ -5,7 +5,8 @@
 module KG {
 
     export interface LineDefinition extends ViewObjectDefinition {
-        lineDef: KGMath.Functions.LinearDefinition;
+        lineDef?: KGMath.Functions.LinearDefinition;
+        linear?: any;
         arrows?: string;
         label?: GraphDivDefinition;
         xInterceptLabel?: string;
@@ -32,17 +33,17 @@ module KG {
         public xInterceptLabelDiv;
         public yInterceptLabelDiv;
 
-        constructor(definition:LineDefinition) {
+        constructor(definition:LineDefinition, modelPath?: string) {
 
-            super(definition);
+            super(definition, modelPath);
 
             var line = this;
 
             if(line instanceof HorizontalLine) {
                 line.linear = new KGMath.Functions.HorizontalLine({y: definition.y});
             } else if(line instanceof VerticalLine) {
-                line.linear = new KGMath.Functions.VerticalLine({x: definition.x})
-            } else {
+                line.linear = new KGMath.Functions.VerticalLine({x: definition.x});
+            } else if(definition.hasOwnProperty('lineDef')) {
                 line.linear = new KGMath.Functions.Linear(definition.lineDef);}
 
             line.viewObjectSVGtype = 'path';
@@ -198,24 +199,21 @@ module KG {
                 return view;
             }
 
-            return view;
         }
-
-
 
     }
 
     export class VerticalLine extends Line {
 
-        constructor(definition) {
-            super(definition);
+        constructor(definition, modelPath?: string) {
+            super(definition, modelPath);
         }
     }
 
     export class HorizontalLine extends Line {
 
-        constructor(definition) {
-            super(definition);
+        constructor(definition, modelPath?: string) {
+            super(definition, modelPath);
         }
     }
 

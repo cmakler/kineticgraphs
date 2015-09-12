@@ -57,8 +57,8 @@ module FinanceGraphs
         public riskReturnLine;
         public positiveDefinite;
 
-        constructor(definition:PortfolioDefinition) {
-            super(definition);
+        constructor(definition:PortfolioDefinition, modelPath?: string) {
+            super(definition, modelPath);
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
             p.threeAssetPortfolios = new KG.PathFamily({

@@ -6,20 +6,23 @@ module EconGraphs {
 
     export interface ProductionCostDefinition extends KG.ModelDefinition
     {
+        fixedCost?: any;
         costFunctionType?: string;
         costFunctionDef?: KGMath.Functions.BaseDefinition;
+        marginalCostFunctionType?: string;
+        marginalCostFunctionDef?: KGMath.Functions.BaseDefinition;
         fixedCostDragParam?: string;
     }
 
     export interface IProductionCost extends KG.IModel
     {
+        fixedCost: number;
         costFunction: KGMath.Functions.Base;
         totalCostCurve: KG.ViewObject;
         marginalCostFunction: KGMath.Functions.Base;
         marginalCostCurve: KG.ViewObject;
         averageCostFunction: KGMath.Functions.Base;
         averageCostCurve: KG.ViewObject;
-        fixedCost: number;
         fixedCostPoint: KG.Point;
 
         tc: (q:number) => number;
@@ -38,12 +41,44 @@ module EconGraphs {
         public fixedCost;
         public fixedCostPoint;
 
-        constructor(definition:ProductionCostDefinition) {
-            super(definition);
+        constructor(definition:ProductionCostDefinition, modelPath?: string) {
+            super(definition,modelPath);
 
             var productionCost = this;
 
-            productionCost.costFunction = new KGMath.Functions[definition.costFunctionType](definition.costFunctionDef);
+            if(definition.hasOwnProperty('costFunctionDef')) {
+                productionCost.costFunction = new KGMath.Functions[definition.costFunctionType](definition.costFunctionDef);
+                productionCost.marginalCostFunction = productionCost.costFunction.derivative();
+            } else if(definition.hasOwnProperty('marginalCostFunctionDef')) {
+                productionCost.marginalCostFunction = new KGMath.Functions[definition.marginalCostFunctionType](definition.marginalCostFunctionDef);
+                productionCost.costFunction = productionCost.marginalCostFunction.integral(0,definition.fixedCost);
+            } else {
+                console.log('must initiate production cost object with either total cost or marginal cost function!')
+            }
+
+            productionCost.averageCostFunction = productionCost.costFunction.average();
+
+            if(productionCost.costFunction instanceof KGMath.Functions.Linear) {
+                productionCost.totalCostCurve = new KG.Line({
+                    name: 'totalCostLine',
+                    className: 'totalCost',
+                    lineDef: productionCost.modelProperty('costFunction.definition'),
+                    label: {
+                        text: 'TC'
+                    }
+                });
+
+                productionCost.marginalCostCurve = new KG.HorizontalLine({
+                    name: 'marginalCostCurve',
+                    className: 'marginalCost',
+                    y: productionCost.modelProperty('marginalCostFunction.y'),
+                    label: {
+                        text: 'MC'
+                    },
+                    numSamplePoints: 501
+                });
+            }
+
             productionCost.totalCostCurve = new KG.FunctionPlot({
                 name: 'totalCostCurve',
                 fn: this.modelProperty('costFunction'),
@@ -54,7 +89,6 @@ module EconGraphs {
                 }
             });
 
-            productionCost.marginalCostFunction = productionCost.costFunction.derivative();
             productionCost.marginalCostCurve = new KG.FunctionPlot({
                 name: 'marginalCostCurve',
                 className: 'marginalCost',
@@ -66,7 +100,6 @@ module EconGraphs {
                 numSamplePoints: 501
             });
 
-            productionCost.averageCostFunction = productionCost.costFunction.average();
             productionCost.averageCostCurve = new KG.FunctionPlot({
                 name: 'averageCostCurve',
                 className: 'averageCost',
@@ -157,10 +190,11 @@ module EconGraphs {
         }
 
         marginalCostAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+            var labelSubscript = label ? '_{' + label + '}' : '',
+                mcq = this.modelProperty('mc('+q+')');
             return new KG.Point({
                 name: 'marginalCostAtQ' + label,
-                coordinates: {x: q, y: this.mc(q)},
+                coordinates: {x: q, y: mcq},
                 className: 'marginalCost',
                 xDrag: dragParam,
                 label: {
@@ -173,10 +207,11 @@ module EconGraphs {
         }
 
         averageCostAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+            var labelSubscript = label ? '_{' + label + '}' : '',
+                atcq = this.modelProperty('atc('+q+')');
             return new KG.Point({
                 name: 'averageCostAtQ' + label,
-                coordinates: {x: q, y: this.atc(q)},
+                coordinates: {x: q, y: atcq},
                 className: 'averageCost',
                 xDrag: dragParam,
                 label: {

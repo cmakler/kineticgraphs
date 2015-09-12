@@ -45,7 +45,7 @@ module KG
         public textMargin;
         public axisBuffer;
 
-        constructor(definition : AxisDefinition) {
+        constructor(definition : AxisDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {
                 min: 0,
@@ -56,7 +56,7 @@ module KG
                 axisBuffer: 30
             });
 
-            super(definition);
+            super(definition, modelPath);
             if(this.ticks == 0) {
                 this.textMargin = 7;
             }

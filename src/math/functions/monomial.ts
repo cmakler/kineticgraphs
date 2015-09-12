@@ -36,12 +36,12 @@ module KGMath.Functions {
         public bases;
         public monomialDefs: any;
 
-        constructor(definition:MonomialDefinition) {
+        constructor(definition:MonomialDefinition, modelPath?: string) {
             this.monomialDefs = {
                 coefficient: definition.coefficient.toString(),
                 powers: definition.powers.map(function(p) {return p.toString()})
             };
-            super(definition);
+            super(definition, modelPath);
         }
 
         // Establish setters

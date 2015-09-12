@@ -25,12 +25,12 @@ module KG
         public topGraph;
         public bottomGraph;
 
-        constructor(definition:TwoVerticalGraphsDefinition) {
+        constructor(definition:TwoVerticalGraphsDefinition, modelPath?: string) {
 
             // ensure dimensions and margins are set; set any missing elements to defaults
             definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
 
-            super(definition);
+            super(definition, modelPath);
 
             // if top and bottom graphs share a common x axis, create axis elements
             if(definition.hasOwnProperty('xAxisDef')) {

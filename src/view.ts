@@ -61,9 +61,9 @@ module KG
         public background;
         private mask;
 
-        constructor(definition:ViewDefinition) {
+        constructor(definition:ViewDefinition, modelPath?:string) {
             definition = _.defaults(definition,{background:'white',mask:true});
-            super(definition);
+            super(definition, modelPath);
             if(definition.hasOwnProperty('xAxisDef')){
                 this.xAxis = new XAxis(definition.xAxisDef);
             }

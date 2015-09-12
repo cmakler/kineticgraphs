@@ -14,9 +14,9 @@ module KG {
         public data;
         public interpolation;
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
 
-            super(definition);
+            super(definition, modelPath);
 
             this.viewObjectSVGtype = 'path';
             this.viewObjectClass = 'dataPath';

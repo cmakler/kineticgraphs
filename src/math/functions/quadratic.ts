@@ -39,7 +39,7 @@ module KGMath.Functions {
         public roots;
         public discriminant;
 
-        constructor(definition:QuadraticDefinition, modelPath?) {
+        constructor(definition:QuadraticDefinition, modelPath?:string) {
             super(definition, modelPath);
             definition.coefficients = definition.coefficients || {a: 1, b: 1, c: 1};
 
@@ -71,11 +71,13 @@ module KGMath.Functions {
         }
 
         // The integral of ax^2 + bx + c is (a/3)x^3 + (b/2)x^2 + cx + C
-        integral(n?,c?) {
-            var coefficients:QuadraticCoefficients = this.coefficients;
+        integral(n?,c?,name?:string) {
+            var q = this,
+                coefficients = this.coefficients;
             if(!c) {
                 c = 0;
             }
+            name = name ? q.modelProperty(name) : null;
             return new Polynomial({
                 termDefs:[
                     {
@@ -95,7 +97,30 @@ module KGMath.Functions {
                         powers: [0]
                     }
                 ]
-            })
+            },name)
+        }
+
+        // The average of ax^2 + bx + c is ax + b + cx^-2 + C
+        average(n?,name?) {
+            var q = this,
+                coefficients:QuadraticCoefficients = q.coefficients;
+            name = name ? q.modelProperty(name) : null;
+            return new Polynomial({
+                termDefs:[
+                    {
+                        coefficient: coefficients.a,
+                        powers: [1]
+                    },
+                    {
+                        coefficient: coefficients.b,
+                        powers: [0]
+                    },
+                    {
+                        coefficient: coefficients.c,
+                        powers: [-1]
+                    }
+                ]
+            },name)
         }
 
         multiply(x) {

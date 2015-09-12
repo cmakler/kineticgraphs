@@ -78,8 +78,8 @@ module EconGraphs {
         public cMax;
         public kMax;
 
-        constructor(definition:MidpointElasticityDefinition) {
-            super(definition);
+        constructor(definition:RamseyCassKoopmansDefinition, modelPath?:string) {
+            super(definition, modelPath);
             this.steadyCapital = new KGMath.Functions.Polynomial({termDefs:[
                 {
                     coefficient: 1,
@@ -92,7 +92,7 @@ module EconGraphs {
             ]});
             this.steadyCapitalView = new KG.FunctionPlot({
                 name: 'steadyCapital',
-                fn: 'model.steadyCapital',
+                fn: this.modelProperty('steadyCapital'),
                 className: 'capital',
                 numSamplePoints:201,
                 label: {
@@ -102,7 +102,7 @@ module EconGraphs {
             this.steadyConsumptionView = new KG.VerticalLine({
                 name: 'steadyConsumption',
                 className: 'consumption',
-                x: 'model.steadyStateK',
+                x: this.modelProperty('steadyStateK'),
                 label: {
                     text: '\\dot c = 0'
                 }
@@ -110,8 +110,8 @@ module EconGraphs {
             this.steadyStateView = new KG.Point({
                 name: 'steadyStatePoint',
                 coordinates: {
-                    x: 'model.steadyStateK',
-                    y: 'model.steadyStateC'
+                    x: this.modelProperty('steadyStateK'),
+                    y: this.modelProperty('steadyStateC')
                 },
                 symbol: 'cross',
                 size: 100,
@@ -138,13 +138,13 @@ module EconGraphs {
             });
             this.growthPathView = new KG.LinePlot({
                 name: 'growthPath',
-                data: 'model.growthPath',
+                data: this.modelProperty('growthPath'),
                 className: 'growth',
                 arrows: 'END'
             });
             this.balancedGrowthPathView = new KG.LinePlot({
                 name: 'balancedGrowthPath',
-                data: 'model.balancedGrowthPath',
+                data: this.modelProperty('balancedGrowthPath'),
                 className: 'growth dashed',
                 interpolation: 'basis'
             })

@@ -27,8 +27,8 @@ module KGMath.Functions {
 
         public terms;
 
-        constructor(definition:PolynomialDefinition) {
-            super(definition);
+        constructor(definition:PolynomialDefinition, modelPath?: string) {
+            super(definition,modelPath);
             if(definition.hasOwnProperty('termDefs')){
                 this.terms = definition.termDefs.map(function(termDef) { return new Monomial(termDef)});
             }

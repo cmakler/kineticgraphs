@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html ng-app="KineticGraphs">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Cost Curves</title>
+    <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../dist/econ-graphs.css">
+    <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
+    <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
+</head>
+<body>
+
+
+<div ng-controller="KineticGraphCtrl">
+    <div class="row">
+        <div class="col-md-4">
+            <h1>Profit Maximization</h1>
+            <hr/>
+            <p>Drag point <span class="math">q</span> left and right to see how total, marginal, and average costs change. You can also drag the fixed cost up and down.</p>
+            <hr/>
+        </div>
+        <div class="col-md-8">
+            <div id="costs"></div>
+        </div>
+    </div>
+
+
+</div>
+<script>
+    var scopeDefinition = {
+        params: {
+            fc: 100,
+            q: 50,
+            demandPriceIntercept: 40,
+            demandQuantityIntercept: 80,
+            marginalCostIntercept: 10,
+            marginalCostSlope: 0,
+            constantMarginalCost: true
+        },
+        restrictions: [
+            {
+                expression: 'model.costFunction.tc(params.q)',
+                restrictionType: 'range',
+                min: 0,
+                max: 1000
+            }
+        ],
+        model: {
+            type: 'EconGraphs.Monopoly',
+            definition: {
+                quantity: 'params.q',
+                cost: {
+                    fixedCost: 'params.fc',
+                    marginalCostFunctionType: 'Linear',
+                    marginalCostFunctionDef: {
+                        slope: 'params.marginalCostSlope',
+                        intercept: 'params.marginalCostIntercept'
+                    },
+                    fixedCostDragParam: 'fc'
+                },
+                demand: {
+                    demandType: 'LinearDemand',
+                    demandDef: {
+                        elasticityMethod: 'point',
+                        price: 'params.price',
+                        type: 'Linear',
+                        def: {
+                            point1: {
+                                x: 0,
+                                y: 'params.demandPriceIntercept'
+                            },
+                            point2: {
+                                x: 'params.demandQuantityIntercept',
+                                y: 0
+                            }
+                        },
+                        priceInterceptDrag: 'params.demandPriceIntercept',
+                        quantityInterceptDrag: 'params.demandQuantityIntercept',
+                        priceDrag: 'params.price'
+                    }
+                }
+
+            }
+        },
+        views: [
+            {
+                type: 'KG.TwoVerticalGraphs',
+                definition: {
+                    element_id: 'costs',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity (q)}'},
+                    topGraph: {
+                        margins: {right: 100},
+                        yAxisDef: {min: 0, max: 1000, title: '\\text{Total Costs (Dollars)}'},
+                        objects: [
+                            'model.costFunction.totalCostCurve',
+                                'model.demandFunction.totalRevenueCurve',
+                            'model.costFunction.fixedCostPoint']
+                    },
+                    bottomGraph: {
+                        margins: {right: 100},
+                        yAxisDef: {min: 0, max: 50, title: '\\text{Unit Costs (Dollars per Unit)}'},
+                        objects: [
+                            'model.costFunction.marginalCostCurve',
+                            'model.costFunction.averageCostCurve',
+                            'model.costFunction.marginalCostAtQuantityPoint(params.q, "","params.q")',
+                            'model.costFunction.averageCostAtQuantityPoint(params.q, "","params.q")',
+                            'model.demandFunction.curve',
+                            'model.demandFunction.marginalRevenueCurve',
+                            'model.demandFunction.priceInterceptPoint',
+                            'model.demandFunction.quantityInterceptPoint',
+                            'model.profitArea'
+                        ]
+                    },
+                    objects: ['model.costFunction.totalCostAtQuantityPoint(params.q, "","params.q")',
+                        'model.demandFunction.totalRevenueAtQuantityPoint(params.q, "","params.q")']
+                }
+            }
+        ]
+    }
+</script>
+
+
+<script src="../dist/kinetic-graphs.js"></script>
+</body>
+</html>

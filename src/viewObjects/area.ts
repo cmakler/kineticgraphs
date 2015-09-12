@@ -31,11 +31,11 @@ module KG {
         public labelPosition;
         public labelDiv;
 
-        constructor(definition:AreaDefinition) {
+        constructor(definition:AreaDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
 
-            super(definition);
+            super(definition, modelPath);
 
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {

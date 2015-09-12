@@ -4,10 +4,8 @@ module EconGraphs {
 
     export interface MonopolyDefinition extends KG.ModelDefinition
     {
-        demandType: string;
-        demandDef: DemandDefinition;
-        costType: string;
-        costDef: ProductionCostDefinition;
+        demand: {demandType: string; demandDef: DemandDefinition;};
+        cost: ProductionCostDefinition;
         choosePrice?: boolean;
         quantity?: any;
         price?: any;
@@ -30,7 +28,9 @@ module EconGraphs {
         optimalOffer: KG.Point;
         MRMCIntersection: KG.Point;
 
-        profit: KG.Area;
+        profit: number;
+        profitArea: KG.Area;
+        profitLabel: string;
         producerSurplus: KG.Area;
     }
 
@@ -51,21 +51,26 @@ module EconGraphs {
         public MRMCIntersection;
 
         public profit;
+        public profitArea;
+        public profitLabel;
         public producerSurplus;
 
-        constructor(definition:MonopolyDefinition) {
-            super(definition);
+        constructor(definition:MonopolyDefinition,modelPath?:string) {
+            super(definition,modelPath);
 
             var m = this;
 
             var p = m.modelProperty('price'),
                 q = m.modelProperty('quantity'),
-                mcq = m.modelProperty('costFunction.marginalCost(' + q + ')'),
-                mc0 = m.modelProperty('costFunction.marginalCost(0)'),
-                acq = m.modelProperty('costFunction.averageCost(' + q + ')');
+                mcq = m.modelProperty('costFunction.mc(' + q + ')'),
+                mc0 = m.modelProperty('costFunction.mc(0)'),
+                acq = m.modelProperty('costFunction.atc(' + q + ')'),
+                profitLabel = m.modelProperty('profitLabel')
 
-            m.demandFunction = new EconGraphs[definition.demandType](definition.demandDef, this.modelPath + '.demandFunction');
-            m.costFunction = new EconGraphs[definition.costType](definition.costDef, this.modelPath + '.costFunction');
+            definition.demand.demandDef.curveLabel = definition.demand.demandDef.curveLabel || 'D = AR';
+
+            m.demandFunction = new EconGraphs[definition.demand.demandType](definition.demand.demandDef, this.modelPath + '.demandFunction');
+            m.costFunction = new EconGraphs.ProductionCost(definition.cost, this.modelPath + '.costFunction');
 
             m.producerSurplus = new KG.Area({
                 data: [
@@ -76,7 +81,9 @@ module EconGraphs {
                 ]
             });
 
-            m.profit = new KG.Area({
+            m.profitArea = new KG.Area({
+                name: 'profitArea',
+                className: 'growth',
                 data: [
                     {x: 0, y: p},
                     {x: q, y: p},
@@ -84,9 +91,11 @@ module EconGraphs {
                     {x: 0, y: acq}
                 ],
                 label: {
-                    text: '\\pi'
+                    text: profitLabel
                 }
             });
+
+
 
         }
 
@@ -99,6 +108,8 @@ module EconGraphs {
             } else {
                 m.price = m.demandFunction.priceAtQuantity(m.quantity);
             }
+            m.profit = m.demandFunction.tr(m.quantity) - m.costFunction.tc(m.quantity);
+            m.profitLabel = (m.profit > 0) ? '\\text{Profit}' : (m.profit < 0) ? '\\text{Loss}' : '';
             return m;
         }
 

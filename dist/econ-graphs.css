@@ -162,6 +162,16 @@ a {
   stroke: #9467bd;
   fill: #9467bd;
 }
+.totalRevenue {
+  color: #2ca02c;
+  stroke: #2ca02c;
+  fill: #2ca02c;
+}
+.marginalRevenue {
+  color: #bcbd22;
+  stroke: #bcbd22;
+  fill: #bcbd22;
+}
 .curve {
   fill: none;
 }

@@ -33,7 +33,7 @@ module KG
         public horizontalDropline;
         public verticalDropline;
 
-        constructor(definition:PointDefinition) {
+        constructor(definition:PointDefinition, modelPath?: string) {
 
             var defaultSize = 100;
             if(definition.hasOwnProperty('label')) {
@@ -45,7 +45,7 @@ module KG
             }
 
             definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: defaultSize, symbol: 'circle'});
-            super(definition);
+            super(definition, modelPath);
 
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {

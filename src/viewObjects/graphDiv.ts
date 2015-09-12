@@ -46,7 +46,7 @@ module KG
 
         static AXIS_COORDINATE_INDICATOR = 'AXIS';
 
-        constructor(definition:GraphDivDefinition) {
+        constructor(definition:GraphDivDefinition, modelPath?: string) {
 
             definition = _.defaults(definition,{
                 dimensions: {width: 100, height: 20},
@@ -54,7 +54,7 @@ module KG
                 color: KG.colorForClassName(definition.className)
             });
 
-            super(definition);
+            super(definition, modelPath);
 
         }
 

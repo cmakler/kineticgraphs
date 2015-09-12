@@ -25,8 +25,8 @@ module EconGraphs {
         public pointView;
         public line;
 
-        constructor(definition:PointElasticityDefinition) {
-            super(definition);
+        constructor(definition:PointElasticityDefinition, modelPath?:string) {
+            super(definition,modelPath);
             this.pointView = new KG.Point({
                 name: 'point',
                 coordinates: definition.point,

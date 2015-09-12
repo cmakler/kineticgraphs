@@ -64,11 +64,11 @@ module KG {
         static BOTH_ARROW_STRING = 'BOTH';
 
 
-        constructor(definition:CurveDefinition) {
+        constructor(definition:CurveDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
 
-            super(definition);
+            super(definition, modelPath);
 
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {

@@ -46,6 +46,11 @@ module EconGraphs {
         public elasticity: Elasticity;
         public curve;
 
+        public marginalRevenueFunction;
+        public marginalRevenueCurve;
+        public totalRevenueFunction;
+        public totalRevenueCurve;
+
         public price;
         public quantity;
 
@@ -54,10 +59,13 @@ module EconGraphs {
         public consumerSurplus;
 
         constructor(definition:DemandDefinition, modelPath?:string) {
+
             definition.className = definition.className || 'demand';
             definition.curveLabel = definition.curveLabel || 'D';
+
             super(definition, modelPath);
             this.demandFunction = new KGMath.Functions[definition.type](definition.def);
+
             this.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
 
             var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.','') : false;
@@ -91,6 +99,8 @@ module EconGraphs {
             var d = this;
             if(d.price) {
                 d.quantity = d.quantityAtPrice(d.price)
+            } else if(d.quantity) {
+                d.price = d.priceAtQuantity(d.quantity)
             }
             return d;
         }

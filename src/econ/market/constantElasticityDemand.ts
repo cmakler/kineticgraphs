@@ -21,8 +21,8 @@ module EconGraphs {
         public slopeLine;
         public quantityDemandedAtPrice;
 
-        constructor(definition:ConstantElasticityDemandDefinition) {
-            super(definition);
+        constructor(definition:ConstantElasticityDemandDefinition, modelPath?: string) {
+            super(definition,modelPath);
             this.curve = new KG.FunctionPlot({
                 name: 'demand',
                 className: 'demand',

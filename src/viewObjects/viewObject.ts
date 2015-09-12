@@ -64,7 +64,7 @@ module KG
         public viewObjectSVGtype;
         public viewObjectClass;
 
-        constructor(definition:ViewObjectDefinition) {
+        constructor(definition:ViewObjectDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {
                 className: '',
@@ -73,7 +73,7 @@ module KG
                 xDrag: false,
                 yDrag: false});
 
-            super(definition);
+            super(definition, modelPath);
 
             var viewObj = this;
             viewObj.xDragDelta = 0;

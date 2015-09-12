@@ -25,7 +25,7 @@ module KG {
         public draggable;
         public labelDiv;
 
-        constructor(definition:DroplineDefinition) {
+        constructor(definition:DroplineDefinition, modelPath?: string) {
 
             definition.coordinates = KG.getCoordinates(definition.coordinates);
             definition = _.defaults(definition,{
@@ -33,7 +33,7 @@ module KG {
                 draggable: false,
                 axisLabel: ''
             });
-            super(definition);
+            super(definition,modelPath);
 
             if(definition.axisLabel.length > 0) {
                 var labelDef:GraphDivDefinition = {
@@ -105,19 +105,19 @@ module KG {
 
     export class VerticalDropline extends Dropline {
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
             definition.name += '_vDropline';
             definition.horizontal = false;
-            super(definition);
+            super(definition, modelPath);
         }
     }
 
     export class HorizontalDropline extends Dropline {
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
             definition.name += '_hDropline';
             definition.horizontal = true;
-            super(definition);
+            super(definition, modelPath);
         }
     }
 

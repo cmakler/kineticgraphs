@@ -8,7 +8,6 @@
 /// <reference path="market/constantElasticityDemand.ts"/>
 /// <reference path="growth/ramseyCassKoopmans.ts"/>
 /// <reference path="production/productionCost.ts"/>
-/// <reference path="production/linearMarginalCost.ts"/>
 
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
