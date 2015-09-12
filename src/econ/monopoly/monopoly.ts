@@ -5,7 +5,7 @@ module EconGraphs {
     export interface MonopolyDefinition extends KG.ModelDefinition
     {
         demand: {demandType: string; demandDef: DemandDefinition;};
-        cost: ProductionCostDefinition;
+        cost: {costType: string; costDef: ProductionCostDefinition;};
         choosePrice?: boolean;
         quantity?: any;
         price?: any;
@@ -70,7 +70,7 @@ module EconGraphs {
             definition.demand.demandDef.curveLabel = definition.demand.demandDef.curveLabel || 'D = AR';
 
             m.demandFunction = new EconGraphs[definition.demand.demandType](definition.demand.demandDef, this.modelPath + '.demandFunction');
-            m.costFunction = new EconGraphs.ProductionCost(definition.cost, this.modelPath + '.costFunction');
+            m.costFunction = new EconGraphs[definition.cost.costType](definition.cost.costDef, this.modelPath + '.costFunction');
 
             m.producerSurplus = new KG.Area({
                 data: [

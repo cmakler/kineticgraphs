@@ -115,45 +115,7 @@ module EconGraphs {
             return d;
         }
 
-        tr(q) {
-            return this.totalRevenueFunction.yValue(q);
-        }
 
-        mr(q) {
-            return this.marginalRevenueFunction.yValue(q);
-        }
-
-        marginalRevenueAtQuantitySlope(q, label?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
-            return new KG.Line({
-                name: 'MRslopeLine' + label,
-                className: 'marginalRevenue dotted',
-                lineDef: {
-                    point: {x: q, y: this.modelProperty('tr('+q+')')},
-                    slope: this.mr(q)
-                },
-                label: {
-                    text: '\\text{slope} = MR(q'+ labelSubscript +')'
-                }
-            });
-        }
-
-        totalRevenueAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
-            return new KG.Point({
-                name: 'totalRevenueAtQ' + label,
-                coordinates: {x: q, y: this.tr(q)},
-                className: 'totalRevenue',
-                xDrag: dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    vertical: 'q' + labelSubscript,
-                    horizontal: 'TR(q'+ labelSubscript +')'
-                }
-            })
-        }
 
     }
 

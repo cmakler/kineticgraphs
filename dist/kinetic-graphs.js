@@ -1311,7 +1311,6 @@ var KGMath;
                         }
                         ;
                     }
-                    points.push({ x: q.vertex.x, y: q.vertex.y });
                 }
                 if (yIsIndependent) {
                     return points.sort(KG.sortObjects('y'));
@@ -3308,6 +3307,42 @@ var EconGraphs;
             }
             return d.elasticity;
         };
+        Demand.prototype.tr = function (q) {
+            return this.totalRevenueFunction.yValue(q);
+        };
+        Demand.prototype.mr = function (q) {
+            return this.marginalRevenueFunction.yValue(q);
+        };
+        Demand.prototype.marginalRevenueAtQuantitySlope = function (q, label) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Line({
+                name: 'MRslopeLine' + label,
+                className: 'marginalRevenue dotted',
+                lineDef: {
+                    point: { x: q, y: this.modelProperty('tr(' + q + ')') },
+                    slope: this.mr(q)
+                },
+                label: {
+                    text: '\\text{slope} = MR(q' + labelSubscript + ')'
+                }
+            });
+        };
+        Demand.prototype.totalRevenueAtQuantityPoint = function (q, label, dragParam) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Point({
+                name: 'totalRevenueAtQ' + label,
+                coordinates: { x: q, y: this.tr(q) },
+                className: 'totalRevenue',
+                xDrag: dragParam,
+                label: {
+                    text: label
+                },
+                droplines: {
+                    vertical: 'q' + labelSubscript,
+                    horizontal: 'TR(q' + labelSubscript + ')'
+                }
+            });
+        };
         return Demand;
     })(KG.Model);
     EconGraphs.Demand = Demand;
@@ -3389,42 +3424,6 @@ var EconGraphs;
             d.priceIntercept = d.demandFunction.yValue(0);
             d.quantityIntercept = d.demandFunction.xValue(0);
             return d;
-        };
-        LinearDemand.prototype.tr = function (q) {
-            return this.totalRevenueFunction.yValue(q);
-        };
-        LinearDemand.prototype.mr = function (q) {
-            return this.marginalRevenueFunction.yValue(q);
-        };
-        LinearDemand.prototype.marginalRevenueAtQuantitySlope = function (q, label) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
-            return new KG.Line({
-                name: 'MRslopeLine' + label,
-                className: 'marginalRevenue dotted',
-                lineDef: {
-                    point: { x: q, y: this.modelProperty('tr(' + q + ')') },
-                    slope: this.mr(q)
-                },
-                label: {
-                    text: '\\text{slope} = MR(q' + labelSubscript + ')'
-                }
-            });
-        };
-        LinearDemand.prototype.totalRevenueAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
-            return new KG.Point({
-                name: 'totalRevenueAtQ' + label,
-                coordinates: { x: q, y: this.tr(q) },
-                className: 'totalRevenue',
-                xDrag: dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    vertical: 'q' + labelSubscript,
-                    horizontal: 'TR(q' + labelSubscript + ')'
-                }
-            });
         };
         return LinearDemand;
     })(EconGraphs.Demand);
@@ -3694,7 +3693,7 @@ var EconGraphs;
             }
             else if (definition.hasOwnProperty('marginalCostFunctionDef')) {
                 productionCost.marginalCostFunction = new KGMath.Functions[definition.marginalCostFunctionType](definition.marginalCostFunctionDef);
-                productionCost.costFunction = productionCost.marginalCostFunction.integral(0, definition.fixedCost);
+                productionCost.costFunction = productionCost.marginalCostFunction.integral(0, definition.fixedCost, productionCost.modelProperty('costFunction'));
             }
             else {
                 console.log('must initiate production cost object with either total cost or marginal cost function!');
@@ -3793,7 +3792,7 @@ var EconGraphs;
                 className: 'averageCost dotted',
                 lineDef: {
                     point: { x: 0, y: 0 },
-                    slope: this.atc(q)
+                    slope: this.modelProperty('atc(' + q + ')')
                 },
                 label: {
                     text: '\\text{slope} = AC(q' + labelSubscript + ')'
@@ -3804,7 +3803,7 @@ var EconGraphs;
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Point({
                 name: 'totalCostAtQ' + label,
-                coordinates: { x: q, y: this.tc(q) },
+                coordinates: { x: q, y: this.modelProperty('tc(' + q + ')') },
                 className: 'totalCost',
                 xDrag: dragParam,
                 label: {
@@ -3849,6 +3848,37 @@ var EconGraphs;
         return ProductionCost;
     })(KG.Model);
     EconGraphs.ProductionCost = ProductionCost;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+'use strict';
+var EconGraphs;
+(function (EconGraphs) {
+    var LinearMarginalCost = (function (_super) {
+        __extends(LinearMarginalCost, _super);
+        function LinearMarginalCost(definition, modelPath) {
+            definition.marginalCostFunctionType = 'Linear';
+            definition.marginalCostFunctionDef = {
+                point1: { x: 0, y: definition.marginalCostIntercept },
+                point2: definition.marginalCostControlPointCoordinates
+            };
+            _super.call(this, definition, modelPath);
+            var productionCost = this;
+            productionCost.marginalCostInterceptPoint = new KG.Point({
+                name: 'marginalCostInterceptPoint',
+                className: 'marginalCost',
+                coordinates: { x: 0, y: definition.marginalCostIntercept },
+                yDrag: definition.marginalCostIntercept
+            });
+            productionCost.marginalCostControlPoint = new KG.Point({
+                name: 'marginalCostControlPoint',
+                className: 'marginalCost',
+                coordinates: definition.marginalCostControlPointCoordinates,
+                yDrag: definition.marginalCostControlPointCoordinates.y
+            });
+        }
+        return LinearMarginalCost;
+    })(EconGraphs.ProductionCost);
+    EconGraphs.LinearMarginalCost = LinearMarginalCost;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
 var EconGraphs;
@@ -4123,7 +4153,7 @@ var EconGraphs;
             var p = m.modelProperty('price'), q = m.modelProperty('quantity'), mcq = m.modelProperty('costFunction.mc(' + q + ')'), mc0 = m.modelProperty('costFunction.mc(0)'), acq = m.modelProperty('costFunction.atc(' + q + ')'), profitLabel = m.modelProperty('profitLabel');
             definition.demand.demandDef.curveLabel = definition.demand.demandDef.curveLabel || 'D = AR';
             m.demandFunction = new EconGraphs[definition.demand.demandType](definition.demand.demandDef, this.modelPath + '.demandFunction');
-            m.costFunction = new EconGraphs.ProductionCost(definition.cost, this.modelPath + '.costFunction');
+            m.costFunction = new EconGraphs[definition.cost.costType](definition.cost.costDef, this.modelPath + '.costFunction');
             m.producerSurplus = new KG.Area({
                 data: [
                     { x: 0, y: p },
@@ -4228,6 +4258,7 @@ var EconGraphs;
 /// <reference path="market/constantElasticityDemand.ts"/>
 /// <reference path="growth/ramseyCassKoopmans.ts"/>
 /// <reference path="production/productionCost.ts"/>
+/// <reference path="production/linearMarginalCost.ts"/>
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
 /// <reference path="utility/risk_aversion.ts"/>

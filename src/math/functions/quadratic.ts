@@ -235,7 +235,6 @@ module KGMath.Functions {
                     var xHigh = q.vertex.x + q.differenceFromVertex(y);
                     if(view.onGraph({x: xHigh, y: y})) {points.push({x: xHigh, y: y})};
                 }
-                points.push({x: q.vertex.x, y:q.vertex.y})
             }
 
             if (yIsIndependent) {

@@ -39,7 +39,8 @@
             demandPriceIntercept: 40,
             demandQuantityIntercept: 80,
             marginalCostIntercept: 10,
-            marginalCostSlope: 0,
+            marginalCostControlPointX: 100,
+            marginalCostControlPointY: 20,
             constantMarginalCost: true
         },
         restrictions: [
@@ -48,6 +49,12 @@
                 restrictionType: 'range',
                 min: 0,
                 max: 1000
+            },
+            {
+                expression: 'params.marginalCostControlPointY',
+                restrictionType: 'range',
+                min: 'params.marginalCostIntercept',
+                max: 50
             }
         ],
         model: {
@@ -55,13 +62,16 @@
             definition: {
                 quantity: 'params.q',
                 cost: {
-                    fixedCost: 'params.fc',
-                    marginalCostFunctionType: 'Linear',
-                    marginalCostFunctionDef: {
-                        slope: 'params.marginalCostSlope',
-                        intercept: 'params.marginalCostIntercept'
-                    },
-                    fixedCostDragParam: 'fc'
+                    costType: 'LinearMarginalCost',
+                    costDef: {
+                        fixedCost: 'params.fc',
+                        marginalCostIntercept: 'params.marginalCostIntercept',
+                        marginalCostControlPointCoordinates: {
+                            x: 90,
+                            y: 'params.marginalCostControlPointY'
+                        },
+                        fixedCostDragParam: 'fc'
+                    }
                 },
                 demand: {
                     demandType: 'LinearDemand',
@@ -92,10 +102,10 @@
                 type: 'KG.TwoVerticalGraphs',
                 definition: {
                     element_id: 'costs',
-                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity (q)}'},
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity (q)}', ticks:0},
                     topGraph: {
                         margins: {right: 100},
-                        yAxisDef: {min: 0, max: 1000, title: '\\text{Total Costs (Dollars)}'},
+                        yAxisDef: {min: 0, max: 1000, title: '\\text{Total Costs (Dollars)}', ticks: 0},
                         objects: [
                             'model.costFunction.totalCostCurve',
                                 'model.demandFunction.totalRevenueCurve',
@@ -103,9 +113,11 @@
                     },
                     bottomGraph: {
                         margins: {right: 100},
-                        yAxisDef: {min: 0, max: 50, title: '\\text{Unit Costs (Dollars per Unit)}'},
+                        yAxisDef: {min: 0, max: 50, title: '\\text{Unit Costs (Dollars per Unit)}', ticks: 0},
                         objects: [
                             'model.costFunction.marginalCostCurve',
+                                'model.costFunction.marginalCostInterceptPoint',
+                                'model.costFunction.marginalCostControlPoint',
                             'model.costFunction.averageCostCurve',
                             'model.costFunction.marginalCostAtQuantityPoint(params.q, "","params.q")',
                             'model.costFunction.averageCostAtQuantityPoint(params.q, "","params.q")',

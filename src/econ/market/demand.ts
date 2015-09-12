@@ -33,6 +33,8 @@ module EconGraphs {
         priceLine: KG.Line;
         quantityDemandedPoint: KG.Point;
         consumerSurplus: KG.Area;
+        marginalRevenueAtQuantitySlope: (quantity:number, label:string) => KG.Line;
+        totalRevenueAtQuantityPoint: (quantity:number, label:string) => KG.Point;
     }
 
     export class Demand extends KG.Model implements IDemand
@@ -47,9 +49,7 @@ module EconGraphs {
         public curve;
 
         public marginalRevenueFunction;
-        public marginalRevenueCurve;
         public totalRevenueFunction;
-        public totalRevenueCurve;
 
         public price;
         public quantity;
@@ -57,6 +57,9 @@ module EconGraphs {
         public priceLine;
         public quantityDemandedPoint;
         public consumerSurplus;
+        public marginalRevenueCurve;
+        public totalRevenueCurve;
+
 
         constructor(definition:DemandDefinition, modelPath?:string) {
 
@@ -147,6 +150,46 @@ module EconGraphs {
                 d.elasticity = d.elasticity.calculateElasticity({point:point, slope:slope});
             }
             return d.elasticity;
+        }
+
+        tr(q) {
+            return this.totalRevenueFunction.yValue(q);
+        }
+
+        mr(q) {
+            return this.marginalRevenueFunction.yValue(q);
+        }
+
+        marginalRevenueAtQuantitySlope(q, label?) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Line({
+                name: 'MRslopeLine' + label,
+                className: 'marginalRevenue dotted',
+                lineDef: {
+                    point: {x: q, y: this.modelProperty('tr('+q+')')},
+                    slope: this.mr(q)
+                },
+                label: {
+                    text: '\\text{slope} = MR(q'+ labelSubscript +')'
+                }
+            });
+        }
+
+        totalRevenueAtQuantityPoint(q, label?, dragParam?) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Point({
+                name: 'totalRevenueAtQ' + label,
+                coordinates: {x: q, y: this.tr(q)},
+                className: 'totalRevenue',
+                xDrag: dragParam,
+                label: {
+                    text: label
+                },
+                droplines: {
+                    vertical: 'q' + labelSubscript,
+                    horizontal: 'TR(q'+ labelSubscript +')'
+                }
+            })
         }
 
     }

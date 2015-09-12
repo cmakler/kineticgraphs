@@ -51,7 +51,7 @@ module EconGraphs {
                 productionCost.marginalCostFunction = productionCost.costFunction.derivative();
             } else if(definition.hasOwnProperty('marginalCostFunctionDef')) {
                 productionCost.marginalCostFunction = new KGMath.Functions[definition.marginalCostFunctionType](definition.marginalCostFunctionDef);
-                productionCost.costFunction = productionCost.marginalCostFunction.integral(0,definition.fixedCost);
+                productionCost.costFunction = productionCost.marginalCostFunction.integral(0,definition.fixedCost, productionCost.modelProperty('costFunction'));
             } else {
                 console.log('must initiate production cost object with either total cost or marginal cost function!')
             }
@@ -164,7 +164,7 @@ module EconGraphs {
                 className: 'averageCost dotted',
                 lineDef: {
                     point: {x: 0, y: 0},
-                    slope: this.atc(q)
+                    slope: this.modelProperty('atc('+q+')')
                 },
                 label: {
                     text: '\\text{slope} = AC(q'+ labelSubscript +')'
@@ -176,7 +176,7 @@ module EconGraphs {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Point({
                 name: 'totalCostAtQ' + label,
-                coordinates: {x: q, y: this.tc(q)},
+                coordinates: {x: q, y: this.modelProperty('tc('+q+')')},
                 className: 'totalCost',
                 xDrag: dragParam,
                 label: {
