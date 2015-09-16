@@ -5,11 +5,16 @@ module EconGraphs {
     export interface MonopolyDefinition extends KG.ModelDefinition
     {
         demand: {demandType: string; demandDef: DemandDefinition;};
-        cost: {costType: string; costDef: ProductionCostDefinition;};
+        cost: {costType: string; costDef: (ProductionCostDefinition | ConstantMarginalCostDefinition | LinearMarginalCostDefinition);};
         choosePrice?: boolean;
         quantity?: any;
         price?: any;
         quantityLabel?: string;
+
+        showAC?: any;
+        showProfit?: any;
+        showACandProfit?: any;
+        snapToOptimalQuantity?: any;
     }
 
     export interface IMonopoly extends KG.IModel
@@ -32,6 +37,11 @@ module EconGraphs {
         profitArea: KG.Area;
         profitLabel: string;
         producerSurplus: KG.Area;
+
+        showAC?: boolean;
+        showProfit?: boolean;
+        showACandProfit?: boolean;
+        snapToOptimalQuantity?: boolean;
     }
 
     export class Monopoly extends KG.Model implements IMonopoly
@@ -55,7 +65,18 @@ module EconGraphs {
         public profitLabel;
         public producerSurplus;
 
+        public showProfit;
+        public showACandProfit;
+        public snapToOptimalQuantity;
+
+
         constructor(definition:MonopolyDefinition,modelPath?:string) {
+
+            definition = _.defaults(definition,{
+                showProfit: true,
+                snapToOptimalQuantity: true
+            });
+
             super(definition,modelPath);
 
             var m = this;
@@ -84,6 +105,7 @@ module EconGraphs {
             m.profitArea = new KG.Area({
                 name: 'profitArea',
                 className: 'growth',
+                show: m.modelProperty('showACandProfit'),
                 data: [
                     {x: 0, y: p},
                     {x: q, y: p},
@@ -103,10 +125,16 @@ module EconGraphs {
             var m = this;
             m.demandFunction.update(scope);
             m.costFunction.update(scope);
+            m.showACandProfit = (m.showProfit && m.costFunction.showAC);
+            if(m.snapToOptimalQuantity && m.demandFunction instanceof LinearDemand && (m.costFunction instanceof LinearMarginalCost || m.costFunction instanceof ConstantMarginalCost)) {
+                m.quantity = Math.max(0,m.demandFunction.marginalRevenueFunction.linearIntersection(m.costFunction.marginalCostFunction).x);
+            }
             if(m.choosePrice) {
                 m.quantity = m.demandFunction.quantityAtPrice(m.price);
+                m.demandFunction.quantity = m.quantity;
             } else {
                 m.price = m.demandFunction.priceAtQuantity(m.quantity);
+                m.demandFunction.price = m.price;
             }
             m.profit = m.demandFunction.tr(m.quantity) - m.costFunction.tc(m.quantity);
             m.profitLabel = (m.profit > 0) ? '\\text{Profit}' : (m.profit < 0) ? '\\text{Loss}' : '';

@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
-    <script type="text/javascript" src="../lib/color_mixer.js"></script>
     <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
     <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
     <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
@@ -31,16 +29,18 @@
             <div id="market"></div>
         </div>
     </div>
+    <hr/>
+
 </div>
 <script>
     var scopeDefinition = {
         params: {
             q1: 10,
-            q2: 10,
-            mc1: 10,
-            mc2: 10,
-            marketDemandIntercept: 30,
-            marketDemandSlope: -1
+            q2: 20,
+            c1: 10,
+            c2: 20,
+            marketDemandPriceIntercept: 80,
+            marketDemandQuantityIntercept: 80
         },
         restrictions: [
 
@@ -48,12 +48,15 @@
         model: {
             type: 'EconGraphs.CournotDuopoly',
             definition: {
-                marketDemandIntercept: 40,
-                marketDemandSlope: -1,
+                marketDemandPriceIntercept: 'params.marketDemandPriceIntercept',
+                marketDemandQuantityIntercept: 'params.marketDemandQuantityIntercept',
                 q1: 'params.q1',
                 q2: 'params.q2',
                 c1: 'params.c1',
-                c2: 'params.c2'
+                c2: 'params.c2',
+                snapToOptimal1: false,
+                snapToOptimal2: true
+
             }
         },
         views: [
@@ -63,7 +66,15 @@
                     element_id:'firm1',
                     xAxisDef: {min: 0, max: 100, title: '\\text{Firm 1 Quantity }(q_1)'},
                     yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.residualDemand1.curve','model.residualDemand1.priceLine','model.residualDemand1.quantityDemandedPoint']
+                    maxDimensions: {width: 500, height:500},
+                    margins: {top: 20, left: 100, bottom: 70, right: 10},
+                    objects: [
+                        'model.firm1.costFunction.marginalCostCurve',
+                        'model.firm1.demandFunction.marginalRevenueCurve',
+                        'model.firm1.demandFunction.curve',
+                        'model.firm1.demandFunction.quantityLine',
+                        'model.firm1.demandFunction.quantityDemandedPoint'
+                    ]
                 }
             },
             {
@@ -71,8 +82,16 @@
                 definition: {
                     element_id:'firm2',
                     xAxisDef: {min: 0, max: 100, title: '\\text{Firm 2 Quantity }(q_2)'},
-                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.residualDemand2.curve','model.residualDemand2.priceLine','model.residualDemand2.quantityDemandedPoint']
+                    yAxisDef: {min: 0, max: 100, title: '', ticks: 0},
+                    maxDimensions: {width: 500, height:500},
+                    margins: {top: 20, left: 10, bottom: 70, right: 10},
+                    objects: [
+                        'model.firm2.costFunction.marginalCostCurve',
+                        'model.firm2.demandFunction.marginalRevenueCurve',
+                        'model.firm2.demandFunction.curve',
+                        'model.firm2.demandFunction.quantityLine',
+                        'model.firm2.demandFunction.quantityDemandedPoint'
+                    ]
                 }
             },
             {
@@ -80,8 +99,15 @@
                 definition: {
                     element_id:'market',
                     xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
-                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.marketDemand.curve','model.marketDemand.priceLine','model.marketDemand.quantityDemandedPoint']
+                    yAxisDef: {min: 0, max: 100, title: '', ticks: 0},
+                    maxDimensions: {width: 500, height:500},
+                    margins: {top: 20, left: 10, bottom: 70, right: 20},
+                    objects: [
+                        'model.marketDemand.curve',
+                        'model.marketDemand.priceInterceptPoint',
+                        'model.marketDemand.quantityInterceptPoint',
+                        'model.marketDemand.quantityDemandedPoint'
+                    ]
                 }
             }
         ]

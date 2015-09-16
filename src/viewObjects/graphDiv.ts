@@ -105,7 +105,7 @@ module KG
                 .style('height',height + 'px')
                 .style('line-height',height + 'px')
                 .style('background-color',divObj.backgroundColor)
-                .attr('class',divObj.className);
+                .attr('class',divObj.classAndVisibility());
 
             // Set left pixel margin; default to centered on x coordinate
             var alignDelta = width*0.5;

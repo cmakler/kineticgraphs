@@ -52,7 +52,8 @@ module KG
                     name: definition.name + '_label',
                     coordinates:definition.coordinates,
                     xDrag: definition.xDrag,
-                    yDrag: definition.yDrag
+                    yDrag: definition.yDrag,
+                    show: definition.show
                 });
                 if(!labelDef.hasOwnProperty('align')) {
                     labelDef.className = 'pointLabel'
@@ -68,6 +69,7 @@ module KG
                         draggable: definition.yDrag,
                         axisLabel: definition.droplines.horizontal,
                         className: definition.className,
+                        show: definition.show
                     });
                 }
                 if(definition.droplines.hasOwnProperty('vertical')) {
@@ -77,6 +79,7 @@ module KG
                         draggable: definition.xDrag,
                         axisLabel: definition.droplines.vertical,
                         className: definition.className,
+                        show: definition.show
                     });
                 }
             }

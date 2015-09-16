@@ -41,7 +41,8 @@ module KG {
                     className: definition.className,
                     text: definition.axisLabel,
                     dimensions: {width: 60, height:20},
-                    backgroundColor: 'white'
+                    backgroundColor: 'white',
+                    show: definition.show
                 };
 
                 if(definition.horizontal) {
@@ -95,7 +96,8 @@ module KG {
                     'x1': anchorX,
                     'y1': anchorY,
                     'x2': pointX,
-                    'y2': pointY
+                    'y2': pointY,
+                    'class': dropline.classAndVisibility()
                 });
 
             return view;

@@ -23,6 +23,18 @@
             <hr/>
             <p>Drag point <span class="math">q</span> left and right to see how total, marginal, and average costs change. You can also drag the fixed cost up and down.</p>
             <hr/>
+            <label>
+                <input type="checkbox" ng-model="params.showAC"> Show average cost
+            </label>
+            <label ng-if="params.showAC">
+                <input type="checkbox" ng-model="params.showProfit"> Show profit/loss area
+            </label>
+            <hr/>
+            <label>
+                <input type="checkbox" ng-model="params.snapToOptimalQ"> Snap to optimal quantity
+            </label>
+
+
         </div>
         <div class="col-md-8">
             <div id="costs"></div>
@@ -35,17 +47,20 @@
     var scopeDefinition = {
         params: {
             fc: 100,
-            q: 50,
+            //q: 50,
             demandPriceIntercept: 40,
             demandQuantityIntercept: 80,
             marginalCostIntercept: 10,
             marginalCostControlPointX: 100,
-            marginalCostControlPointY: 20,
-            constantMarginalCost: true
+            marginalCostControlPointY: 10,
+            constantMarginalCost: true,
+            showProfit: true,
+            showAC: true,
+            snapToOptimalQ: true
         },
         restrictions: [
             {
-                expression: 'model.costFunction.tc(params.q)',
+                expression: 'model.costFunction.tc(model.quantity)',
                 restrictionType: 'range',
                 min: 0,
                 max: 1000
@@ -61,23 +76,27 @@
             type: 'EconGraphs.Monopoly',
             definition: {
                 quantity: 'params.q',
+                snapToOptimalQuantity: 'params.snapToOptimalQ',
+                showProfit: 'params.showProfit',
                 cost: {
                     costType: 'LinearMarginalCost',
                     costDef: {
+                        quantityDraggable: 'model.quantityDraggable',
                         fixedCost: 'params.fc',
                         marginalCostIntercept: 'params.marginalCostIntercept',
                         marginalCostControlPointCoordinates: {
                             x: 90,
                             y: 'params.marginalCostControlPointY'
                         },
-                        fixedCostDragParam: 'fc'
+                        fixedCostDragParam: 'fc',
+                        showAC: 'params.showAC'
                     }
                 },
                 demand: {
                     demandType: 'LinearDemand',
                     demandDef: {
                         elasticityMethod: 'point',
-                        price: 'params.price',
+                        quantity: 'model.quantity',
                         type: 'Linear',
                         def: {
                             point1: {
@@ -90,8 +109,7 @@
                             }
                         },
                         priceInterceptDrag: 'params.demandPriceIntercept',
-                        quantityInterceptDrag: 'params.demandQuantityIntercept',
-                        priceDrag: 'params.price'
+                        quantityInterceptDrag: 'params.demandQuantityIntercept'
                     }
                 }
 
@@ -119,8 +137,8 @@
                                 'model.costFunction.marginalCostInterceptPoint',
                                 'model.costFunction.marginalCostControlPoint',
                             'model.costFunction.averageCostCurve',
-                            'model.costFunction.marginalCostAtQuantityPoint(params.q, "","params.q")',
-                            'model.costFunction.averageCostAtQuantityPoint(params.q, "","params.q")',
+                            'model.costFunction.marginalCostAtQuantityPoint(model.quantity, "", "params.q")',
+                            'model.costFunction.averageCostAtQuantityPoint(model.quantity, "", "params.q")',
                             'model.demandFunction.curve',
                             'model.demandFunction.marginalRevenueCurve',
                             'model.demandFunction.priceInterceptPoint',
@@ -128,8 +146,8 @@
                             'model.profitArea'
                         ]
                     },
-                    objects: ['model.costFunction.totalCostAtQuantityPoint(params.q, "","params.q")',
-                        'model.demandFunction.totalRevenueAtQuantityPoint(params.q, "","params.q")']
+                    objects: ['model.costFunction.totalCostAtQuantityPoint(model.quantity, "", "params.q")',
+                        'model.demandFunction.totalRevenueAtQuantityPoint(model.quantity, "", "params.q")']
                 }
             }
         ]

@@ -30,7 +30,8 @@ module EconGraphs {
         price: number;
         quantity: number;
 
-        priceLine: KG.Line;
+        priceLine: KG.HorizontalLine;
+        quantityLine: KG.VerticalLine;
         quantityDemandedPoint: KG.Point;
         consumerSurplus: KG.Area;
         marginalRevenueAtQuantitySlope: (quantity:number, label:string) => KG.Line;
@@ -55,6 +56,7 @@ module EconGraphs {
         public quantity;
 
         public priceLine;
+        public quantityLine;
         public quantityDemandedPoint;
         public consumerSurplus;
         public marginalRevenueCurve;
@@ -81,12 +83,21 @@ module EconGraphs {
                 y: definition.price
             });
 
+            this.quantityLine = new KG.VerticalLine({
+                name: 'quantityLine',
+                color: 'grey',
+                arrows: 'NONE',
+                xDrag: definition.quantityDrag,
+                x: definition.quantity
+            });
+
             this.quantityDemandedPoint = new KG.Point({
                 name: 'quantityDemandedAtPrice',
                 coordinates: {x: this.modelProperty('quantity'), y: this.modelProperty('price')},
                 size: 500,
                 color: 'black',
                 yDrag: definition.price,
+                xDrag: definition.quantity,
                 label: {
                     text: 'A'
                 },

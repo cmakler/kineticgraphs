@@ -140,6 +140,24 @@ module KGMath.Functions {
 
         }
 
+        // The average of ax^2 + bx + c is ax + b + cx^-2 + C
+        average(n?,name?) {
+            var l = this;
+            name = name ? l.modelProperty(name) : null;
+            return new Polynomial({
+                termDefs:[
+                    {
+                        coefficient: l.slopeDef,
+                        powers: [0]
+                    },
+                    {
+                        coefficient: l.interceptDef,
+                        powers: [-1]
+                    }
+                ]
+            },name)
+        }
+
         yValue(x) {
             var l = this.updateLine();
             var y = l.isVertical ? undefined : l.yIntercept + l.slope * x;
@@ -218,7 +236,7 @@ module KGMath.Functions {
                         b: b*ob,
                         c: ob*c - oc*b - delta
                     }
-                }),
+                }).updateLine(),
                 x = diffLine.xIntercept,
                 y = thisLine.yValue(x);
 

@@ -4,83 +4,124 @@ module EconGraphs {
 
     export interface CournotDuopolyDefinition extends KG.ModelDefinition
     {
-        marketDemandIntercept: any;
-        marketDemandSlope: any;
-        q1: any;
-        q2: any;
+        marketDemandPriceIntercept: any;
+        marketDemandQuantityIntercept: any;
+        q1?: any;
+        q2?: any;
         c1: any;
         c2: any;
+        snapToOptimal1: boolean;
+        snapToOptimal2: boolean;
+        showProfit: boolean;
     }
 
     export interface ICournotDuopoly extends KG.IModel
     {
 
-        marketDemandIntercept: number;
-        marketDemandSlope: number;
         residualDemand1Intercept: number;
         residualDemand2Intercept: number;
-
+        firm1: Monopoly;
+        firm2: Monopoly;
+        snapToOptimal1: boolean;
+        snapToOptimal2: boolean;
         marketDemand: LinearDemand;
-        residualDemand1: LinearDemand;
-        residualDemand2: LinearDemand;
-
         price: number;
-        q1: number;
-        q2: number;
     }
 
     export class CournotDuopoly extends KG.Model implements ICournotDuopoly
     {
 
-        public marketDemandIntercept;
-        public marketDemandSlope;
+        public marketDemand;
+        public firm1;
+        public firm2;
         public residualDemand1Intercept;
         public residualDemand2Intercept;
-
-        public marketDemand;
-        public residualDemand1;
-        public residualDemand2;
-        public price;
-        public q1;
-        public q2;
-
 
         public priceLine;
         public quantityDemandedAtPrice;
         public consumerSurplus;
 
+        public snapToOptimal1;
+        public snapToOptimal2;
+
+        public price;
+
         constructor(definition:CournotDuopolyDefinition, modelPath?: string) {
             super(definition, modelPath);
-            this.marketDemand = new LinearDemand({
-                type: 'SlopeInterceptLine',
+            var cournot = this;
+            cournot.marketDemand = new LinearDemand({
+                type: 'Linear',
+                quantity: KG.addDefs(definition.q1, definition.q2),
                 def: {
-                    b: definition.marketDemandIntercept,
-                    m: definition.marketDemandSlope
+                    point1: {
+                        x: 0,
+                        y: cournot.modelProperty('marketDemandPriceIntercept')
+                    },
+                    point2: {
+                        x: cournot.modelProperty('marketDemandQuantityIntercept'),
+                        y: 0
+                    }
                 },
                 curveLabel: 'P(q_1 + q_2)',
-                quantityLabel: 'q_1 + q_2'
-            });
-            this.marketDemand.path = 'model.residualDemand2'
-            this.residualDemand1 = new LinearDemand({
-                type: 'SlopeInterceptLine',
-                def: {
-                    b: definition.marketDemandIntercept,
-                    m: definition.marketDemandSlope
+                quantityLabel: 'q_1 + q_2',
+                priceInterceptDrag: 'params.marketDemandPriceIntercept',
+                quantityInterceptDrag: 'params.marketDemandQuantityIntercept'
+            },this.modelProperty('marketDemand'));
+
+            cournot.firm1 = new Monopoly({
+                quantity: definition.q1,
+                snapToOptimalQuantity: definition.snapToOptimal1,
+                showProfit: 'params.showProfit',
+                cost: {
+                    costType: 'ConstantMarginalCost',
+                    costDef: {
+                        quantityDraggable: true,
+                        fixedCost: 0,
+                        c: definition.c1
+                    }
                 },
-                curveLabel: 'P(q_1 | q_2)',
-                quantityLabel: 'q_1'
-            });
-            this.residualDemand1.path = 'model.residualDemand1'
-            this.residualDemand2 = new LinearDemand({
-                type: 'SlopeInterceptLine',
-                def: {
-                    b: definition.marketDemandIntercept,
-                    m: definition.marketDemandSlope
+                demand: {
+                    demandType: 'LinearDemand',
+                    demandDef: {
+                        elasticityMethod: 'point',
+                        quantity: definition.q1,
+                        quantityDrag: definition.q1,
+                        type: 'Linear',
+                        def: {
+                            slope: cournot.modelProperty('marketDemand.demandFunction.slope'),
+                            intercept: cournot.modelProperty('residualDemand1Intercept')
+                        }
+                    }
+                }
+            },cournot.modelProperty('firm1'));
+
+            cournot.firm2 = new Monopoly({
+                quantity: definition.q2,
+                snapToOptimalQuantity: definition.snapToOptimal2,
+                showProfit: 'params.showProfit',
+                cost: {
+                    costType: 'ConstantMarginalCost',
+                    costDef: {
+                        quantityDraggable: true,
+                        fixedCost: 0,
+                        c: definition.c2
+                    }
                 },
-                curveLabel: 'P(q_2 | q_1)',
-                quantityLabel: 'q_2'
-            });
-            this.residualDemand2.path = 'model.residualDemand2'
+                demand: {
+                    demandType: 'LinearDemand',
+                    demandDef: {
+                        elasticityMethod: 'point',
+                        quantity: cournot.modelProperty('firm2.quantity'),
+                        quantityDrag: definition.q2,
+                        type: 'Linear',
+                        def: {
+                            slope: cournot.modelProperty('marketDemand.demandFunction.slope'),
+                            intercept: cournot.modelProperty('residualDemand2Intercept')
+                        }
+                    }
+                }
+            },cournot.modelProperty('firm2'));
+
 
         }
 
@@ -89,13 +130,18 @@ module EconGraphs {
         }
 
         _update(scope) {
-            var d = this;
-            d.marketDemand.update(scope);
-            d.residualDemand1.update(scope);
-            d.residualDemand2.update(scope);
-            d.residualDemand1.demandFunction.b = d.residualDemandIntercept(d.q2);
-            d.residualDemand2.demandFunction.b = d.residualDemandIntercept(d.q1);
-            return d;
+            var cournot = this;
+            cournot.marketDemand.update(scope);
+            cournot.residualDemand1Intercept = cournot.residualDemandIntercept(cournot.firm2.quantity);
+            cournot.residualDemand2Intercept = cournot.residualDemandIntercept(cournot.firm1.quantity);
+            cournot.firm1.update(scope);
+            cournot.firm2.update(scope);
+            cournot.firm1.update(scope);
+            cournot.firm2.update(scope);
+            cournot.marketDemand.update(scope);
+            cournot.marketDemand.quantity = cournot.firm1.quantity + cournot.firm2.quantity;
+            cournot.marketDemand.price = cournot.marketDemand.priceAtQuantity(cournot.marketDemand.quantity);
+            return cournot;
         }
 
     }
