@@ -87,6 +87,7 @@ module EconGraphs {
                         quantity: definition.q1,
                         quantityDrag: definition.q1,
                         type: 'Linear',
+                        quantityLabel: '1',
                         def: {
                             slope: cournot.modelProperty('marketDemand.demandFunction.slope'),
                             intercept: cournot.modelProperty('residualDemand1Intercept')

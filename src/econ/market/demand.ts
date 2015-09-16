@@ -69,18 +69,21 @@ module EconGraphs {
             definition.curveLabel = definition.curveLabel || 'D';
 
             super(definition, modelPath);
-            this.demandFunction = new KGMath.Functions[definition.type](definition.def);
 
-            this.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
+            var d = this;
+
+            d.demandFunction = new KGMath.Functions[definition.type](definition.def);
+
+            d.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
 
             var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.','') : false;
 
-            this.priceLine = new KG.HorizontalLine({
+            d.priceLine = new KG.HorizontalLine({
                 name: 'priceLine',
                 color: 'grey',
                 arrows: 'NONE',
                 yDrag: definition.priceDrag,
-                y: definition.price
+                y: d.modelProperty('price')
             });
 
             this.quantityLine = new KG.VerticalLine({
@@ -88,7 +91,7 @@ module EconGraphs {
                 color: 'grey',
                 arrows: 'NONE',
                 xDrag: definition.quantityDrag,
-                x: definition.quantity
+                x: d.modelProperty('quantity')
             });
 
             this.quantityDemandedPoint = new KG.Point({
@@ -169,6 +172,25 @@ module EconGraphs {
 
         mr(q) {
             return this.marginalRevenueFunction.yValue(q);
+        }
+
+        priceAtQuantityPoint(q, def:{label?: string; vDropline?: string; hDropline?: string; xDrag?: any}) {
+            return new KG.Point({
+                name: 'DemandPoint',
+                className: 'demand',
+                coordinates: {
+                    x: q,
+                    y: this.priceAtQuantity(q)
+                },
+                label: {
+                    text: def.label || ''
+                },
+                droplines: {
+                    vertical: def.vDropline,
+                    horizontal: def.hDropline
+                },
+                xDrag: def.xDrag
+            });
         }
 
         marginalRevenueAtQuantitySlope(q, label?) {

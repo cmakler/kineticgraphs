@@ -72,8 +72,7 @@
                         'model.firm1.costFunction.marginalCostCurve',
                         'model.firm1.demandFunction.marginalRevenueCurve',
                         'model.firm1.demandFunction.curve',
-                        'model.firm1.demandFunction.quantityLine',
-                        'model.firm1.demandFunction.quantityDemandedPoint'
+                        'model.firm1.demandFunction.priceAtQuantityPoint(model.firm1.quantity,{vDropline:"q_1", hDropline: "P", xDrag: "params.q1"})'
                     ]
                 }
             },
@@ -89,8 +88,7 @@
                         'model.firm2.costFunction.marginalCostCurve',
                         'model.firm2.demandFunction.marginalRevenueCurve',
                         'model.firm2.demandFunction.curve',
-                        'model.firm2.demandFunction.quantityLine',
-                        'model.firm2.demandFunction.quantityDemandedPoint'
+                        'model.firm2.demandFunction.priceAtQuantityPoint(model.firm2.quantity,{vDropline:"q_2"})'
                     ]
                 }
             },
@@ -106,7 +104,7 @@
                         'model.marketDemand.curve',
                         'model.marketDemand.priceInterceptPoint',
                         'model.marketDemand.quantityInterceptPoint',
-                        'model.marketDemand.quantityDemandedPoint'
+                        'model.marketDemand.priceAtQuantityPoint(model.marketDemand.quantity,{vDropline:"q_1 + q_2"})'
                     ]
                 }
             }

@@ -3258,22 +3258,23 @@ var EconGraphs;
             definition.className = definition.className || 'demand';
             definition.curveLabel = definition.curveLabel || 'D';
             _super.call(this, definition, modelPath);
-            this.demandFunction = new KGMath.Functions[definition.type](definition.def);
-            this.elasticity = (definition.elasticityMethod == 'point') ? new EconGraphs.PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new EconGraphs.ConstantElasticity({}) : new EconGraphs.MidpointElasticity({});
+            var d = this;
+            d.demandFunction = new KGMath.Functions[definition.type](definition.def);
+            d.elasticity = (definition.elasticityMethod == 'point') ? new EconGraphs.PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new EconGraphs.ConstantElasticity({}) : new EconGraphs.MidpointElasticity({});
             var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.', '') : false;
-            this.priceLine = new KG.HorizontalLine({
+            d.priceLine = new KG.HorizontalLine({
                 name: 'priceLine',
                 color: 'grey',
                 arrows: 'NONE',
                 yDrag: definition.priceDrag,
-                y: definition.price
+                y: d.modelProperty('price')
             });
             this.quantityLine = new KG.VerticalLine({
                 name: 'quantityLine',
                 color: 'grey',
                 arrows: 'NONE',
                 xDrag: definition.quantityDrag,
-                x: definition.quantity
+                x: d.modelProperty('quantity')
             });
             this.quantityDemandedPoint = new KG.Point({
                 name: 'quantityDemandedAtPrice',
@@ -3345,6 +3346,24 @@ var EconGraphs;
         };
         Demand.prototype.mr = function (q) {
             return this.marginalRevenueFunction.yValue(q);
+        };
+        Demand.prototype.priceAtQuantityPoint = function (q, def) {
+            return new KG.Point({
+                name: 'DemandPoint',
+                className: 'demand',
+                coordinates: {
+                    x: q,
+                    y: this.priceAtQuantity(q)
+                },
+                label: {
+                    text: def.label || ''
+                },
+                droplines: {
+                    vertical: def.vDropline,
+                    horizontal: def.hDropline
+                },
+                xDrag: def.xDrag
+            });
         };
         Demand.prototype.marginalRevenueAtQuantitySlope = function (q, label) {
             var labelSubscript = label ? '_{' + label + '}' : '';
@@ -4319,6 +4338,7 @@ var EconGraphs;
                         quantity: definition.q1,
                         quantityDrag: definition.q1,
                         type: 'Linear',
+                        quantityLabel: '1',
                         def: {
                             slope: cournot.modelProperty('marketDemand.demandFunction.slope'),
                             intercept: cournot.modelProperty('residualDemand1Intercept')
