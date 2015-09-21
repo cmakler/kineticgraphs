@@ -40,7 +40,7 @@ module KGMath.Functions {
         public discriminant;
 
         constructor(definition:QuadraticDefinition, modelPath?:string) {
-            super(definition, modelPath);
+
             definition.coefficients = definition.coefficients || {a: 1, b: 1, c: 1};
 
             if(!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
@@ -53,6 +53,26 @@ module KGMath.Functions {
                     y: vertexY
                 }
             }
+
+            // extract coefficients from vertex and point
+            if(definition.hasOwnProperty('vertex') && definition.hasOwnProperty('point')) {
+
+                // a = (p.y - vertex.y) / (p.x - vertex.x) ^ 2
+                var yDiff = KG.subtractDefs(definition.point.y,definition.vertex.y),
+                    xDiffSquared = KG.squareDef(KG.subtractDefs(definition.point.x,definition.vertex.x))
+
+                definition.coefficients.a = KG.divideDefs(yDiff,xDiffSquared);
+
+                // b = -2a*vertex.x
+                definition.coefficients.b = KG.multiplyDefs(-2,KG.multiplyDefs(definition.coefficients.a,definition.vertex.x));
+
+                // c = vertex.y + a*(vertex.x)^2
+                definition.coefficients.c = KG.addDefs(definition.vertex.y, KG.multiplyDefs(definition.coefficients.a,KG.squareDef(definition.vertex.x)))
+
+            }
+
+            super(definition, modelPath);
+
         }
 
         _update(scope) {

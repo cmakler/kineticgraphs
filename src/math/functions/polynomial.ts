@@ -127,8 +127,8 @@ module KGMath.Functions {
         // Adding a constant to a polynomial means appending a new constant term
         add(x) {
             var p = this;
-            var termDefs = p.terms;
-            termDefs.push(new Monomial({coefficient: x, powers:[0]}))
+            var termDefs = _.clone(p.terms);
+            termDefs.push(new Monomial({coefficient: x, powers:[0]}));
             return new Polynomial({
                 termDefs: termDefs
             });

@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
-    <script type="text/javascript" src="../lib/color_mixer.js"></script>
     <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
     <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
     <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
@@ -37,7 +35,10 @@
     var scopeDefinition = {
         params: {
             fc: 100,
-            q: 50
+            q: 50,
+            mcVertexX: 20,
+            mcVertexY: 5,
+            mcControlPointY: 18
         },
         restrictions: [
             {
@@ -48,24 +49,16 @@
             }
         ],
         model: {
-            type: 'EconGraphs.ProductionCost',
+            type: 'EconGraphs.QuadraticMarginalCost',
             definition: {
-                costFunctionType: 'Polynomial',
-                costFunctionDef: {termDefs:[
-                    {
-                        coefficient: 0.1,
-                        powers: [2]
-                    },
-                    {
-                        coefficient: 1,
-                        powers: [1]
-                    },
-                    {
-                        coefficient: 'params.fc',
-                        powers: [0]
-                    }
-                ]},
-                fixedCostDragParam: 'fc'
+                marginalCostVertexCoordinates: {x: 'params.mcVertexX', y: 'params.mcVertexY'},
+                marginalCostControlPointCoordinates: {x: 90, y: 'params.mcControlPointY'},
+                fixedCost: 'params.fc',
+                fixedCostDragParam: 'fc',
+                show: {
+                    vc: true,
+                    avc: true
+                }
             }
         },
         views: [
@@ -77,12 +70,26 @@
                     topGraph: {
                         margins: {right: 100},
                         yAxisDef: {min: 0, max: 1000, title: '\\text{Total Costs (Dollars)}'},
-                        objects: ['model.totalCostCurve','model.fixedCostPoint','model.marginalCostAtQuantitySlope(params.q, "")','model.averageCostAtQuantitySlope(params.q, "")']
+                        objects: [
+                            'model.variableCostCurve',
+                            'model.totalCostCurve',
+                            'model.fixedCostPoint',
+                            'model.marginalCostAtQuantitySlope(params.q, "")',
+                            'model.averageCostAtQuantitySlope(params.q, "")'
+                        ]
                     },
                     bottomGraph: {
                         margins: {right: 100},
                         yAxisDef: {min: 0, max: 20, title: '\\text{Unit Costs (Dollars per Unit)}'},
-                        objects: ['model.marginalCostCurve','model.averageCostCurve','model.marginalCostAtQuantityPoint(params.q, "","params.q")','model.averageCostAtQuantityPoint(params.q, "","params.q")']
+                        objects: [
+                            'model.marginalCostCurve',
+                            'model.averageCostCurve',
+                            'model.averageVariableCostCurve',
+                            'model.marginalCostAtQuantityPoint(params.q, "","params.q")',
+                            'model.averageCostAtQuantityPoint(params.q, "","params.q")',
+                                'model.marginalCostVertex',
+                                'model.marginalCostControlPoint'
+                        ]
                     },
                     objects: ['model.totalCostAtQuantityPoint(params.q, "","params.q")']
                 }

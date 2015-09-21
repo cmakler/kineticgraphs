@@ -95,7 +95,7 @@ module KGMath.Functions {
                 b = l.coefficients.b,
                 c = l.coefficients.c;
 
-            l.isVertical = (b === 0) || (a === Infinity);
+            l.isVertical = (b === 0) || (a === Infinity) || (a === -Infinity);
             l.isHorizontal = (a === 0);
 
             l.slope = l.isVertical ? Infinity : -a/b;

@@ -36,6 +36,8 @@ module KG
 
             model.modelPath = modelPath || 'model';
 
+
+
             for (var key in definition) {
                 if(definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];

@@ -137,15 +137,25 @@ a {
   stroke: #d62728;
   fill: #d62728;
 }
+.averageCost {
+  color: #9467bd;
+  stroke: #9467bd;
+  fill: #9467bd;
+}
 .marginalCost {
   color: #ff7f0e;
   stroke: #ff7f0e;
   fill: #ff7f0e;
 }
-.averageCost {
-  color: #9467bd;
-  stroke: #9467bd;
-  fill: #9467bd;
+.variableCost {
+  color: #2ca02c;
+  stroke: #2ca02c;
+  fill: #2ca02c;
+}
+.averageVariableCost {
+  color: #bcbd22;
+  stroke: #bcbd22;
+  fill: #bcbd22;
 }
 .utility {
   color: #1f77b4;

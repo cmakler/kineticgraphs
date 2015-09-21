@@ -67,6 +67,7 @@ module KG
         constructor(definition:ViewObjectDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {
+                name: '',
                 className: '',
                 color: KG.colorForClassName(definition.className),
                 show: true,

@@ -30,15 +30,26 @@
         </div>
     </div>
     <hr/>
+    <div class="row">
+        <div class="col-md-4">
+            <equation>\pi_1 = (P - c_1)q_1 || = ({{model.firm1.price | number:0}} - {{params.c1}})\times {{model.firm1.quantity | number:0}} || = {{ model.firm1.profit | number:0}}</equation>
+        </div>
+        <div class="col-md-4">
+
+        </div>
+        <div class="col-md-4">
+
+        </div>
+    </div>
 
 </div>
 <script>
     var scopeDefinition = {
         params: {
             q1: 10,
-            q2: 20,
+            q2: 10,
             c1: 10,
-            c2: 20,
+            c2: 10,
             marketDemandPriceIntercept: 80,
             marketDemandQuantityIntercept: 80
         },
@@ -55,8 +66,8 @@
                 c1: 'params.c1',
                 c2: 'params.c2',
                 snapToOptimal1: false,
-                snapToOptimal2: true
-
+                snapToOptimal2: false,
+                showProfit: true
             }
         },
         views: [
@@ -88,7 +99,7 @@
                         'model.firm2.costFunction.marginalCostCurve',
                         'model.firm2.demandFunction.marginalRevenueCurve',
                         'model.firm2.demandFunction.curve',
-                        'model.firm2.demandFunction.priceAtQuantityPoint(model.firm2.quantity,{vDropline:"q_2"})'
+                        'model.firm2.demandFunction.priceAtQuantityPoint(model.firm2.quantity,{vDropline:"q_2", xDrag: "params.q2"})'
                     ]
                 }
             },
@@ -104,6 +115,7 @@
                         'model.marketDemand.curve',
                         'model.marketDemand.priceInterceptPoint',
                         'model.marketDemand.quantityInterceptPoint',
+                        'model.firm1.demandFunction.priceAtQuantityPoint(model.firm1.quantity,{vDropline:"q_1", hDropline: "P", xDrag: "params.q1"})',
                         'model.marketDemand.priceAtQuantityPoint(model.marketDemand.quantity,{vDropline:"q_1 + q_2"})'
                     ]
                 }
