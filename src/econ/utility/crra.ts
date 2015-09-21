@@ -5,18 +5,21 @@ module EconGraphs {
     export interface ConstantRRADefinition extends OneGoodUtilityDefinition
     {
         rra: any;
+
     }
 
     export interface IConstantRRA extends IOneGoodUtility
     {
         rra: number;
         utilityFormula: (c? : number) => string;
+
     }
 
     export class ConstantRRA extends OneGoodUtility implements IConstantRRA
     {
 
         public rra;
+        public show;
 
         constructor(definition:ConstantRRADefinition, modelPath?:string) {
 

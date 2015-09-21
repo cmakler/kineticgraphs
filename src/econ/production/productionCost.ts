@@ -290,13 +290,32 @@ module EconGraphs {
             return new KG.Line({
                 name: 'MCslopeLine' + label,
                 className: 'marginalCost dotted',
+                show: this.show.mcslope,
                 lineDef: {
                     point: {x: q, y: this.tc(q)},
                     slope: this.mc(q)
                 },
                 xDrag: xDrag,
                 label: {
-                    text: '\\text{slope} = MC = '+ this.mc(q).toFixed(1)
+                    text: '\\text{slope} = MC'
+                }
+            });
+        }
+
+        marginalCostAtVariableCostQuantitySlope(q, label?, dragParam?) {
+            var labelSubscript = label ? '_{' + label + '}' : '',
+                xDrag = this.quantityDraggable ? dragParam : false;
+            return new KG.Line({
+                name: 'MCslopeLineVC' + label,
+                className: 'marginalCost dotted',
+                show: (this.show.mcslope && this.show.vc),
+                lineDef: {
+                    point: {x: q, y: this.modelProperty('vc('+q+')')},
+                    slope: this.mc(q)
+                },
+                xDrag: xDrag,
+                label: {
+                    text: '\\text{slope} = MC'
                 }
             });
         }
@@ -307,13 +326,14 @@ module EconGraphs {
             return new KG.Line({
                 name: 'ATCslopeLine' + label,
                 className: 'averageCost dotted',
+                show: this.show.atcslope,
                 lineDef: {
                     point: {x: 0, y: 0},
                     slope: this.modelProperty('atc('+q+')')
                 },
                 xDrag: xDrag,
                 label: {
-                    text: '\\text{slope} = AC = '+ this.atc(q).toFixed(1)
+                    text: '\\text{slope} = ATC'
                 }
             });
         }
@@ -324,13 +344,14 @@ module EconGraphs {
             return new KG.Line({
                 name: 'AVCslopeLine' + label,
                 className: 'averageVariableCost dotted',
+                show: this.show.avcslope,
                 lineDef: {
                     point: {x: 0, y: 0},
                     slope: this.modelProperty('avc('+q+')')
                 },
                 xDrag: xDrag,
                 label: {
-                    text: '\\text{slope} = AVC = '+ this.avc(q).toFixed(1)
+                    text: '\\text{slope} = AVC'
                 }
             });
         }
@@ -360,19 +381,23 @@ module EconGraphs {
                 name: 'variableCostAtQ' + label,
                 coordinates: {x: q, y: this.modelProperty('vc('+q+')')},
                 className: 'variableCost',
+                show: this.show.vc,
                 xDrag: xDrag,
                 label: {
                     text: label
                 },
                 droplines: {
-                    vertical: 'q' + labelSubscript,
                     horizontal: 'VC(q'+ labelSubscript +')'
                 }
             })
         }
 
         marginalCostAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '',
+            var axisLabel = this.mc(q).toFixed(1);
+            if(label && label.length > 0) {
+                axisLabel = label;
+            }
+            var axisLabel = axisLabel || this.mc(q).toFixed(1),
                 mcq = this.modelProperty('mc('+q+')'),
                 xDrag = this.quantityDraggable ? dragParam : false;;
             return new KG.Point({
@@ -380,31 +405,47 @@ module EconGraphs {
                 coordinates: {x: q, y: mcq},
                 className: 'marginalCost',
                 xDrag: xDrag,
-                label: {
-                    text: label
-                },
                 droplines: {
-                    horizontal: this.mc(q).toFixed(1)
+                    horizontal: axisLabel
                 }
             })
         }
 
         averageCostAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '',
-                atcq = this.modelProperty('atc('+q+')'),
+            var axisLabel = this.atc(q).toFixed(1);
+            if(label && label.length > 0) {
+                axisLabel = label;
+            }
+            var atcq = this.modelProperty('atc('+q+')'),
                 xDrag = this.quantityDraggable ? dragParam : false;;
             return new KG.Point({
                 name: 'averageCostAtQ' + label,
                 coordinates: {x: q, y: atcq},
                 className: 'averageCost',
                 xDrag: xDrag,
-                label: {
-                    text: label
-                },
                 droplines: {
-                    horizontal: this.atc(q).toFixed(1)
+                    horizontal: axisLabel
                 },
                 show: this.show.atc
+            })
+        }
+
+        averageVariableCostAtQuantityPoint(q, label?, dragParam?) {
+            var axisLabel = this.avc(q).toFixed(1);
+            if(label && label.length > 0) {
+                axisLabel = label;
+            }
+            var avcq = this.modelProperty('avc('+q+')'),
+                xDrag = this.quantityDraggable ? dragParam : false;;
+            return new KG.Point({
+                name: 'averageVariableCostAtQ' + label,
+                coordinates: {x: q, y: avcq},
+                className: 'averageVariableCost',
+                xDrag: xDrag,
+                droplines: {
+                    horizontal: axisLabel
+                },
+                show: this.show.avc
             })
         }
 

@@ -55,7 +55,8 @@ module KG {
                     className: definition.className,
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag,
-                    color: definition.color
+                    color: definition.color,
+                    show: definition.show
                 });
                 //console.log(labelDef);
                 line.labelDiv = new GraphDiv(labelDef);

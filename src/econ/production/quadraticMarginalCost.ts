@@ -45,6 +45,7 @@ module EconGraphs {
                 name: 'marginalCostControlPoint',
                 className: 'marginalCost',
                 coordinates: definition.marginalCostControlPointCoordinates,
+                xDrag: definition.marginalCostControlPointCoordinates.x,
                 yDrag: definition.marginalCostControlPointCoordinates.y
             })
 

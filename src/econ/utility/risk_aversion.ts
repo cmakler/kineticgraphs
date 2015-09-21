@@ -9,6 +9,10 @@ module EconGraphs {
         pLow: any;
         utilityType: string;
         utilityDef: OneGoodUtilityDefinition;
+        show?: {
+            ce: any;
+            rp: any;
+        }
     }
 
     export interface IRiskAversion extends KG.IModel
@@ -24,6 +28,10 @@ module EconGraphs {
         certaintyEquivalent: number;
         riskPremium: number;
         riskPremiumSegment: KG.Segment;
+        show: {
+            ce: boolean;
+            rp: boolean;
+        }
     }
 
     export class RiskAversion extends KG.Model implements IRiskAversion
@@ -40,6 +48,7 @@ module EconGraphs {
         public utilityOfExpectedC;
         public certaintyEquivalent;
         public riskPremium;
+        public show;
 
 
         public riskPremiumSegment;
@@ -52,6 +61,11 @@ module EconGraphs {
         constructor(definition:RiskAversionDefinition, modelPath?:string) {
 
             definition.pLow = definition.pLow || 0.5;
+
+            definition.show = _.defaults(definition.show || {},{
+                ce: false,
+                rp: false
+            });
 
             super(definition, modelPath);
 
@@ -85,6 +99,7 @@ module EconGraphs {
             this.certaintyEquivalentPoint = new KG.Point({
                 name: 'certaintyEquivalentPoint',
                 className: 'riskPremium',
+                show: this.show.ce,
                 coordinates: {
                     x: this.modelProperty('certaintyEquivalent'),
                     y: this.modelProperty('expectedU')
@@ -110,6 +125,7 @@ module EconGraphs {
             this.riskPremiumSegment = new KG.Segment({
                 name: 'xDiffSegment',
                 className: 'riskPremium',
+                show: this.show.rp,
                 a: {
                     x: this.modelProperty('expectedC'),
                     y: this.modelProperty('expectedU')

@@ -140,6 +140,14 @@ module KGMath.Functions {
 
         }
 
+        add(x,name?:string) {
+            var m = this;
+            return new Linear({
+                slope: m.slopeDef,
+                intercept: KG.addDefs(m.interceptDef,x)
+            },name)
+        }
+
         // The average of ax^2 + bx + c is ax + b + cx^-2 + C
         average(n?,name?) {
             var l = this;

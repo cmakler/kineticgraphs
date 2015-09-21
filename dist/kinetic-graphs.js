@@ -1035,6 +1035,13 @@ var KGMath;
                     }, name);
                 }
             };
+            Linear.prototype.add = function (x, name) {
+                var m = this;
+                return new Linear({
+                    slope: m.slopeDef,
+                    intercept: KG.addDefs(m.interceptDef, x)
+                }, name);
+            };
             // The average of ax^2 + bx + c is ax + b + cx^-2 + C
             Linear.prototype.average = function (n, name) {
                 var l = this;
@@ -1139,13 +1146,6 @@ var KGMath;
             __extends(Quadratic, _super);
             function Quadratic(definition, modelPath) {
                 definition.coefficients = definition.coefficients || { a: 1, b: 1, c: 1 };
-                if (!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
-                    var negativeB = KG.multiplyDefs(-1, definition.coefficients.b), twoA = KG.multiplyDefs(2, definition.coefficients.a), vertexX = KG.divideDefs(negativeB, twoA), vertexY = this.modelProperty('yValue(' + vertexX + ')');
-                    definition.vertex = {
-                        x: vertexX,
-                        y: vertexY
-                    };
-                }
                 // extract coefficients from vertex and point
                 if (definition.hasOwnProperty('vertex') && definition.hasOwnProperty('point')) {
                     // a = (p.y - vertex.y) / (p.x - vertex.x) ^ 2
@@ -1157,6 +1157,13 @@ var KGMath;
                     definition.coefficients.c = KG.addDefs(definition.vertex.y, KG.multiplyDefs(definition.coefficients.a, KG.squareDef(definition.vertex.x)));
                 }
                 _super.call(this, definition, modelPath);
+                if (!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
+                    var negativeB = KG.multiplyDefs(-1, definition.coefficients.b), twoA = KG.multiplyDefs(2, definition.coefficients.a), vertexX = KG.divideDefs(negativeB, twoA), vertexY = this.modelProperty('yValue(' + vertexX + ')');
+                    definition.vertex = {
+                        x: vertexX,
+                        y: vertexY
+                    };
+                }
             }
             Quadratic.prototype._update = function (scope) {
                 var q = this;
@@ -1831,7 +1838,8 @@ var KG;
                     className: definition.className,
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag,
-                    color: definition.color
+                    color: definition.color,
+                    show: definition.show
                 });
                 //console.log(labelDef);
                 line.labelDiv = new KG.GraphDiv(labelDef);
@@ -3910,13 +3918,30 @@ var EconGraphs;
             return new KG.Line({
                 name: 'MCslopeLine' + label,
                 className: 'marginalCost dotted',
+                show: this.show.mcslope,
                 lineDef: {
                     point: { x: q, y: this.tc(q) },
                     slope: this.mc(q)
                 },
                 xDrag: xDrag,
                 label: {
-                    text: '\\text{slope} = MC = ' + this.mc(q).toFixed(1)
+                    text: '\\text{slope} = MC'
+                }
+            });
+        };
+        ProductionCost.prototype.marginalCostAtVariableCostQuantitySlope = function (q, label, dragParam) {
+            var labelSubscript = label ? '_{' + label + '}' : '', xDrag = this.quantityDraggable ? dragParam : false;
+            return new KG.Line({
+                name: 'MCslopeLineVC' + label,
+                className: 'marginalCost dotted',
+                show: (this.show.mcslope && this.show.vc),
+                lineDef: {
+                    point: { x: q, y: this.modelProperty('vc(' + q + ')') },
+                    slope: this.mc(q)
+                },
+                xDrag: xDrag,
+                label: {
+                    text: '\\text{slope} = MC'
                 }
             });
         };
@@ -3926,13 +3951,14 @@ var EconGraphs;
             return new KG.Line({
                 name: 'ATCslopeLine' + label,
                 className: 'averageCost dotted',
+                show: this.show.atcslope,
                 lineDef: {
                     point: { x: 0, y: 0 },
                     slope: this.modelProperty('atc(' + q + ')')
                 },
                 xDrag: xDrag,
                 label: {
-                    text: '\\text{slope} = AC = ' + this.atc(q).toFixed(1)
+                    text: '\\text{slope} = ATC'
                 }
             });
         };
@@ -3942,13 +3968,14 @@ var EconGraphs;
             return new KG.Line({
                 name: 'AVCslopeLine' + label,
                 className: 'averageVariableCost dotted',
+                show: this.show.avcslope,
                 lineDef: {
                     point: { x: 0, y: 0 },
                     slope: this.modelProperty('avc(' + q + ')')
                 },
                 xDrag: xDrag,
                 label: {
-                    text: '\\text{slope} = AVC = ' + this.avc(q).toFixed(1)
+                    text: '\\text{slope} = AVC'
                 }
             });
         };
@@ -3976,47 +4003,67 @@ var EconGraphs;
                 name: 'variableCostAtQ' + label,
                 coordinates: { x: q, y: this.modelProperty('vc(' + q + ')') },
                 className: 'variableCost',
+                show: this.show.vc,
                 xDrag: xDrag,
                 label: {
                     text: label
                 },
                 droplines: {
-                    vertical: 'q' + labelSubscript,
                     horizontal: 'VC(q' + labelSubscript + ')'
                 }
             });
         };
         ProductionCost.prototype.marginalCostAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '', mcq = this.modelProperty('mc(' + q + ')'), xDrag = this.quantityDraggable ? dragParam : false;
+            var axisLabel = this.mc(q).toFixed(1);
+            if (label && label.length > 0) {
+                axisLabel = label;
+            }
+            var axisLabel = axisLabel || this.mc(q).toFixed(1), mcq = this.modelProperty('mc(' + q + ')'), xDrag = this.quantityDraggable ? dragParam : false;
             ;
             return new KG.Point({
                 name: 'marginalCostAtQ' + label,
                 coordinates: { x: q, y: mcq },
                 className: 'marginalCost',
                 xDrag: xDrag,
-                label: {
-                    text: label
-                },
                 droplines: {
-                    horizontal: this.mc(q).toFixed(1)
+                    horizontal: axisLabel
                 }
             });
         };
         ProductionCost.prototype.averageCostAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '', atcq = this.modelProperty('atc(' + q + ')'), xDrag = this.quantityDraggable ? dragParam : false;
+            var axisLabel = this.atc(q).toFixed(1);
+            if (label && label.length > 0) {
+                axisLabel = label;
+            }
+            var atcq = this.modelProperty('atc(' + q + ')'), xDrag = this.quantityDraggable ? dragParam : false;
             ;
             return new KG.Point({
                 name: 'averageCostAtQ' + label,
                 coordinates: { x: q, y: atcq },
                 className: 'averageCost',
                 xDrag: xDrag,
-                label: {
-                    text: label
-                },
                 droplines: {
-                    horizontal: this.atc(q).toFixed(1)
+                    horizontal: axisLabel
                 },
                 show: this.show.atc
+            });
+        };
+        ProductionCost.prototype.averageVariableCostAtQuantityPoint = function (q, label, dragParam) {
+            var axisLabel = this.avc(q).toFixed(1);
+            if (label && label.length > 0) {
+                axisLabel = label;
+            }
+            var avcq = this.modelProperty('avc(' + q + ')'), xDrag = this.quantityDraggable ? dragParam : false;
+            ;
+            return new KG.Point({
+                name: 'averageVariableCostAtQ' + label,
+                coordinates: { x: q, y: avcq },
+                className: 'averageVariableCost',
+                xDrag: xDrag,
+                droplines: {
+                    horizontal: axisLabel
+                },
+                show: this.show.avc
             });
         };
         return ProductionCost;
@@ -4096,6 +4143,7 @@ var EconGraphs;
                 name: 'marginalCostControlPoint',
                 className: 'marginalCost',
                 coordinates: definition.marginalCostControlPointCoordinates,
+                xDrag: definition.marginalCostControlPointCoordinates.x,
                 yDrag: definition.marginalCostControlPointCoordinates.y
             });
         }
@@ -4285,6 +4333,10 @@ var EconGraphs;
         __extends(RiskAversion, _super);
         function RiskAversion(definition, modelPath) {
             definition.pLow = definition.pLow || 0.5;
+            definition.show = _.defaults(definition.show || {}, {
+                ce: false,
+                rp: false
+            });
             _super.call(this, definition, modelPath);
             this.utility = new EconGraphs[definition.utilityType](definition.utilityDef, this.modelPath + '.utility');
             this.expectedUtilityPoint = new KG.Point({
@@ -4313,6 +4365,7 @@ var EconGraphs;
             this.certaintyEquivalentPoint = new KG.Point({
                 name: 'certaintyEquivalentPoint',
                 className: 'riskPremium',
+                show: this.show.ce,
                 coordinates: {
                     x: this.modelProperty('certaintyEquivalent'),
                     y: this.modelProperty('expectedU')
@@ -4336,6 +4389,7 @@ var EconGraphs;
             this.riskPremiumSegment = new KG.Segment({
                 name: 'xDiffSegment',
                 className: 'riskPremium',
+                show: this.show.rp,
                 a: {
                     x: this.modelProperty('expectedC'),
                     y: this.modelProperty('expectedU')

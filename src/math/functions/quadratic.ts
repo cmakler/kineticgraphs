@@ -43,17 +43,6 @@ module KGMath.Functions {
 
             definition.coefficients = definition.coefficients || {a: 1, b: 1, c: 1};
 
-            if(!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
-                var negativeB = KG.multiplyDefs(-1,definition.coefficients.b),
-                    twoA = KG.multiplyDefs(2,definition.coefficients.a),
-                    vertexX = KG.divideDefs(negativeB,twoA),
-                    vertexY = this.modelProperty('yValue('+vertexX+')');
-                definition.vertex = {
-                    x: vertexX,
-                    y: vertexY
-                }
-            }
-
             // extract coefficients from vertex and point
             if(definition.hasOwnProperty('vertex') && definition.hasOwnProperty('point')) {
 
@@ -72,6 +61,19 @@ module KGMath.Functions {
             }
 
             super(definition, modelPath);
+
+            if(!definition.hasOwnProperty('vertex') && definition.coefficients.a != 0) {
+                var negativeB = KG.multiplyDefs(-1,definition.coefficients.b),
+                    twoA = KG.multiplyDefs(2,definition.coefficients.a),
+                    vertexX = KG.divideDefs(negativeB,twoA),
+                    vertexY = this.modelProperty('yValue('+vertexX+')');
+                definition.vertex = {
+                    x: vertexX,
+                    y: vertexY
+                }
+            }
+
+
 
         }
 

@@ -21,7 +21,10 @@
         <div class="col-md-4">
             <h1>Monopoly Profit Maximization</h1>
             <hr/>
-            <p>Drag point <span class="math">q</span> left and right to see how total, marginal, and average costs change. You can also drag the fixed cost up and down.</p>
+            <p>Drag point <span class="math">q</span> left and right to see how total, marginal, and average costs change, or select <b>set to optimal quantity</b> below.</p>
+            <p>Change the fixed cost of the production function by dragging the y-intercept of the total cost function up and down.</p>
+            <p>Change the marginal cost of the production function by dragging the two orange control points in the lower graph.</p>
+            <p>Change the demand curve facing the monopolist by dragging its endpoints.</p>
             <hr/>
             <label>
                 <input type="checkbox" ng-model="params.showAC"> Show average cost
@@ -31,10 +34,8 @@
             </label>
             <hr/>
             <label>
-                <input type="checkbox" ng-model="params.snapToOptimalQ"> Snap to optimal quantity
+                <input type="checkbox" ng-model="params.snapToOptimalQ"> Set to optimal quantity
             </label>
-
-
         </div>
         <div class="col-md-8">
             <div id="costs"></div>
@@ -47,16 +48,16 @@
     var scopeDefinition = {
         params: {
             fc: 100,
-            //q: 50,
+            q: 50,
             demandPriceIntercept: 40,
             demandQuantityIntercept: 80,
             marginalCostIntercept: 10,
             marginalCostControlPointX: 100,
             marginalCostControlPointY: 10,
             constantMarginalCost: true,
-            showProfit: true,
-            showAC: true,
-            snapToOptimalQ: true
+            showProfit: false,
+            showAC: false,
+            snapToOptimalQ: false
         },
         restrictions: [
             {
@@ -77,7 +78,7 @@
             definition: {
                 quantity: 'params.q',
                 snapToOptimalQuantity: 'params.snapToOptimalQ',
-                showProfit: 'params.showProfit',
+                showProfit: '(params.showProfit && params.showAC)',
                 cost: {
                     costType: 'LinearMarginalCost',
                     costDef: {
@@ -89,7 +90,12 @@
                             y: 'params.marginalCostControlPointY'
                         },
                         fixedCostDragParam: 'fc',
-                        showAC: 'params.showAC'
+                        show: {
+                            atc: 'params.showAC'
+                        },
+                        labels: {
+                            atc: 'AC'
+                        }
                     }
                 },
                 demand: {
@@ -137,8 +143,8 @@
                                 'model.costFunction.marginalCostInterceptPoint',
                                 'model.costFunction.marginalCostControlPoint',
                             'model.costFunction.averageCostCurve',
-                            'model.costFunction.marginalCostAtQuantityPoint(model.quantity, "", "params.q")',
-                            'model.costFunction.averageCostAtQuantityPoint(model.quantity, "", "params.q")',
+                            //'model.costFunction.marginalCostAtQuantityPoint(model.quantity, "MC", "params.q")',
+                            //'model.costFunction.averageCostAtQuantityPoint(model.quantity, "AC", "params.q")',
                             'model.demandFunction.curve',
                             'model.demandFunction.marginalRevenueCurve',
                             'model.demandFunction.priceInterceptPoint',
