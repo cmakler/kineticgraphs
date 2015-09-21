@@ -5,12 +5,12 @@
     <title>Demand Elasticity</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
-    <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
+    <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
     <script type="text/javascript" src="../lib/color_mixer.js"></script>
     <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
-    <script type="text/javascript" src="../bower_components/katex/build/katex/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
     <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
     <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
     <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
@@ -109,8 +109,8 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id: 'graph',
-                    xAxis: {min: 0, max: 100, title: '\\text{Quantity Demanded}'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price}'},
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity Demanded}'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Price}'},
                     objects: ['model.curve', 'model.priceLine', 'model.quantityDemandedAtPrice', 'model.slopeLine']
                 }
             },
@@ -119,7 +119,7 @@
                 definition: {
                     element_id: 'sliderA',
                     param: 'a',
-                    axis: {min: 0, max: 2000, tickValues: [0, 1000, 2000]}
+                    axisDef: {min: 0, max: 2000, tickValues: [0, 1000, 2000]}
                 }
             },
             {
@@ -127,7 +127,7 @@
                 definition: {
                     element_id: 'sliderB',
                     param: 'b',
-                    axis: {min: 0, max: 2, tickValues: [0, 1, 2]}
+                    axisDef: {min: 0, max: 2, tickValues: [0, 1, 2]}
                 }
             },
             {
@@ -135,7 +135,7 @@
                 definition: {
                     element_id: 'sliderPrice',
                     param: 'price',
-                    axis: {min: 0, max: 100, tickValues: [0, 50, 100]}
+                    axisDef: {min: 0, max: 100, tickValues: [0, 50, 100]}
                 }
             }
         ]

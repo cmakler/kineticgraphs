@@ -10,7 +10,7 @@ module KG
     {
         param: string;
         precision: number;
-        axis: AxisDefinition;
+        axisDef: AxisDefinition;
     }
 
     export interface ISlider extends IView
@@ -19,16 +19,16 @@ module KG
     }
 
     export class Slider extends View implements ISlider {
-        public axis;
+        public axisDef;
 
-        constructor(definition: SliderDefinition) {
+        constructor(definition: SliderDefinition, modelPath?: string) {
 
             definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 500, height: 50 });
             definition.margins = _.defaults(definition.margins || {}, {top: 25, left: 25, bottom: 25, right: 25});
             definition.mask = false;
 
-            super(definition);
-            this.xAxis = new XAxis(definition.axis);
+            super(definition, modelPath);
+            this.xAxis = new XAxis(definition.axisDef);
             this.objects = [
                 new SliderControl({name: definition.element_id + 'Ctrl', param: 'params.' + definition.param})
             ]
@@ -39,6 +39,10 @@ module KG
             return this;
         }
 
+        onGraph(coordinates) {
+            return true;
+        }
+
 
 
     }
@@ -47,11 +51,11 @@ module KG
 
         public param;
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
             definition.xDrag = true;
             definition.yDrag = false;
             definition.coordinates = {x: definition.param, y:0};
-            super(definition);
+            super(definition, modelPath);
             this.viewObjectSVGtype = 'circle';
             this.viewObjectClass = 'sliderControl';
         }

@@ -1,21 +1,5 @@
 @import 'kinetic-graphs.less';
-
-
-@demand: @blue-dark;
-@demand-old: @blue-medium;
-@demand-fill: @blue-faint;
-
-@growth: @green-dark;
-@growth-old: @green-medium;
-@growth-fill: @green-faint;
-
-@capital: @orange-dark;
-@capital-old: @orange-medium;
-@capital-fill: @orange-faint;
-
-@consumption: @blue-dark;
-@consumption-old: @blue-medium;
-@consumption-fill: @blue-faint;
+@import 'econ-colors.less';
 
 .demand {
   color: @demand;
@@ -36,10 +20,75 @@
 .capital {
   color: @capital;
   stroke: @capital;
+  fill: @capital;
 }
 
 .consumption {
   color: @consumption;
   stroke: @consumption;
+  fill: @consumption;
 }
 
+.totalCost {
+  color: @totalCost;
+  stroke: @totalCost;
+  fill: @totalCost;
+}
+
+.averageCost {
+  color: @averageCost;
+  stroke: @averageCost;
+  fill: @averageCost;
+}
+
+.marginalCost {
+  color: @marginalCost;
+  stroke: @marginalCost;
+  fill: @marginalCost;
+}
+
+.variableCost {
+  color: @variableCost;
+  stroke: @variableCost;
+  fill: @variableCost;
+}
+
+.averageVariableCost {
+  color: @averageVariableCost;
+  stroke: @averageVariableCost;
+  fill: @averageVariableCost;
+}
+
+.utility {
+  color: @utility;
+  stroke: @utility;
+  fill: @utility;
+}
+
+.expectedUtility {
+  color: @expectedUtility;
+  stroke: @expectedUtility;
+  fill: @expectedUtility;
+}
+
+.riskPremium {
+  color: @riskPremium;
+  stroke: @riskPremium;
+  fill: @riskPremium;
+}
+
+.totalRevenue {
+  color: @totalRevenue;
+  stroke: @totalRevenue;
+  fill: @totalRevenue;
+}
+
+.marginalRevenue {
+  color: @marginalRevenue;
+  stroke: @marginalRevenue;
+  fill: @marginalRevenue;
+}
+
+.curve {
+  fill: none;
+}

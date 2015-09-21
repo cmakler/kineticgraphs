@@ -64,11 +64,11 @@ module KG {
         static BOTH_ARROW_STRING = 'BOTH';
 
 
-        constructor(definition:CurveDefinition) {
+        constructor(definition:CurveDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
 
-            super(definition);
+            super(definition, modelPath);
 
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {
@@ -76,7 +76,8 @@ module KG {
                     className: definition.className,
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag,
-                    color: definition.color
+                    color: definition.color,
+                    show: definition.show
                 });
                 console.log(labelDef);
                 this.labelDiv = new GraphDiv(labelDef);
@@ -103,8 +104,18 @@ module KG {
             if(curve.labelDiv) {
                 var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
                 var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
-                curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
-                curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                if(labelCoordinates.y > view.yAxis.domain.max) {
+                    labelCoordinates.y = view.yAxis.domain.max;
+                    curve.labelDiv.align = 'center';
+                    curve.labelDiv.valign = 'bottom';
+                } else if(labelCoordinates.x >= view.xAxis.domain.max) {
+                    labelCoordinates.x = view.xAxis.domain.max;
+                    curve.labelDiv.align = 'left';
+                    curve.labelDiv.valign = 'middle'
+                } else {
+                    curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
+                    curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                }
                 curve.labelDiv.coordinates = labelCoordinates;
             }
         }

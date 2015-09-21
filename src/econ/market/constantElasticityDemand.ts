@@ -21,8 +21,8 @@ module EconGraphs {
         public slopeLine;
         public quantityDemandedAtPrice;
 
-        constructor(definition:ConstantElasticityDemandDefinition) {
-            super(definition);
+        constructor(definition:ConstantElasticityDemandDefinition, modelPath?: string) {
+            super(definition,modelPath);
             this.curve = new KG.FunctionPlot({
                 name: 'demand',
                 className: 'demand',
@@ -32,15 +32,13 @@ module EconGraphs {
                     text: 'D'
                 }
             });
-            this.priceLine = new KG.Line({
+            this.priceLine = new KG.HorizontalLine({
                 name: 'priceLine',
                 color: 'grey',
                 arrows: 'NONE',
                 type: 'HorizontalLine',
                 yDrag: 'price',
-                def: {
-                    y: 'params.price'
-                }
+                y: 'params.price'
             });
             this.quantityDemandedAtPrice = new KG.Point({
                 name: 'quantityDemandedAtPrice',
@@ -58,11 +56,10 @@ module EconGraphs {
             });
             this.slopeLine = new KG.Line({
                 name: 'slopeLine',
-                type: 'PointSlopeLine',
                 className: 'demand dotted',
-                def: {
-                    p: {x: 'model.quantityAtPrice(params.price)', y: 'params.price'},
-                    m: '1/model.slopeAtPrice(params.price)'
+                lineDef: {
+                    point: {x: 'model.quantityAtPrice(params.price)', y: 'params.price'},
+                    slope: '1/model.slopeAtPrice(params.price)'
                 },
                 label: {
                     text: 'model.slopeAtPriceWords(params.price)'

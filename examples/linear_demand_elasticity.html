@@ -5,14 +5,14 @@
     <title>Demand Elasticity</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
-    <link rel="stylesheet" href="../bower_components/katex/build/katex.min.css">
+    <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
     <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="../bower_components/jquery-color/jquery.color.js"></script>
     <script type="text/javascript" src="../lib/color_mixer.js"></script>
     <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
     <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
     <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
-    <script type="text/javascript" src="../bower_components/katex/build/katex/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
     <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
 </head>
 <body>
@@ -67,17 +67,21 @@
             type: 'EconGraphs.LinearDemand',
             definition: {
                 elasticityMethod: 'point',
-                type: 'TwoPointLine',
+                price: 'params.price',
+                type: 'Linear',
                 def: {
-                    p1: {
+                    point1: {
                         x: 0,
                         y: 'params.demandPriceIntercept'
                     },
-                    p2: {
+                    point2: {
                         x: 'params.demandQuantityIntercept',
                         y: 0
                     }
-                }
+                },
+                priceInterceptDrag: 'params.demandPriceIntercept',
+                quantityInterceptDrag: 'params.demandQuantityIntercept',
+                priceDrag: 'params.price'
             }
         },
         views: [
@@ -85,9 +89,9 @@
                 type: 'KG.Graph',
                 definition: {
                     element_id:'graph',
-                    xAxis: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
-                    yAxis: {min: 0, max: 100, title: '\\text{Price }(P)'},
-                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedAtPrice','model.consumerSurplus']
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
+                    objects: ['model.curve','model.priceInterceptPoint','model.quantityInterceptPoint','model.priceLine','model.quantityDemandedPoint']
                 }
             }
         ]

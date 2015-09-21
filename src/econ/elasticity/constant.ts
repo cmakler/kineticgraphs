@@ -16,8 +16,8 @@ module EconGraphs {
 
     export class ConstantElasticity extends Elasticity implements IConstantElasticity
     {
-        constructor(definition:ConstantElasticityDefinition) {
-            super(definition);
+        constructor(definition:ConstantElasticityDefinition, modelPath?:string) {
+            super(definition, modelPath);
         }
 
     }

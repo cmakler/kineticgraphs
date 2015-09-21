@@ -57,8 +57,8 @@ module FinanceGraphs
         public riskReturnLine;
         public positiveDefinite;
 
-        constructor(definition:PortfolioDefinition) {
-            super(definition);
+        constructor(definition:PortfolioDefinition, modelPath?: string) {
+            super(definition, modelPath);
             var p = this;
             p.assets = [p.asset1, p.asset2, p.asset3];
             p.threeAssetPortfolios = new KG.PathFamily({
@@ -101,10 +101,9 @@ module FinanceGraphs
                 name: 'twoPointSegment',
                 className: 'risk-free',
                 arrows: 'OPEN',
-                type: 'TwoPointLine',
-                def: {
-                    p1: p.riskFreeAsset,
-                    p2: p.optimalPortfolio,
+                lineDef: {
+                    point1: p.riskFreeAsset,
+                    point2: p.optimalPortfolio,
                 }
             });
             p.optimalPortfolioMean = 0;

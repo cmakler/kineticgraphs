@@ -9,8 +9,8 @@ module KG
         element_id?: string;
         maxDimensions?: IDimensions;
         margins?: IMargins;
-        xAxis?: AxisDefinition;
-        yAxis?: AxisDefinition;
+        xAxisDef?: AxisDefinition;
+        yAxisDef?: AxisDefinition;
         objects?: ViewObjectDefinition[];
         background?: string;
         mask?: boolean;
@@ -48,7 +48,7 @@ module KG
 
     export class View extends Model implements IView
     {
-        private element_id;
+        public element_id;
         public maxDimensions;
         public dimensions;
         public margins;
@@ -61,14 +61,14 @@ module KG
         public background;
         private mask;
 
-        constructor(definition:ViewDefinition) {
+        constructor(definition:ViewDefinition, modelPath?:string) {
             definition = _.defaults(definition,{background:'white',mask:true});
-            super(definition);
-            if(definition.hasOwnProperty('xAxis')){
-                this.xAxis = new XAxis(definition.xAxis);
+            super(definition, modelPath);
+            if(definition.hasOwnProperty('xAxisDef')){
+                this.xAxis = new XAxis(definition.xAxisDef);
             }
-            if(definition.hasOwnProperty('yAxis')){
-                this.yAxis = new YAxis(definition.yAxis);
+            if(definition.hasOwnProperty('yAxisDef')){
+                this.yAxis = new YAxis(definition.yAxisDef);
             }
         }
 
@@ -180,10 +180,10 @@ module KG
 
                 // draw axes
                 if(view.xAxis) {
-                    view.xAxis.draw(axes, view.divs, axisDimensions, view.margins);
+                    view.xAxis.update(scope).draw(axes, view.divs, axisDimensions, view.margins);
                 }
                 if(view.yAxis) {
-                    view.yAxis.draw(axes, view.divs, axisDimensions, view.margins);
+                    view.yAxis.update(scope).draw(axes, view.divs, axisDimensions, view.margins);
                 }
 
             }
@@ -278,7 +278,7 @@ module KG
                         newY = yAxis.scale.invert(mouseY + yDelta);
                         if(newY < yAxis.domain.min) {
                             dragUpdate[yParam] = yAxis.domain.min;
-                        } else if(newY > xAxis.domain.max) {
+                        } else if(newY > yAxis.domain.max) {
                             dragUpdate[yParam] = yAxis.domain.max;
                         } else {
                             dragUpdate[yParam] = newY;

@@ -25,8 +25,8 @@ module EconGraphs {
         public pointView;
         public line;
 
-        constructor(definition:PointElasticityDefinition) {
-            super(definition);
+        constructor(definition:PointElasticityDefinition, modelPath?:string) {
+            super(definition,modelPath);
             this.pointView = new KG.Point({
                 name: 'point',
                 coordinates: definition.point,
@@ -38,9 +38,9 @@ module EconGraphs {
                     vertical: 'Q'
                 }
             });
-            this.line = new KGMath.Functions.PointSlopeLine({
-                p: definition.point,
-                m: definition.slope
+            this.line = new KGMath.Functions.Linear({
+                point: definition.point,
+                slope: definition.slope
             })
         }
 

@@ -19,13 +19,13 @@ module KG {
         public begin;
         public end;
 
-        constructor(definition:ArrowDefinition) {
+        constructor(definition:ArrowDefinition, modelPath?: string) {
 
             definition.labelPosition = Curve.LABEL_POSITION_MIDDLE;
             definition.data = [KG.getCoordinates(definition.begin), KG.getCoordinates(definition.end)];
             definition.arrows = Curve.END_ARROW_STRING;
 
-            super(definition);
+            super(definition, modelPath);
 
             this.viewObjectClass = 'arrow';
         }

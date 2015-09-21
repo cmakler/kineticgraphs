@@ -6,10 +6,14 @@ module EconGraphs {
     {
         type: string;
         def: KGMath.Functions.BaseDefinition;
-        className: string;
-        curveLabel: string;
-        quantityLabel: string;
-        elasticityMethod: string;
+        className?: string;
+        curveLabel?: string;
+        quantityLabel?: string;
+        elasticityMethod?: string;
+        price?: any;
+        quantity?: any;
+        priceDrag?: string;
+        quantityDrag?: string;
     }
 
     export interface IDemand extends KG.IModel
@@ -19,10 +23,19 @@ module EconGraphs {
         priceAtQuantity: (quantity: number) => number;
         priceElasticity: (price: number) => Elasticity;
         curve: KG.ViewObject;
-        quantityAtPriceView: (price: number) => KG.Point;
         className: string;
         curveLabel: string;
         quantityLabel: string;
+
+        price: number;
+        quantity: number;
+
+        priceLine: KG.HorizontalLine;
+        quantityLine: KG.VerticalLine;
+        quantityDemandedPoint: KG.Point;
+        consumerSurplus: KG.Area;
+        marginalRevenueAtQuantitySlope: (quantity:number, label:string) => KG.Line;
+        totalRevenueAtQuantityPoint: (quantity:number, label:string) => KG.Point;
     }
 
     export class Demand extends KG.Model implements IDemand
@@ -36,10 +49,77 @@ module EconGraphs {
         public elasticity: Elasticity;
         public curve;
 
-        constructor(definition:DemandDefinition) {
-            super(definition);
-            this.demandFunction = new KGMath.Functions[definition.type](definition.def);
-            this.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
+        public marginalRevenueFunction;
+        public totalRevenueFunction;
+
+        public price;
+        public quantity;
+
+        public priceLine;
+        public quantityLine;
+        public quantityDemandedPoint;
+        public consumerSurplus;
+        public marginalRevenueCurve;
+        public totalRevenueCurve;
+
+
+        constructor(definition:DemandDefinition, modelPath?:string) {
+
+            definition.className = definition.className || 'demand';
+            definition.curveLabel = definition.curveLabel || 'D';
+
+            super(definition, modelPath);
+
+            var d = this;
+
+            d.demandFunction = new KGMath.Functions[definition.type](definition.def);
+
+            d.elasticity = (definition.elasticityMethod == 'point') ? new PointElasticity({}) : (definition.elasticityMethod = 'constant') ? new ConstantElasticity({}) : new MidpointElasticity({});
+
+            var priceLineDrag = (typeof definition.price == 'string') ? definition.price.replace('params.','') : false;
+
+            d.priceLine = new KG.HorizontalLine({
+                name: 'priceLine',
+                color: 'grey',
+                arrows: 'NONE',
+                yDrag: definition.priceDrag,
+                y: d.modelProperty('price')
+            });
+
+            this.quantityLine = new KG.VerticalLine({
+                name: 'quantityLine',
+                color: 'grey',
+                arrows: 'NONE',
+                xDrag: definition.quantityDrag,
+                x: d.modelProperty('quantity')
+            });
+
+            this.quantityDemandedPoint = new KG.Point({
+                name: 'quantityDemandedAtPrice',
+                coordinates: {x: this.modelProperty('quantity'), y: this.modelProperty('price')},
+                size: 500,
+                color: 'black',
+                yDrag: definition.price,
+                xDrag: definition.quantity,
+                label: {
+                    text: 'A'
+                },
+                droplines: {
+                    vertical: 'Q^D_A',
+                    horizontal: 'P_A'
+                }
+            });
+
+        }
+
+        _update(scope) {
+            var d = this;
+            if(d.price) {
+                d.quantity = d.quantityAtPrice(d.price)
+            } else if(d.quantity) {
+                d.price = d.priceAtQuantity(d.quantity)
+            }
+            return d;
         }
 
         quantityAtPrice(price:number) {
@@ -84,6 +164,65 @@ module EconGraphs {
                 d.elasticity = d.elasticity.calculateElasticity({point:point, slope:slope});
             }
             return d.elasticity;
+        }
+
+        tr(q) {
+            return this.totalRevenueFunction.yValue(q);
+        }
+
+        mr(q) {
+            return this.marginalRevenueFunction.yValue(q);
+        }
+
+        priceAtQuantityPoint(q, def:{label?: string; vDropline?: string; hDropline?: string; xDrag?: any}) {
+            return new KG.Point({
+                name: 'DemandPoint',
+                className: 'demand',
+                coordinates: {
+                    x: q,
+                    y: this.priceAtQuantity(q)
+                },
+                label: {
+                    text: def.label || ''
+                },
+                droplines: {
+                    vertical: def.vDropline,
+                    horizontal: def.hDropline
+                },
+                xDrag: def.xDrag
+            });
+        }
+
+        marginalRevenueAtQuantitySlope(q, label?) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Line({
+                name: 'MRslopeLine' + label,
+                className: 'marginalRevenue dotted',
+                lineDef: {
+                    point: {x: q, y: this.modelProperty('tr('+q+')')},
+                    slope: this.mr(q)
+                },
+                label: {
+                    text: '\\text{slope} = MR(q'+ labelSubscript +')'
+                }
+            });
+        }
+
+        totalRevenueAtQuantityPoint(q, label?, dragParam?) {
+            var labelSubscript = label ? '_{' + label + '}' : '';
+            return new KG.Point({
+                name: 'totalRevenueAtQ' + label,
+                coordinates: {x: q, y: this.tr(q)},
+                className: 'totalRevenue',
+                xDrag: dragParam,
+                label: {
+                    text: label
+                },
+                droplines: {
+                    vertical: 'q' + labelSubscript,
+                    horizontal: 'TR(q'+ labelSubscript +')'
+                }
+            })
         }
 
     }

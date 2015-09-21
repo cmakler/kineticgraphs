@@ -1,11 +1,9 @@
-/// <reference path="../bower_components/DefinitelyTyped/jquery/jquery.d.ts" />
-/// <reference path="../bower_components/DefinitelyTyped/jquery.color/jquery.color.d.ts" />
-/// <reference path="../bower_components/DefinitelyTyped/angularjs/angular.d.ts"/>
-/// <reference path="../bower_components/DefinitelyTyped/d3/d3.d.ts"/>
-/// <reference path="../bower_components/DefinitelyTyped/underscore/underscore.d.ts"/>
+/// <reference path="../typings/tsd.d.ts"/>
+/// <reference path="../bower_components/dt-d3/d3.d.ts"/>
 
 /// <reference path="constants.ts" />
-/// <reference path="helpers.ts" />
+/// <reference path="helpers/helpers.ts" />
+/// <reference path="helpers/definitions.ts" />
 
 /// <reference path="model.ts" />
 /// <reference path="restriction.ts" />
@@ -29,6 +27,7 @@
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
 /// <reference path="views/graph.ts" />
+/// <reference path="views/twoVerticalGraphs.ts" />
 /// <reference path="views/slider.ts" />
 
 /// <reference path="controller.ts" />
@@ -36,6 +35,7 @@
 /// <reference path="sample/sample.ts" />
 /// <reference path="finance/fg.ts" />
 /// <reference path="econ/eg.ts" />
+/// <reference path="physics/pg.ts"/>
 
 'use strict';
 

@@ -33,19 +33,31 @@ module KG
         public horizontalDropline;
         public verticalDropline;
 
-        constructor(definition:PointDefinition) {
+        constructor(definition:PointDefinition, modelPath?: string) {
 
-            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: 100, symbol: 'circle'});
-            super(definition);
+            var defaultSize = 100;
+            if(definition.hasOwnProperty('label')) {
+                if(definition.label.hasOwnProperty('text')) {
+                    if(definition.label.text.length > 0) {
+                        defaultSize = 500;
+                    }
+                }
+            }
+
+            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: defaultSize, symbol: 'circle'});
+            super(definition, modelPath);
 
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
                     coordinates:definition.coordinates,
                     xDrag: definition.xDrag,
-                    yDrag: definition.yDrag
+                    yDrag: definition.yDrag,
+                    show: definition.show
                 });
-                labelDef.color = (labelDef.hasOwnProperty('align')) ? this.color : 'white';
+                if(!labelDef.hasOwnProperty('align')) {
+                    labelDef.className = 'pointLabel'
+                }
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
@@ -56,7 +68,8 @@ module KG
                         coordinates: definition.coordinates,
                         draggable: definition.yDrag,
                         axisLabel: definition.droplines.horizontal,
-
+                        className: definition.className,
+                        show: definition.show
                     });
                 }
                 if(definition.droplines.hasOwnProperty('vertical')) {
@@ -64,7 +77,9 @@ module KG
                         name: definition.name,
                         coordinates: definition.coordinates,
                         draggable: definition.xDrag,
-                        axisLabel: definition.droplines.vertical
+                        axisLabel: definition.droplines.vertical,
+                        className: definition.className,
+                        show: definition.show
                     });
                 }
             }
@@ -75,17 +90,41 @@ module KG
 
         createSubObjects(view) {
             var p = this;
-            if(p.labelDiv) {
-                view.addObject(p.labelDiv);
+            if(view instanceof KG.TwoVerticalGraphs) {
+                if(p.labelDiv) {
+                    view.topGraph.addObject(p.labelDiv);
+                }
+                if(p.verticalDropline) {
+                    var continuationDropLine = new VerticalDropline({
+                        name: p.verticalDropline.name,
+                        coordinates: {x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
+                        draggable: p.verticalDropline.draggable,
+                        axisLabel: p.verticalDropline.axisLabel
+                    });
+                    p.verticalDropline.labelDiv = null;
+                    view.topGraph.addObject(p.verticalDropline);
+                    view.bottomGraph.addObject(continuationDropLine);
+                    p.verticalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                    continuationDropLine.createSubObjects(view.bottomGraph);
+                }
+                if(p.horizontalDropline) {
+                    view.topGraph.addObject(p.horizontalDropline);
+                    p.horizontalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                }
+            } else {
+                if(p.labelDiv) {
+                    view.addObject(p.labelDiv);
+                }
+                if(p.verticalDropline) {
+                    view.addObject(p.verticalDropline);
+                    p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                }
+                if(p.horizontalDropline) {
+                    view.addObject(p.horizontalDropline);
+                    p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                }
             }
-            if(p.verticalDropline) {
-                view.addObject(p.verticalDropline);
-                p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
-            }
-            if(p.horizontalDropline) {
-                view.addObject(p.horizontalDropline);
-                p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
-            }
+
             return view;
         }
 
@@ -94,15 +133,23 @@ module KG
             var point = this,
                 draggable = (point.xDrag || point.yDrag);
 
+            var subview = (view instanceof KG.TwoVerticalGraphs) ? view.topGraph : view;
+
             if(!point.hasOwnProperty('coordinates')) {
                 return view;
             }
+
+
 
             if(isNaN(point.coordinates.x) || isNaN(point.coordinates.y) || point.coordinates.x == Infinity || point.coordinates.y == Infinity) {
                 return view;
             }
 
-            var group:D3.Selection = view.objectGroup(point.name, point.initGroupFn(), true);
+            var group:D3.Selection = subview.objectGroup(point.name, point.initGroupFn(), true);
+
+            if(!subview.onGraph(point.coordinates)) {
+                point.show = false;
+            }
 
             if (point.symbol === 'none') {
                 point.show = false;
@@ -117,14 +164,14 @@ module KG
                         'class': point.classAndVisibility(),
                         'fill': point.color,
                         'd': d3.svg.symbol().type(point.symbol).size(point.size),
-                        'transform': view.translateByCoordinates(point.coordinates)
+                        'transform': subview.translateByCoordinates(point.coordinates)
                     });
             } catch(error) {
                 console.log(error);
             }
 
             if(draggable){
-                return point.setDragBehavior(view,pointSymbol);
+                return point.setDragBehavior(subview,pointSymbol);
             } else {
                 return view;
             }

@@ -25,7 +25,7 @@ module KG {
         public draggable;
         public labelDiv;
 
-        constructor(definition:DroplineDefinition) {
+        constructor(definition:DroplineDefinition, modelPath?: string) {
 
             definition.coordinates = KG.getCoordinates(definition.coordinates);
             definition = _.defaults(definition,{
@@ -33,31 +33,34 @@ module KG {
                 draggable: false,
                 axisLabel: ''
             });
-            super(definition);
+            super(definition,modelPath);
 
-            var labelDef:GraphDivDefinition = {
-                name: definition.name + '_label',
-                color: 'black',
-                text: definition.axisLabel,
-                dimensions: {width: 30, height:20},
-                backgroundColor: 'white'
-            };
+            if(definition.axisLabel.length > 0) {
+                var labelDef:GraphDivDefinition = {
+                    name: definition.name + '_label',
+                    className: definition.className,
+                    text: definition.axisLabel,
+                    dimensions: {width: 60, height:20},
+                    backgroundColor: 'white',
+                    show: definition.show
+                };
 
-            if(definition.horizontal) {
-                labelDef.coordinates = {
-                    x: KG.GraphDiv.AXIS_COORDINATE_INDICATOR,
-                    y: definition.coordinates.y
-                };
-                labelDef.yDrag = definition.draggable;
-            } else {
-                labelDef.coordinates = {
-                    x: definition.coordinates.x,
-                    y: KG.GraphDiv.AXIS_COORDINATE_INDICATOR
-                };
-                labelDef.xDrag = definition.draggable;
+                if(definition.horizontal) {
+                    labelDef.coordinates = {
+                        x: KG.GraphDiv.AXIS_COORDINATE_INDICATOR,
+                        y: definition.coordinates.y
+                    };
+                    labelDef.yDrag = definition.draggable;
+                } else {
+                    labelDef.coordinates = {
+                        x: definition.coordinates.x,
+                        y: KG.GraphDiv.AXIS_COORDINATE_INDICATOR
+                    };
+                    labelDef.xDrag = definition.draggable;
+                }
+
+                this.labelDiv = new GraphDiv(labelDef);
             }
-
-            this.labelDiv = new GraphDiv(labelDef);
 
             this.viewObjectSVGtype = 'line';
             this.viewObjectClass = 'dropline';
@@ -93,7 +96,8 @@ module KG {
                     'x1': anchorX,
                     'y1': anchorY,
                     'x2': pointX,
-                    'y2': pointY
+                    'y2': pointY,
+                    'class': dropline.classAndVisibility()
                 });
 
             return view;
@@ -103,19 +107,19 @@ module KG {
 
     export class VerticalDropline extends Dropline {
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
             definition.name += '_vDropline';
             definition.horizontal = false;
-            super(definition);
+            super(definition, modelPath);
         }
     }
 
     export class HorizontalDropline extends Dropline {
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
             definition.name += '_hDropline';
             definition.horizontal = true;
-            super(definition);
+            super(definition, modelPath);
         }
     }
 

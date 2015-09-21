@@ -15,13 +15,13 @@ module KG {
         public data;
         public interpolation;
 
-        constructor(definition) {
+        constructor(definition, modelPath?: string) {
 
             definition = _.defaults(definition, {
                 data: [],
                 interpolation: 'basis'
             });
-            super(definition);
+            super(definition, modelPath);
 
             this.viewObjectSVGtype = 'g';
             this.viewObjectClass = 'dataPathFamily';

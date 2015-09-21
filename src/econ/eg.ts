@@ -7,3 +7,14 @@
 /// <reference path="market/linearDemand.ts"/>
 /// <reference path="market/constantElasticityDemand.ts"/>
 /// <reference path="growth/ramseyCassKoopmans.ts"/>
+/// <reference path="production/productionCost.ts"/>
+/// <reference path="production/linearMarginalCost.ts"/>
+/// <reference path="production/constantMarginalCost.ts"/>
+/// <reference path="production/quadraticMarginalCost.ts"/>
+
+/// <reference path="utility/oneGoodUtility.ts"/>
+/// <reference path="utility/crra.ts"/>
+/// <reference path="utility/risk_aversion.ts"/>
+
+/// <reference path="monopoly/monopoly.ts"/>
+/// <reference path="oligopoly/cournotDuopoly.ts"/>

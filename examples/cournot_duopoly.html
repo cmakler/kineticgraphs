@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html ng-app="KineticGraphs">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Cournot Duopoly</title>
+    <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../dist/econ-graphs.css">
+    <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
+    <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
+</head>
+<body>
+<div ng-controller="KineticGraphCtrl">
+    <h1>Cournot Duopoly</h1>
+    <p>Change the amounts each firm produces (<span class="math">q_1</span> and <span class="math">q_2</span>).</p>
+    <hr/>
+    <div class="row">
+        <div class="col-md-4">
+            <div id="firm1"></div>
+        </div>
+        <div class="col-md-4">
+            <div id="firm2"></div>
+        </div>
+        <div class="col-md-4">
+            <div id="market"></div>
+        </div>
+    </div>
+    <!--<hr/>
+    <div class="row">
+        <div class="col-md-4">
+            <equation>\pi_1 = (P - c_1)q_1 || = ({{model.firm1.price | number:0}} - {{params.c1}})\times {{model.firm1.quantity | number:0}} || = {{ model.firm1.profit | number:0}}</equation>
+        </div>
+        <div class="col-md-4">
+
+        </div>
+        <div class="col-md-4">
+
+        </div>
+    </div>-->
+
+</div>
+<script>
+    var scopeDefinition = {
+        params: {
+            q1: 10,
+            q2: 10,
+            c1: 10,
+            c2: 10,
+            marketDemandPriceIntercept: 80,
+            marketDemandQuantityIntercept: 80
+        },
+        restrictions: [
+
+        ],
+        model: {
+            type: 'EconGraphs.CournotDuopoly',
+            definition: {
+                marketDemandPriceIntercept: 'params.marketDemandPriceIntercept',
+                marketDemandQuantityIntercept: 'params.marketDemandQuantityIntercept',
+                q1: 'params.q1',
+                q2: 'params.q2',
+                c1: 'params.c1',
+                c2: 'params.c2',
+                snapToOptimal1: false,
+                snapToOptimal2: false,
+                showProfit: true
+            }
+        },
+        views: [
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id:'firm1',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Firm 1 Quantity }(q_1)'},
+                    yAxisDef: {min: 0, max: 100, title: '\\text{Price }(P)'},
+                    maxDimensions: {width: 500, height:500},
+                    margins: {top: 20, left: 100, bottom: 70, right: 10},
+                    objects: [
+                        'model.firm1.costFunction.marginalCostCurve',
+                        'model.firm1.demandFunction.marginalRevenueCurve',
+                        'model.firm1.demandFunction.curve',
+                        'model.firm1.demandFunction.priceAtQuantityPoint(model.firm1.quantity,{vDropline:"q_1", hDropline: "P", xDrag: "params.q1"})'
+                    ]
+                }
+            },
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id:'firm2',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Firm 2 Quantity }(q_2)'},
+                    yAxisDef: {min: 0, max: 100, title: '', ticks: 0},
+                    maxDimensions: {width: 500, height:500},
+                    margins: {top: 20, left: 10, bottom: 70, right: 10},
+                    objects: [
+                        'model.firm2.costFunction.marginalCostCurve',
+                        'model.firm2.demandFunction.marginalRevenueCurve',
+                        'model.firm2.demandFunction.curve',
+                        'model.firm2.demandFunction.priceAtQuantityPoint(model.firm2.quantity,{vDropline:"q_2", xDrag: "params.q2"})'
+                    ]
+                }
+            },
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id:'market',
+                    xAxisDef: {min: 0, max: 100, title: '\\text{Quantity }(Q)'},
+                    yAxisDef: {min: 0, max: 100, title: '', ticks: 0},
+                    maxDimensions: {width: 500, height:500},
+                    margins: {top: 20, left: 10, bottom: 70, right: 20},
+                    objects: [
+                        'model.marketDemand.curve',
+                        'model.marketDemand.priceInterceptPoint',
+                        'model.marketDemand.quantityInterceptPoint',
+                        'model.firm1.demandFunction.priceAtQuantityPoint(model.firm1.quantity,{vDropline:"q_1", hDropline: "P", xDrag: "params.q1"})',
+                        'model.marketDemand.priceAtQuantityPoint(model.marketDemand.quantity,{vDropline:"q_1 + q_2"})'
+                    ]
+                }
+            }
+        ]
+    }
+</script>
+<script src="../dist/kinetic-graphs.js"></script>
+</body>
+</html>

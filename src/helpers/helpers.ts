@@ -1,4 +1,4 @@
-/// <reference path="kg.ts"/>
+/// <reference path="../kg.ts"/>
 
 'use strict';
 
@@ -189,30 +189,6 @@ module KG
                 higher = descending ? b[key] : a[key];
             return lower > higher ? -1 : lower < higher ? 1 : lower <= higher ? 0 : NaN;
         }
-    }
-
-    export function createInstance(definition) {
-
-        // from http://stackoverflow.com/questions/1366127/
-        function typeSpecificConstructor(typeName) {
-            var arr = typeName.split(".");
-
-            var fn = (window || this);
-            for (var i = 0, len = arr.length; i < len; i++) {
-                fn = fn[arr[i]];
-            }
-
-            if (typeof fn !== "function") {
-                throw new Error("object type " + typeName + " not found");
-            }
-
-            return fn;
-        }
-
-        // each object is a new instance of the class named in the 'type' parameter
-        var newObjectConstructor = typeSpecificConstructor(definition.type);
-        return new newObjectConstructor(definition.definition);
-
     }
 
 }

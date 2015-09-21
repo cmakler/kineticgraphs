@@ -42,8 +42,8 @@ module EconGraphs {
         public yDiffSegment;
         public line;
 
-        constructor(definition:MidpointElasticityDefinition) {
-            super(definition);
+        constructor(definition:MidpointElasticityDefinition, modelPath?:string) {
+            super(definition, modelPath);
             this.point1view = new KG.Point({
                 name: 'point1',
                 coordinates: definition.point1,
@@ -93,13 +93,12 @@ module EconGraphs {
                 name: 'demand',
                 className: 'demand',
                 arrows: 'NONE',
-                type: 'TwoPointLine',
-                def: {
-                    p1: {
+                lineDef: {
+                    point1: {
                         x: 'params.x1',
                         y: 'params.y1'
                     },
-                    p2: {
+                    point2: {
                         x: 'params.x2',
                         y: 'params.y2'
                     }

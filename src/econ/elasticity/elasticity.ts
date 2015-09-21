@@ -29,7 +29,7 @@ module EconGraphs {
         public elasticityWord;
         public elasticityComparator;
 
-        constructor(definition:ElasticityDefinition) {
+        constructor(definition:ElasticityDefinition, modelPath?:string) {
             definition.inverse = _.defaults(false, definition.inverse);
             definition.terms = _.defaults({
                 perfectlyElastic: "perfectly elastic",
@@ -38,7 +38,7 @@ module EconGraphs {
                 inelastic: "inelastic",
                 unitElastic: "unit elastic"
             },definition.terms);
-            super(definition);
+            super(definition, modelPath);
         }
 
         calculateElasticity(inputs? : any) {

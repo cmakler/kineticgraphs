@@ -31,11 +31,11 @@ module KG {
         public labelPosition;
         public labelDiv;
 
-        constructor(definition:AreaDefinition) {
+        constructor(definition:AreaDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
 
-            super(definition);
+            super(definition, modelPath);
 
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {
@@ -43,9 +43,10 @@ module KG {
                     className: definition.className,
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag,
-                    color: definition.color
+                    color: definition.color,
+                    show: definition.show
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 this.labelDiv = new GraphDiv(labelDef);
             }
 
@@ -93,7 +94,8 @@ module KG {
                     'class': area.classAndVisibility(),
                     'd': dataLine(dataCoordinates)
                 })
-                .style('fill',KG.colorForClassName(area.className, 'faint'))
+                .style('fill',KG.colorForClassName(area.className, 'light'))
+                .style('opacity',0.5)
 
             return view;
         }

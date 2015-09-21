@@ -25,6 +25,8 @@ module KGMath.Functions {
         value: (bases?: number[]) => number;
         levelCurve: (n:number, level?:number) => Monomial;
         derivative: (n:number) => Monomial;
+        average: (n:number) => Monomial;
+        multiply: (x: number) => Monomial;
     }
 
     export class Monomial extends Base implements IMonomial {
@@ -32,9 +34,14 @@ module KGMath.Functions {
         public coefficient;
         public powers;
         public bases;
+        public monomialDefs: any;
 
-        constructor(definition:MonomialDefinition) {
-            super(definition);
+        constructor(definition:MonomialDefinition, modelPath?: string) {
+            this.monomialDefs = {
+                coefficient: definition.coefficient.toString(),
+                powers: definition.powers.map(function(p) {return p.toString()})
+            };
+            super(definition, modelPath);
         }
 
         // Establish setters
@@ -82,16 +89,88 @@ module KGMath.Functions {
 
                 // the new coefficient is the old coefficient times
                 //the power of the variable whose derivative we're taking
-                coefficient: m.coefficient * m.powers[n],
+                coefficient: KG.multiplyDefs(m.monomialDefs.coefficient, m.monomialDefs.powers[n]),
 
-                powers: m.powers.map(function (p, index) {
+                powers: m.monomialDefs.powers.map(function (p, index) {
                     if (index == n) {
-                        return p - 1;
+                        return KG.subtractDefs(p,1);
                     } else {
                         return p
                     }
                 }),
 
+                bases: m.bases
+
+            })
+        }
+
+        // Return the monomial that is the integral of this monomial
+        // with respect to the n'th variable, with no constant of integration
+        integral(n) {
+
+            var m = this;
+
+            // n is the index of the term; first term by default
+            n = n - 1 || 0;
+
+            return new Monomial({
+
+                // the new coefficient is the old coefficient times
+                //the power of the variable whose derivative we're taking
+                coefficient: KG.divideDefs(m.monomialDefs.coefficient, KG.addDefs(m.monomialDefs.powers[n],1)),
+
+                powers: m.monomialDefs.powers.map(function (p, index) {
+                    if (index == n) {
+                        return KG.addDefs(p,1);
+                    } else {
+                        return p
+                    }
+                }),
+
+                bases: m.bases
+
+            })
+        }
+
+        // Return the monomial that reduces the power of the n'th variable by 1
+        average(n) {
+
+            var m = this;
+
+            // n is the index of the term; first term by default
+            n = n - 1 || 0;
+
+            return new Monomial({
+
+                coefficient: m.monomialDefs.coefficient,
+
+                // reduce the power of the n'th variable by 1
+                powers: m.monomialDefs.powers.map(function (p, index) {
+                    if (index == n) {
+                        return p + " - 1";
+                    } else {
+                        return p
+                    }
+                }),
+
+                bases: m.bases
+
+            })
+        }
+
+        // Return the monomial that multiplies the coefficient by x
+        multiply(x) {
+
+            var m = this;
+
+            // n is the index of the term; first term by default
+            x = x || 1;
+
+            return new Monomial({
+
+                // multiply the coefficient by x
+                coefficient: "(" + m.monomialDefs.coefficient + ")*(" + x + ")",
+                powers: m.monomialDefs.powers,
                 bases: m.bases
 
             })
@@ -142,14 +221,25 @@ module KGMath.Functions {
 
         // returns the y value corresponding to the given x value for m(x,y) = m.level
         yValue(x) {
-            this.setBase(1,x);
-            return this.levelCurve(2).value();
+            var m = this;
+            if(m.powers.length == 1) {
+                return m.coefficient * Math.pow(x,m.powers[0]);
+            } else {
+                this.setBase(1,x);
+                return this.levelCurve(2).value();
+            }
+
         }
 
         // returns the x value corresponding to the given y value for m(x,y) = m.level
         xValue(y) {
-            this.setBase(2,y);
-            return this.levelCurve(1).value();
+            var m = this;
+            if(this.powers.length == 1) {
+                return Math.pow(y/m.coefficient,1/m.powers[0]);
+            } else {
+                this.setBase(2,y);
+                return this.levelCurve(1).value();
+            }
         }
 
     }

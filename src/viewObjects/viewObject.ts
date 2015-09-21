@@ -8,7 +8,7 @@ module KG
     export interface ViewObjectDefinition extends ModelDefinition
     {
         name?: string;
-        show?: boolean;
+        show?: any;
         className?: string;
         xDrag?: any;
         yDrag?: any;
@@ -64,16 +64,17 @@ module KG
         public viewObjectSVGtype;
         public viewObjectClass;
 
-        constructor(definition:ViewObjectDefinition) {
+        constructor(definition:ViewObjectDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {
+                name: '',
                 className: '',
                 color: KG.colorForClassName(definition.className),
                 show: true,
                 xDrag: false,
                 yDrag: false});
 
-            super(definition);
+            super(definition, modelPath);
 
             var viewObj = this;
             viewObj.xDragDelta = 0;
@@ -81,17 +82,16 @@ module KG
 
             if(definition.xDrag) {
                 if(typeof definition.xDrag == 'string') {
-                    viewObj.xDragParam = definition.xDrag;
+                    viewObj.xDragParam = definition.xDrag.replace('params.','');
                     viewObj.xDrag = true;
                 } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.x == 'string') {
                     this.xDragParam = definition.coordinates.x.replace('params.','');
                 }
-
             }
 
             if(definition.yDrag) {
                 if(typeof definition.yDrag == 'string') {
-                    viewObj.yDragParam = definition.yDrag;
+                    viewObj.yDragParam = definition.yDrag.replace('params.','');
                     viewObj.yDrag = true;
                 } else if(definition.hasOwnProperty('coordinates') && typeof definition.coordinates.y == 'string') {
                     this.yDragParam = definition.coordinates.y.replace('params.','');

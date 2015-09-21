@@ -9,7 +9,6 @@ module KG
 
     export interface IPropertySetter
     {
-
         name: string;
         value: any;
         defaultValue: any;
@@ -17,6 +16,8 @@ module KG
 
     export interface IModel
     {
+        modelPath: string;
+        modelProperty: (name:string) => string;
         setNumericProperty: (propertySetter:IPropertySetter) => Model;
         setArrayProperty: (propertySetter:IPropertySetter) => Model;
         update: (scope:IScope, callback?: (any)=>any) => void;
@@ -29,9 +30,13 @@ module KG
     export class Model
     {
 
-        constructor(public definition:ModelDefinition) {
+        constructor(public definition:ModelDefinition, public modelPath?: string) {
 
             var model = this;
+
+            model.modelPath = modelPath || 'model';
+
+
 
             for (var key in definition) {
                 if(definition.hasOwnProperty(key) && definition[key] != undefined) {
@@ -44,6 +49,10 @@ module KG
                 }
             }
 
+        }
+
+        modelProperty(name) {
+            return this.modelPath + '.' + name;
         }
 
         setNumericProperty(propertySetter) {

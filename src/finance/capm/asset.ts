@@ -28,8 +28,8 @@ module FinanceGraphs
         public stDev;
         public point;
 
-        constructor(definition:AssetDefinition) {
-            super(definition);
+        constructor(definition:AssetDefinition, modelPath?: string) {
+            super(definition, modelPath);
             this.point = new KG.Point({
                 name: definition.name+'point',
                 coordinates: {x: definition.stDev, y:definition.mean},
