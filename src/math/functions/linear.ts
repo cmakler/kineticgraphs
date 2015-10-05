@@ -178,12 +178,23 @@ module KGMath.Functions {
             return x;
         }
 
-        points(view:KG.IView) {
+        points(view:KG.IView, xDomain?:KG.Domain, yDomain?: KG.Domain) {
 
             var l = this;
 
-            var xDomain = view.xAxis.domain,
-                yDomain = view.yAxis.domain;
+            if(xDomain) {
+                xDomain.min = Math.max(view.xAxis.domain.min, xDomain.min);
+                xDomain.max = Math.min(view.xAxis.domain.max, xDomain.max);
+            } else {
+                xDomain = view.xAxis.domain;
+            }
+
+            if(yDomain) {
+                yDomain.min = Math.max(view.yAxis.domain.min, yDomain.min);
+                yDomain.max = Math.min(view.yAxis.domain.max, yDomain.max);
+            } else {
+                xDomain = view.yAxis.domain;
+            }
 
             var points: KG.ICoordinates[] = [];
 

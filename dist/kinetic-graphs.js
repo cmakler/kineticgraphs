@@ -198,6 +198,7 @@ var KG;
         return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
     }
     KG.distanceBetweenCoordinates = distanceBetweenCoordinates;
+    // Takes a variety of ways of defining x-y coordinates and returns an object with x and y properties
     function getCoordinates(def) {
         var defaultCoordinates = { x: 0, y: 0 };
         if (!def || def == undefined) {
@@ -217,6 +218,12 @@ var KG;
         }
     }
     KG.getCoordinates = getCoordinates;
+    // Takes a variety of ways of defining x-y coordinates and returns an array [x,y]
+    function getBases(def) {
+        var coordinates = getCoordinates(def);
+        return [coordinates.x, coordinates.y];
+    }
+    KG.getBases = getBases;
     function sortObjects(key, descending) {
         return function (a, b) {
             var lower = descending ? a[key] : b[key], higher = descending ? b[key] : a[key];
@@ -1692,7 +1699,7 @@ var KG;
                     color: definition.color,
                     show: definition.show
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 this.labelDiv = new KG.GraphDiv(labelDef);
             }
             this.startArrow = (definition.arrows == Curve.START_ARROW_STRING || definition.arrows == Curve.BOTH_ARROW_STRING);
@@ -4151,6 +4158,30 @@ var EconGraphs;
     })(EconGraphs.ProductionCost);
     EconGraphs.QuadraticMarginalCost = QuadraticMarginalCost;
 })(EconGraphs || (EconGraphs = {}));
+/**
+ * Created by cmakler on 9/23/15.
+ */
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var Utility = (function (_super) {
+        __extends(Utility, _super);
+        function Utility(definition, modelPath) {
+            definition = _.defaults(definition, {
+                className: 'utility'
+            });
+            _super.call(this, definition, modelPath);
+            this.utilityFunction = new KGMath.Functions[definition.type](definition.def);
+        }
+        Utility.prototype._update = function (scope) {
+            var u = this;
+            u.utilityFunction.update(scope);
+            return u;
+        };
+        return Utility;
+    })(KG.Model);
+    EconGraphs.Utility = Utility;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
@@ -4158,12 +4189,10 @@ var EconGraphs;
         __extends(OneGoodUtility, _super);
         function OneGoodUtility(definition, modelPath) {
             definition = _.defaults(definition, {
-                className: 'utility',
                 curveLabel: 'u(c)',
                 marginalCurveLabel: 'u\'(c)'
             });
             _super.call(this, definition, modelPath);
-            this.utilityFunction = new KGMath.Functions[definition.type](definition.def);
             this.utilityFunctionView = new KG.FunctionPlot({
                 name: 'utilityFunction',
                 className: this.className,
@@ -4202,14 +4231,14 @@ var EconGraphs;
         OneGoodUtility.prototype.marginalUtilityAtQuantity = function (c) {
             return this.marginalUtilityFunction.yValue(c);
         };
-        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (q, label) {
+        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (c, label) {
             var labelSubscript = label ? '_{' + label + '}' : '';
             return new KG.Line({
                 name: 'slopeLine' + label,
                 className: 'demand dotted',
                 lineDef: {
-                    point: { x: q, y: this.utilityAtQuantity(q) },
-                    slope: this.marginalUtilityAtQuantity(q)
+                    point: { x: c, y: this.utilityAtQuantity(c) },
+                    slope: this.marginalUtilityAtQuantity(c)
                 },
                 label: {
                     text: "\\text{slope} = u\'(c" + labelSubscript + ")"
@@ -4253,7 +4282,7 @@ var EconGraphs;
             return this.utilityFunction.xValue(u);
         };
         return OneGoodUtility;
-    })(KG.Model);
+    })(EconGraphs.Utility);
     EconGraphs.OneGoodUtility = OneGoodUtility;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
@@ -4596,6 +4625,7 @@ var EconGraphs;
 /// <reference path="production/linearMarginalCost.ts"/>
 /// <reference path="production/constantMarginalCost.ts"/>
 /// <reference path="production/quadraticMarginalCost.ts"/>
+/// <reference path="utility/utility.ts"/>
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
 /// <reference path="utility/risk_aversion.ts"/>
@@ -4718,5 +4748,29 @@ angular.module('KineticGraphs', []).controller('KineticGraphCtrl', ['$scope', '$
     return function (input, decimals) {
         return $filter('number')(input * 100, decimals) + '\\%';
     };
-}]);
+}]).filter('extendedReal', ['$filter', function ($filter) {
+    return function (input, decimals) {
+        if (input == Infinity) {
+            return '\\infty';
+        }
+        else if (input == -Infinity) {
+            return '-\\infty';
+        }
+        else
+            return $filter('number')(input, decimals);
+    };
+}]).directive('toggle', function () {
+    function link(scope, el, attrs) {
+        scope.toggle = function () {
+            scope.params[attrs.param] = !scope.params[attrs.param];
+        };
+    }
+    return {
+        link: link,
+        restrict: 'E',
+        replace: true,
+        transclude: true,
+        template: "<button ng-click='toggle()'><span ng-transclude/></button>"
+    };
+});
 //# sourceMappingURL=kinetic-graphs.js.map

@@ -12,9 +12,13 @@
 /// <reference path="production/constantMarginalCost.ts"/>
 /// <reference path="production/quadraticMarginalCost.ts"/>
 
+/// <reference path="utility/utility.ts"/>
+
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
 /// <reference path="utility/risk_aversion.ts"/>
+
+/// <reference path="utility/twoGoodUtility.ts"/>
 
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/>

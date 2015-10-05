@@ -167,6 +167,7 @@ module KG
         return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
     }
 
+    // Takes a variety of ways of defining x-y coordinates and returns an object with x and y properties
     export function getCoordinates(def) {
         var defaultCoordinates:{} = {x: 0, y: 0};
         if(!def || def == undefined) {
@@ -181,6 +182,12 @@ module KG
         } else {
             return defaultCoordinates;
         }
+    }
+
+    // Takes a variety of ways of defining x-y coordinates and returns an array [x,y]
+    export function getBases(def) {
+        var coordinates = getCoordinates(def);
+        return [coordinates.x, coordinates.y];
     }
 
     export function sortObjects(key, descending?) {
