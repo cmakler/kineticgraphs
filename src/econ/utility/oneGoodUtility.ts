@@ -14,11 +14,11 @@ module EconGraphs {
 
         utilityAtQuantity: (quantity:number) => number;
         consumptionYieldingUtility: (utility:number) => number;
-        utilityAtQuantityPoint: (quantity:number, label?: string, dragParam?: string) => KG.Point;
+        utilityAtQuantityPoint: (quantity:number, params?:KG.PointParamsDefinition) => KG.Point;
 
         utilityFunctionView: KG.Curve;
         marginalUtilityFunctionView: KG.Curve;
-        marginalUtilitySlopeView: (name:string, quantity:number) => KG.Line;
+        marginalUtilitySlopeView: (quantity:number, params?:KG.LineParamsDefinition) => KG.Line;
     }
 
     export class OneGoodUtility extends Utility implements IOneGoodUtility
@@ -87,51 +87,33 @@ module EconGraphs {
             return this.marginalUtilityFunction.yValue(c)
         }
 
-        marginalUtilityAtQuantitySlope(c, slopeLineParams: {id?: string; label?:string;}) {
+        marginalUtilityAtQuantitySlope(c, params) {
             return new KG.Line({
-                name: 'slopeLine_' + slopeLineParams.id,
+                name: 'marginalUtilityAtQuantitySlope',
                 className: 'demand dotted',
                 lineDef: {
                     point: {x: c, y: this.utilityAtQuantity(c)},
                     slope: this.marginalUtilityAtQuantity(c)
                 },
-                label: {
-                    text: "\\text{slope} = " + slopeLineParams.label
-                }
+                params: params
             });
         }
 
-        utilityAtQuantityPoint(q, pointParams: {id?: string; label?:string; xAxisLabel?:string; yAxisLabel?:string; className?:string; dragParam?:string}) {
+        utilityAtQuantityPoint(q, params: KG.PointParamsDefinition) {
             return new KG.Point({
-                name: 'utilityAtQ_' + pointParams.id,
                 coordinates: {x: q, y: this.utilityAtQuantity(q)},
-                size: 500,
-                class: pointParams.className || 'utility',
-                xDrag: pointParams.dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    vertical: 'c' + labelSubscript,
-                    horizontal: 'u(c'+ labelSubscript +')'
-                }
+                name: 'utilityAtQ',
+                className: 'utility',
+                params: params
             })
         }
 
-        marginalUtilityAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        marginalUtilityAtQuantityPoint(q, params?) {
             return new KG.Point({
-                name: 'marginalUtilityAtQ' + label,
+                name: 'marginalUtilityAtQ',
                 coordinates: {x: q, y: this.marginalUtilityFunction.yValue(q)},
-                size: 500,
-                class: 'utility',
-                xDrag: dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    horizontal: 'u\'(c'+ labelSubscript +')'
-                }
+                className: 'utility',
+                params: params
             })
         }
 

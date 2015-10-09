@@ -1484,6 +1484,31 @@ var KG;
     var ViewObject = (function (_super) {
         __extends(ViewObject, _super);
         function ViewObject(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('className')) {
+                    if (definition.hasOwnProperty('className')) {
+                        definition.className += ' ' + p.className;
+                    }
+                    else {
+                        definition.className = p.className;
+                    }
+                }
+                if (p.hasOwnProperty('name')) {
+                    if (definition.hasOwnProperty('name')) {
+                        definition.name += '_' + p.name;
+                    }
+                    else {
+                        definition.name = p.name;
+                    }
+                }
+                if (p.hasOwnProperty('xDrag')) {
+                    definition.xDrag = p.xDrag;
+                }
+                if (p.hasOwnProperty('xDragParam')) {
+                    definition.yDrag = p.yDrag;
+                }
+            }
             definition = _.defaults(definition, {
                 name: '',
                 className: '',
@@ -1568,24 +1593,8 @@ var KG;
     var Point = (function (_super) {
         __extends(Point, _super);
         function Point(definition, modelPath) {
-            if (definition.hasOwnProperty('pointParams')) {
-                var p = definition.pointParams;
-                if (p.hasOwnProperty('className')) {
-                    if (definition.hasOwnProperty('className')) {
-                        definition.className += ' ' + p.className;
-                    }
-                    else {
-                        definition.className = p.className;
-                    }
-                }
-                if (p.hasOwnProperty('id')) {
-                    if (definition.hasOwnProperty('name')) {
-                        definition.name += ' ' + p.id;
-                    }
-                    else {
-                        definition.name = p.id;
-                    }
-                }
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
                 if (p.hasOwnProperty('label')) {
                     definition.label = {
                         text: p.label
@@ -1664,6 +1673,7 @@ var KG;
                 if (p.verticalDropline) {
                     var continuationDropLine = new KG.VerticalDropline({
                         name: p.verticalDropline.name,
+                        className: p.verticalDropline.className,
                         coordinates: { x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max },
                         draggable: p.verticalDropline.draggable,
                         axisLabel: p.verticalDropline.axisLabel
@@ -1971,6 +1981,14 @@ var KG;
     var Line = (function (_super) {
         __extends(Line, _super);
         function Line(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    };
+                }
+            }
             _super.call(this, definition, modelPath);
             var line = this;
             if (line instanceof HorizontalLine) {
@@ -4490,49 +4508,31 @@ var EconGraphs;
         OneGoodUtility.prototype.marginalUtilityAtQuantity = function (c) {
             return this.marginalUtilityFunction.yValue(c);
         };
-        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (c, slopeLineParams) {
+        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (c, params) {
             return new KG.Line({
-                name: 'slopeLine_' + slopeLineParams.id,
+                name: 'marginalUtilityAtQuantitySlope',
                 className: 'demand dotted',
                 lineDef: {
                     point: { x: c, y: this.utilityAtQuantity(c) },
                     slope: this.marginalUtilityAtQuantity(c)
                 },
-                label: {
-                    text: "\\text{slope} = " + slopeLineParams.label
-                }
+                params: params
             });
         };
-        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, pointParams) {
+        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, params) {
             return new KG.Point({
-                name: 'utilityAtQ_' + pointParams.id,
                 coordinates: { x: q, y: this.utilityAtQuantity(q) },
-                size: 500,
-                class: pointParams.className || 'utility',
-                xDrag: pointParams.dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    vertical: 'c' + labelSubscript,
-                    horizontal: 'u(c' + labelSubscript + ')'
-                }
+                name: 'utilityAtQ',
+                className: 'utility',
+                params: params
             });
         };
-        OneGoodUtility.prototype.marginalUtilityAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        OneGoodUtility.prototype.marginalUtilityAtQuantityPoint = function (q, params) {
             return new KG.Point({
-                name: 'marginalUtilityAtQ' + label,
+                name: 'marginalUtilityAtQ',
                 coordinates: { x: q, y: this.marginalUtilityFunction.yValue(q) },
-                size: 500,
-                class: 'utility',
-                xDrag: dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    horizontal: 'u\'(c' + labelSubscript + ')'
-                }
+                className: 'utility',
+                params: params
             });
         };
         OneGoodUtility.prototype.consumptionYieldingUtility = function (u) {
@@ -4750,7 +4750,7 @@ var EconGraphs;
                     y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.05'
                 },
                 label: {
-                    text: 'model.transfer | number:0',
+                    text: 'T',
                     valign: 'top'
                 }
             });
@@ -4767,7 +4767,7 @@ var EconGraphs;
                     y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.1'
                 },
                 label: {
-                    text: '-model.transfer | number:0',
+                    text: 'T',
                     valign: 'top'
                 }
             });

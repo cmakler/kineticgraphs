@@ -99,7 +99,7 @@ module EconGraphs {
                     y: this.modelProperty('utility.utilityAtQuantity(100)')+'*0.05'
                 },
                 label: {
-                    text: 'model.transfer | number:0',
+                    text: 'T',
                     valign: 'top'
                 }
             });
@@ -116,7 +116,7 @@ module EconGraphs {
                     y: this.modelProperty('utility.utilityAtQuantity(100)')+'*0.1'
                 },
                 label: {
-                    text: '-model.transfer | number:0',
+                    text: 'T',
                     valign: 'top'
                 }
             });

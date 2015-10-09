@@ -69,13 +69,20 @@
                     xAxisDef: {min: 0, max: 10, title: '\\text{Consumption (units)}'},
                     topGraph: {
                         yAxisDef: {min: 0, max: 'model.utilityAtQuantity(10)', title: '\\text{Total Utility (utils)}'},
-                        objects: ['model.utilityFunctionView','model.marginalUtilityAtQuantitySlope(params.c, "u\'(c_A)")']
+                        objects: [
+                            'model.utilityFunctionView',
+                            'model.marginalUtilityAtQuantitySlope(params.c, {label: "slope = u\'(c_A)"})'
+                        ]
                     },
                     bottomGraph: {
                         yAxisDef: {min: 0, max: 1, title: '\\text{Marginal Utility (utils/unit)}'},
-                        objects: ['model.marginalUtilityFunctionView','model.marginalUtilityAtQuantityPoint(params.c, "A","params.c")']
+                        objects: [
+                            'model.marginalUtilityFunctionView',
+                            'model.marginalUtilityAtQuantityPoint(params.c,{yAxisLabel: "u\'(c_A)", xDrag:"params.c"})']
                     },
-                    objects: ['model.utilityAtQuantityPoint(params.c, "A","params.c")']
+                    objects: [
+                        'model.utilityAtQuantityPoint(params.c, {xAxisLabel: "c_A", yAxisLabel: "u(c_A)", xDrag:"params.c"})'
+                    ]
                 }
             },
             {

@@ -90,13 +90,13 @@
                     yAxisDef: {min: 0, max: 'model.utility.utilityAtQuantity(100)', title: '\\text{Total Utility (utils)}', ticks: 0},
                     objects: [
                         'model.utility.utilityFunctionView',
-                        'model.utility.utilityAtQuantityPoint(params.ca, "L","params.ca")',
-                        'model.utility.utilityAtQuantityPoint(params.cb, "H","params.cb")',
+                        'model.utility.utilityAtQuantityPoint(params.ca, {name: "CL", xAxisLabel: "c_L", yAxisLabel: "u(c_L)", xDrag: "params.ca"})',
+                        'model.utility.utilityAtQuantityPoint(params.cb, {name: "CH", xAxisLabel: "c_H", yAxisLabel: "u(c_H)", xDrag: "params.cb"})',
                         'model.expectedUtilityPoint',
                         'model.certaintyEquivalentPoint',
                         'model.expectedConsumptionPoint',
-                            'model.expectationSegment',
-                            'model.riskPremiumSegment'
+                        'model.expectationSegment',
+                        'model.riskPremiumSegment'
                     ]
                 }
             },

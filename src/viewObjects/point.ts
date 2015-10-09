@@ -5,13 +5,12 @@
 module KG
 {
 
-    export interface PointParamsDefinition {
-        id?: string;
-        className?:string;
+    export interface PointParamsDefinition extends ViewObjectParamsDefinition {
         label?:string;
         xAxisLabel?:string;
         yAxisLabel?:string;
-        dragParam?:string
+        xDragParam?:string;
+        yDragParam?:string;
     }
 
     export interface PointDefinition extends ViewObjectDefinition {
@@ -19,7 +18,7 @@ module KG
         size?: number;
         label?: GraphDivDefinition;
         droplines?: any;
-        pointParams?: PointParamsDefinition;
+        params?: PointParamsDefinition;
     }
 
     export interface IPoint extends IViewObject {
@@ -45,24 +44,9 @@ module KG
 
         constructor(definition:PointDefinition, modelPath?: string) {
 
-            if(definition.hasOwnProperty('pointParams')) {
-                var p = definition.pointParams;
+            if(definition.hasOwnProperty('params')) {
 
-                if(p.hasOwnProperty('className')) {
-                    if(definition.hasOwnProperty('className')) {
-                        definition.className += ' ' + p.className;
-                    } else {
-                        definition.className = p.className;
-                    }
-                }
-
-                if(p.hasOwnProperty('id')) {
-                    if(definition.hasOwnProperty('name')) {
-                        definition.name += ' ' + p.id;
-                    } else {
-                        definition.name = p.id;
-                    }
-                }
+                var p = definition.params;
 
                 if(p.hasOwnProperty('label')) {
                     definition.label = {
@@ -93,8 +77,6 @@ module KG
                     }
                 }
             }
-
-
 
             definition = _.defaults(definition, {
                 coordinates: {x:0,y:0},
@@ -154,6 +136,7 @@ module KG
                 if(p.verticalDropline) {
                     var continuationDropLine = new VerticalDropline({
                         name: p.verticalDropline.name,
+                        className: p.verticalDropline.className,
                         coordinates: {x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
                         draggable: p.verticalDropline.draggable,
                         axisLabel: p.verticalDropline.axisLabel

@@ -4,6 +4,10 @@
 
 module KG {
 
+    export interface LineParamsDefinition extends ViewObjectParamsDefinition {
+        label?:string;
+    }
+
     export interface LineDefinition extends ViewObjectDefinition {
         lineDef?: KGMath.Functions.LinearDefinition;
         linear?: any;
@@ -13,6 +17,7 @@ module KG {
         yInterceptLabel?: string;
         x?: any;
         y?: any;
+        params?: LineParamsDefinition;
     }
 
     export interface ILine extends IViewObject {
@@ -34,6 +39,18 @@ module KG {
         public yInterceptLabelDiv;
 
         constructor(definition:LineDefinition, modelPath?: string) {
+
+            if(definition.hasOwnProperty('params')) {
+
+                var p = definition.params;
+
+                if(p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    }
+                }
+
+            }
 
             super(definition, modelPath);
 
