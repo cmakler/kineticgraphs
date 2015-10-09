@@ -34,9 +34,8 @@
                     <div class="col-xs-9" id="pLowSlider"></div>
                 </div>
             </div>
-            <label><input type="checkbox" ng-model="params.showCE"> Show certainty equivalent (CE)</label>
-            <label><input type="checkbox" ng-model="params.showRP"> Show risk premium (RP)</label>
-            <toggle param="showCE"><span ng-if="params.showCE">Hide</span><span ng-if="!params.showCE">Show</span> certainty equivalent</toggle>
+            <toggle param="showCE" class="riskPremium"><span ng-if="params.showCE">Hide</span><span ng-if="!params.showCE">Show</span> certainty equivalent (CE)</toggle>
+            <toggle param="showRP" class="riskPremium"><span ng-if="params.showRP">Hide</span><span ng-if="!params.showRP">Show</span> risk premium (RP)</toggle>
         </div>
     </div>
 </div>

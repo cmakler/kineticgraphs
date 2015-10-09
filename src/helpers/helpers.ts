@@ -24,6 +24,11 @@ module KG
         return colorArray;
     }
 
+    export interface DomainDef {
+        min: any;
+        max: any;
+    }
+
     export interface IDomain
     {
         min: number;
@@ -31,6 +36,7 @@ module KG
         samplePoints: (numSamples:number) => number[];
         toArray: () => number[];
         contains: (x:number, strict?:boolean) => boolean;
+        intersection: (otherDomain:Domain) => Domain;
     }
 
     export class Domain implements IDomain
@@ -59,6 +65,20 @@ module KG
                 sp.push(min + (i/(numSamples-1))*(max - min));
             }
             return sp;
+        }
+
+        intersection(otherDomain:Domain) {
+            var thisDomain = this;
+            if(!otherDomain || otherDomain == undefined) {
+                return thisDomain;
+            }
+            var min = Math.max(thisDomain.min, otherDomain.min),
+                max = Math.min(thisDomain.max, otherDomain.max);
+            if(max < min) {
+                return null;
+            } else {
+                return new Domain(min,max);
+            }
         }
 
     }

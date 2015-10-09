@@ -70,7 +70,8 @@ angular.module('KineticGraphs', [])
             link: link,
             restrict: 'E',
             replace: true,
+            scope: true,
             transclude: true,
-            template: "<button ng-click='toggle()'><span ng-transclude/></button>"
+            template: "<button ng-click='toggle()' style='width: 100%'><span ng-transclude/></button>"
         };
     });

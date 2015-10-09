@@ -105,6 +105,19 @@ var KG;
             }
             return sp;
         };
+        Domain.prototype.intersection = function (otherDomain) {
+            var thisDomain = this;
+            if (!otherDomain || otherDomain == undefined) {
+                return thisDomain;
+            }
+            var min = Math.max(thisDomain.min, otherDomain.min), max = Math.min(thisDomain.max, otherDomain.max);
+            if (max < min) {
+                return null;
+            }
+            else {
+                return new Domain(min, max);
+            }
+        };
         return Domain;
     })();
     KG.Domain = Domain;
@@ -547,6 +560,13 @@ var KGMath;
             function Base(definition, modelPath) {
                 definition.level = definition.level || 0;
                 _super.call(this, definition, modelPath);
+                var fn = this;
+                if (definition.hasOwnProperty('xDomainDef')) {
+                    fn.xDomain = new KG.Domain(definition.xDomainDef.min, definition.xDomainDef.max);
+                }
+                if (definition.hasOwnProperty('yDomainDef')) {
+                    fn.yDomain = new KG.Domain(definition.yDomainDef.min, definition.yDomainDef.max);
+                }
             }
             // Returns the slope between (a,f(a)) and (b,f(b)).
             // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
@@ -635,17 +655,101 @@ var KGMath;
 (function (KGMath) {
     var Functions;
     (function (Functions) {
-        var OneVariable = (function (_super) {
-            __extends(OneVariable, _super);
-            function OneVariable(definition, modelPath) {
+        var Implicit = (function (_super) {
+            __extends(Implicit, _super);
+            function Implicit(definition, modelPath) {
                 _super.call(this, definition, modelPath);
+                var fn = this;
+                fn.xFunction = new KGMath.Functions[definition.xFunctionType](definition.xFunctionDef, fn.modelProperty('xFunction'));
+                fn.yFunction = new KGMath.Functions[definition.yFunctionType](definition.yFunctionDef, fn.modelProperty('yFunction'));
+                fn.tDomain = new KG.Domain(tDomainDef.min, tDomainDef.max);
             }
-            OneVariable.prototype.yValue = function (x) {
-                return this.fn(x);
+            Implicit.prototype._update = function (scope) {
+                var fn = this;
+                fn.xFunction.update(scope);
+                fn.yFunction.update(scope);
+                fn.tDomain.update(scope);
+                return fn;
             };
-            return OneVariable;
-        })(Functions.Base);
-        Functions.OneVariable = OneVariable;
+            Implicit.prototype.point = function (t) {
+                var fn = this;
+                return {
+                    x: fn.xFunction.yValue(t),
+                    y: fn.yFunction.yValue(t)
+                };
+            };
+            // Returns the slope between (x(t1), y(t1)) and (x(t2),y(t2)).
+            // If inverse = true, return 1 / that slope.
+            Implicit.prototype.slopeBetweenPoints = function (t1, t2, inverse) {
+                var p1 = this.point(t1), p2 = this.point(t2);
+                inverse = inverse || false;
+                var s = (p1.y - p2.y) / (p1.x - p2.x);
+                return inverse ? 1 / s : s;
+            };
+            Implicit.prototype.points = function (view, numSamplePoints) {
+                var fn = this, points = [];
+                numSamplePoints = numSamplePoints || 51;
+                var samplePoints = fn.tDomain.samplePoints(numSamplePoints);
+                for (var i = 0; i < numSamplePoints; i++) {
+                    var previousPoint = (i > 0) ? fn.point(samplePoints[i - 1]) : null, point = fn.point(samplePoints[i]), nextPoint = (i < numSamplePoints - 1) ? fn.point(samplePoints[i + 1]) : null;
+                    if (view.onGraph(point) || view.onGraph(previousPoint) || view.onGraph(nextPoint)) {
+                        points.push(point);
+                    }
+                }
+                return points;
+            };
+            return Implicit;
+        })(KG.Model);
+        Functions.Implicit = Implicit;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Relation = (function (_super) {
+            __extends(Relation, _super);
+            function Relation(definition, modelPath) {
+                definition.inverse = definition.inverse || false;
+                _super.call(this, definition, modelPath);
+                var f = this;
+                f.fn = new KGMath.Functions[definition.functionType](definition.functionDef, fn.modelProperty('fn'));
+            }
+            // Returns the slope between (a,f(a)) and (b,f(b)).
+            // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
+            // Assumes that a and b are both scalars (for now).
+            Relation.prototype.slopeBetweenPoints = function (a, b, inverse) {
+                var f = this;
+                b = b || 0;
+                inverse = inverse || false;
+                var s = (f.fn.yValue(a) - f.fn.yValue(b)) / (a - b);
+                return (inverse != f.inverse) ? 1 / s : s;
+            };
+            Relation.prototype.points = function (view, numSamplePoints) {
+                var f = this, points = [];
+                numSamplePoints = numSamplePoints || 51;
+                var independentAxis = f.inverse ? view.yAxis : view.xAxis, sampleIndependentValues = independentAxis.domain.samplePoints(numSamplePoints), sampleDependentValues = sampleIndependentValues.map(f.fn.yValue);
+                for (var i = 0; i < numSamplePoints; i++) {
+                    var point, previousPoint, nextPoint;
+                    if (f.inverse) {
+                        previousPoint = (i > 0) ? { x: sampleDependentValues[i - 1], y: sampleIndependentValues[i - 1] } : null;
+                        point = { x: sampleDependentValues[i], y: sampleIndependentValues[i] };
+                        nextPoint = (i < numSamplePoints - 1) ? { x: sampleDependentValues[i + 1], y: sampleIndependentValues[i + 1] } : null;
+                    }
+                    else {
+                        previousPoint = (i > 0) ? { x: sampleIndependentValues[i - 1], y: sampleDependentValues[i - 1] } : null;
+                        point = { x: sampleIndependentValues[i], y: sampleDependentValues[i] };
+                        nextPoint = (i < numSamplePoints - 1) ? { x: sampleIndependentValues[i + 1], y: sampleDependentValues[i + 1] } : null;
+                    }
+                    if (view.onGraph(point) || view.onGraph(previousPoint) || view.onGraph(nextPoint)) {
+                        points.push(point);
+                    }
+                }
+                return points;
+            };
+            return Relation;
+        })(KG.Model);
+        Functions.Relation = Relation;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
 /*
@@ -1078,7 +1182,7 @@ var KGMath;
             };
             Linear.prototype.points = function (view) {
                 var l = this;
-                var xDomain = view.xAxis.domain, yDomain = view.yAxis.domain;
+                var xDomain = view.xAxis.domain.intersection(l.xDomain), yDomain = view.yAxis.domain.intersection(l.yDomain);
                 var points = [];
                 if (l.isVertical) {
                     points = [{ x: l.xIntercept, y: yDomain.min }, { x: l.xIntercept, y: yDomain.max }];
@@ -1367,7 +1471,8 @@ var KGMath;
 })(KGMath || (KGMath = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
-/// <reference path="functions/oneVariable.ts"/>
+/// <reference path="functions/implicit.ts"/>
+/// <reference path="functions/relation.ts"/>
 /// <reference path="functions/monomial.ts"/>
 /// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
@@ -1389,6 +1494,7 @@ var KG;
             });
             _super.call(this, definition, modelPath);
             var viewObj = this;
+            /* Set drag behavior on object */
             viewObj.xDragDelta = 0;
             viewObj.yDragDelta = 0;
             if (definition.xDrag) {
@@ -2140,7 +2246,7 @@ var KG;
         FunctionPlot.prototype.updateDataForView = function (view) {
             var p = this;
             if (typeof p.fn == 'function') {
-                p.fn = new KGMath.Functions.OneVariable({ fn: p.fn });
+                p.fn = new KGMath.Functions.Relation({ fn: p.fn });
             }
             p.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
             return p;
@@ -2486,6 +2592,10 @@ var KG;
         }
         // Check to see if a point is on the graph
         Graph.prototype.onGraph = function (coordinates) {
+            var ok = (coordinates != null) && (coordinates != undefined) && coordinates.hasOwnProperty('x') && coordinates.hasOwnProperty('y');
+            if (!ok) {
+                return false;
+            }
             return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
         };
         // Convert model coordinates to pixel coordinates for a single point
@@ -4159,6 +4269,93 @@ var EconGraphs;
     EconGraphs.QuadraticMarginalCost = QuadraticMarginalCost;
 })(EconGraphs || (EconGraphs = {}));
 /**
+ * Created by cmakler on 10/2/15.
+ */
+var EconGraphs;
+(function (EconGraphs) {
+    var Budget = (function (_super) {
+        __extends(Budget, _super);
+        function Budget(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+        }
+        Budget.prototype.isAffordable = function (bundle) {
+            return true; // TODO update
+        };
+        Budget.prototype.frontier = function (graph) {
+            return new KG.FunctionPlot({
+                fn: 'foo'
+            });
+        };
+        Budget.prototype.feasibleSet = function (graph) {
+            return new KG.Area({});
+        };
+        Budget.prototype.frontierSegments = function (graph) {
+            return this.budgetSegments.map(function (b) {
+                return b.budgetSegment(graph);
+            });
+        };
+        return Budget;
+    })(KG.Model);
+    EconGraphs.Budget = Budget;
+})(EconGraphs || (EconGraphs = {}));
+/**
+ * Created by cmakler on 10/2/15.
+ */
+var EconGraphs;
+(function (EconGraphs) {
+    var BudgetSegment = (function (_super) {
+        __extends(BudgetSegment, _super);
+        function BudgetSegment(definition, modelPath) {
+            if (definition.hasOwnProperty('endowment')) {
+                if (definition.endowment.hasOwnProperty('x') && definition.endowment.hasOwnProperty('y')) {
+                    var endowmentValueX = KG.multiplyDefs(definition.endowment.x, definition.px), endowmentValueY = KG.multiplyDefs(definition.endowment.y, definition.py);
+                    definition.income = KG.addDefs(endowmentValueX, endowmentValueY);
+                }
+                else {
+                    console.log('Endowment must have x and y properties:');
+                    console.log(definition.endowment);
+                }
+            }
+            definition.priceRatio = KG.divideDefs(definition.px, definition.py);
+            _super.call(this, definition, modelPath);
+            var b = this;
+            var xMin = definition.xMin || 0, xMax = definition.xMax || KG.divideDefs(definition.income, definition.px), yMin = definition.yMin || 0, yMax = definition.yMax || KG.divideDefs(definition.income, definition.py);
+            b.xDomain = new KG.Domain(xMin, xMax);
+            b.yDomain = new KG.Domain(yMin, yMax);
+            if (definition.hasOwnProperty('endowment')) {
+                b.budgetLine = new KGMath.Functions.Linear({
+                    point: definition.endowment,
+                    slope: KG.multiplyDefs(-1, definition.priceRatio)
+                });
+            }
+            else {
+                b.budgetLine = new KGMath.Functions.Linear({
+                    slope: KG.multiplyDefs(-1, definition.priceRatio),
+                    intercept: KG.divideDefs(definition.income, definition.py)
+                });
+            }
+        }
+        BudgetSegment.prototype._update = function (scope) {
+            var b = this;
+            b.budgetLine.update(scope);
+            return b;
+        };
+        BudgetSegment.prototype.isAffordable = function (bundle) {
+            var b = this;
+            // return false if not in the domain for which this budget segment is relevant
+            if (!b.xDomain.contains(bundle.x) || !b.xDomain.contains(bundle.y)) {
+                return false;
+            }
+            // the bundle's cost is the quantities of x and y times their prices
+            var bundleCost = b.px * bundle.x + b.py * bundle.y;
+            // return true if the bundle's cost is less than or equal to constraint's income
+            return (bundleCost <= b.income);
+        };
+        return BudgetSegment;
+    })(KG.Model);
+    EconGraphs.BudgetSegment = BudgetSegment;
+})(EconGraphs || (EconGraphs = {}));
+/**
  * Created by cmakler on 9/23/15.
  */
 /// <reference path="../eg.ts"/>
@@ -4451,6 +4648,240 @@ var EconGraphs;
 /// <reference path="../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
+    var TwoGoodUtility = (function (_super) {
+        __extends(TwoGoodUtility, _super);
+        function TwoGoodUtility(definition, modelPath) {
+            definition = _.defaults(definition, {
+                indifferenceCurveLabel: 'U'
+            });
+            _super.call(this, definition, modelPath);
+        }
+        TwoGoodUtility.prototype._update = function (scope) {
+            var u = this;
+            u.utilityFunction.update(scope);
+            return u;
+        };
+        TwoGoodUtility.prototype.utility = function (bundle) {
+            return this.utilityFunction.value(KG.getBases(bundle));
+        };
+        TwoGoodUtility.prototype.mux = function (bundle) {
+            return this.utilityFunction.derivative(1).value(KG.getBases(bundle));
+        };
+        TwoGoodUtility.prototype.muy = function (bundle) {
+            return this.utilityFunction.derivative(2).value(KG.getBases(bundle));
+        };
+        TwoGoodUtility.prototype.mrs = function (bundle) {
+            return this.mux(bundle) / this.muy(bundle);
+        };
+        TwoGoodUtility.prototype.mrsLine = function (bundle) {
+            var u = this;
+            return new KG.Line({
+                point: bundle,
+                slope: -1 * u.mrs(bundle)
+            });
+        };
+        TwoGoodUtility.prototype.optimalBundle = function (budget) {
+            return { x: 0, y: 0 };
+        };
+        TwoGoodUtility.prototype.indirectUtility = function (budget) {
+            var u = this;
+            return u.utility(u.optimalBundle(budget));
+        };
+        // Given two bundles, evaluates whether agent prefers first or second, or is indifferent
+        TwoGoodUtility.prototype.bundlePreferred = function (bundles, tolerance) {
+            var u = this;
+            tolerance = tolerance || 0.01; // percent difference within which one is thought to be indifferent
+            var u1 = u.utility(bundles[0]), u2 = u.utility(bundles[1]), percentUilityDifference = (u2 - u1) / (0.5 * (u1 + u2));
+            if (percentUilityDifference > tolerance) {
+                return 2; //second bundle preferred
+            }
+            if (percentUilityDifference < -tolerance) {
+                return 1; //first bundle preferred
+            }
+            return 0; //indifferent between two bundles
+        };
+        /*
+
+         Find the price-consumption curve for a given income and other price
+
+         The pccParams object should have the following structure:
+         {
+         good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
+         minPrice: the minimum price to evaluate (0 by default)
+         maxPrice: the maximum price to evaluate (50 by default)
+         income: the consumer's income, OR a bundle {x:x, y:y} to be evaluated at current prices
+         otherPrice: the price of the other good
+         }
+
+         */
+        TwoGoodUtility.prototype.priceConsumptionCurve = function (pccParams) {
+            var u = this;
+            return {
+                points: function (xDomain, yDomain) {
+                    var px, py, isGoodX = ('y' != pccParams['good']), minPrice = pccParams['minPrice'] || 0, maxPrice = pccParams['maxPrice'] || 100, income = pccParams['income'], endowment = pccParams['endowment'] || {}, samplePoints = pccParams['samplePoints'] || 51, otherPrice = pccParams['otherPrice'], priceConsumptionFunction = function (price) {
+                        px = isGoodX ? price : otherPrice;
+                        py = isGoodX ? otherPrice : price;
+                        if (endowment.hasOwnProperty('x')) {
+                            income = endowment.x * px + endowment.y * py;
+                        }
+                        return u.optimalBundle(income, px, py);
+                    };
+                    return functionPoints(priceConsumptionFunction, xDomain, yDomain, {
+                        min: minPrice,
+                        max: maxPrice,
+                        dependentVariable: 'p'
+                    });
+                }
+            };
+        };
+        /*
+
+         Find the income expansion path for a given set of prices.
+         The incomeExpansionParams object should have the following structure:
+
+         {
+         minIncome: the minimum income to evaluate (0 by default)
+         maxIncome: the maximum income to evaluate (50 by default)
+         px: price of x
+         py: price of y
+         }
+
+         */
+        TwoGoodUtility.prototype.incomeConsumptionCurve = function (iccParams) {
+            var u = this;
+            return {
+                points: function (xDomain, yDomain) {
+                    var minIncome = iccParams['minIncome'] || 0, maxIncome = iccParams['maxIncome'] || 50, px = iccParams['px'], py = iccParams['py'], samplePoints = iccParams['samplePoints'] || 51, incomeConsumptionFunction = function (income) {
+                        return u.optimalBundle(income, px, py);
+                    };
+                    return functionPoints(incomeConsumptionFunction, xDomain, yDomain, {
+                        min: minIncome,
+                        max: maxIncome,
+                        dependentVariable: 'i'
+                    });
+                }
+            };
+        };
+        /*
+
+         Find the Engel curve for a given set of prices
+         The engelCurveParams object should have the following structure:
+         {
+         good: the good whose quantity demanded we are going to plot
+         minIncome: the minimum income to evaluate (0 by default)
+         maxIncome: the maximum income to evaluate (50 by default)
+         px: price of x
+         py: price of y
+         }
+
+         */
+        TwoGoodUtility.prototype.engelCurve = function (engelParams) {
+            var u = this;
+            return {
+                points: function (xDomain, yDomain) {
+                    var isGoodX = ('y' != engelParams['good']), px = engelParams['px'], py = engelParams['py'], engelFunction = function (income) {
+                        return isGoodX ? u.optimalBundle(income, px, py)[0] : u.optimalBundle(income, px, py)[1];
+                    };
+                    return functionPoints(engelFunction, xDomain, yDomain, { dependentVariable: 'y' });
+                }
+            };
+        };
+        /*
+
+         Find the demand curve for a given income and other price
+
+         The demandParams object should have the following structure:
+         {
+         good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
+         minPrice: the minimum price to evaluate (0 by default)
+         maxPrice: the maximum price to evaluate (50 by default)
+         income: the consumer's income
+         otherPrice: the price of the other good
+         }
+
+         */
+        TwoGoodUtility.prototype.demandCurve = function (demandParams) {
+            var u = this;
+            return {
+                points: function (xDomain, yDomain) {
+                    yDomain = domainAsObject(yDomain);
+                    var compensatedIncome, isGoodX = ('y' != demandParams['good']), compensationPrice = demandParams['compensationPrice'] || 0, income = demandParams['income'], numberOfConsumers = demandParams['numberOfConsumers'] || 1, minPrice = demandParams['minPrice'] || yDomain.min, maxPrice = demandParams['maxPrice'] || yDomain.max, otherPrice = demandParams['otherPrice'], samplePoints = demandParams['samplePoints'] || 51, demandFunction = function (price) {
+                        if (isGoodX) {
+                            compensatedIncome = (compensationPrice > 0) ? u.compensatedIncome(income, compensationPrice, price, otherPrice) : income;
+                            return u.optimalBundle(compensatedIncome, price, otherPrice)[0] * numberOfConsumers;
+                        }
+                        else {
+                            return u.optimalBundle(income, otherPrice, price)[1] * numberOfConsumers;
+                        }
+                    };
+                    return functionPoints(demandFunction, xDomain, yDomain, {
+                        dependentVariable: 'y',
+                        min: minPrice,
+                        max: maxPrice
+                    });
+                },
+                area: function (xDomain, yDomain) {
+                    xDomain = domainAsObject(xDomain);
+                    yDomain = domainAsObject(yDomain);
+                    var points = this.points(xDomain, yDomain), minPrice = demandParams['minPrice'] || yDomain.min, maxPrice = demandParams['maxPrice'] || yDomain.max;
+                    points.push({ x: 0, y: maxPrice });
+                    points.push({ x: 0, y: minPrice });
+                    return points;
+                }
+            };
+        };
+        // Find the lowest possible cost for a given level of utility, given px and py
+        TwoGoodUtility.prototype.lowestPossibleCost = function (utility, px, py) {
+            return 0; // overridden by specific utility function
+        };
+        // Return the bundle that provides a given level of utility at lowest cost
+        TwoGoodUtility.prototype.lowestCostBundle = function (utility, px, py) {
+            var u = this;
+            // set income to lowest necessary to achieve utility
+            var income = u.lowestPossibleCost(utility, px, py);
+            return u.optimalBundle(income, px, py);
+        };
+        // Return the income necessary to achieve v(income,px1,py) if px is now px2
+        TwoGoodUtility.prototype.compensatedIncome = function (income, px1, px2, py) {
+            var u = this;
+            var utility = u.utility(u.optimalBundle(income, px1, py));
+            return u.lowestPossibleCost(utility, px2, py);
+        };
+        // Return the decomposition bundle for a price change from px1 to px2
+        TwoGoodUtility.prototype.decompositionBundle = function (income, px1, px2, py) {
+            var u = this;
+            return u.optimalBundle(u.compensatedIncome(income, px1, px2, py), px2, py);
+        };
+        return TwoGoodUtility;
+    })(EconGraphs.Utility);
+    EconGraphs.TwoGoodUtility = TwoGoodUtility;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var UtilityDemand = (function (_super) {
+        __extends(UtilityDemand, _super);
+        function UtilityDemand(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+            var d = this;
+            d.utilityFunction = new Econgraphs[definition.utilityFnDef.utilityType](definition.utilityFnDef.utilityDef, d.modelProperty('utilityFn'));
+            d.demandCurve = new KG.FunctionPlot({
+                fn: d.modelProperty('demandFunction'),
+                yIsIndependent: true
+            });
+        }
+        UtilityDemand.prototype._update = function (scope) {
+            var m = this;
+            m.utilityFunction.update(scope);
+            return m;
+        };
+        return UtilityDemand;
+    })(KG.Model);
+    EconGraphs.UtilityDemand = UtilityDemand;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
     var Monopoly = (function (_super) {
         __extends(Monopoly, _super);
         function Monopoly(definition, modelPath) {
@@ -4625,10 +5056,14 @@ var EconGraphs;
 /// <reference path="production/linearMarginalCost.ts"/>
 /// <reference path="production/constantMarginalCost.ts"/>
 /// <reference path="production/quadraticMarginalCost.ts"/>
+/// <reference path="budget/budget.ts"/>
+/// <reference path="budget/budgetSegment.ts"/>
 /// <reference path="utility/utility.ts"/>
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
 /// <reference path="utility/risk_aversion.ts"/>
+/// <reference path="utility/twoGoodUtility.ts"/>
+/// <reference path="utility/utilityDemand.ts"/>
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/> 
 /**
@@ -4769,8 +5204,9 @@ angular.module('KineticGraphs', []).controller('KineticGraphCtrl', ['$scope', '$
         link: link,
         restrict: 'E',
         replace: true,
+        scope: true,
         transclude: true,
-        template: "<button ng-click='toggle()'><span ng-transclude/></button>"
+        template: "<button ng-click='toggle()' style='width: 100%'><span ng-transclude/></button>"
     };
 });
 //# sourceMappingURL=kinetic-graphs.js.map

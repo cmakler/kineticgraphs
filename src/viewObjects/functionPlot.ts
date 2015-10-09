@@ -36,7 +36,7 @@ module KG {
         updateDataForView(view) {
             var p = this;
             if(typeof p.fn == 'function') {
-                p.fn = new KGMath.Functions.OneVariable({fn: p.fn})
+                p.fn = new KGMath.Functions.Relation({fn: p.fn})
             }
             p.data = p.fn.points(view,p.yIsIndependent,p.numSamplePoints);
             return p;

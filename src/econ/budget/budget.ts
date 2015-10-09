@@ -22,8 +22,30 @@ module EconGraphs {
 
     export class Budget extends KG.Model implements IBudget {
 
+        public budgetSegments;
+
         constructor(definition:BudgetDefinition, modelPath?:string) {
             super(definition, modelPath);
+        }
+
+        isAffordable(bundle) {
+            return true; // TODO update
+        }
+
+        frontier(graph) {
+            return new KG.FunctionPlot({
+                fn: 'foo'
+            })
+        }
+
+        feasibleSet(graph) {
+            return new KG.Area({
+
+            })
+        }
+
+        frontierSegments(graph) {
+            return this.budgetSegments.map(function(b) { return b.budgetSegment(graph) })
         }
     }
 }

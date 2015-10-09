@@ -14,6 +14,8 @@ module KG
         yDrag?: any;
         color?: string;
         coordinates?: ICoordinates;
+        xDomainDef?: DomainDef;
+        yDomainDef?: DomainDef;
     }
 
     export interface IViewObject extends IModel
@@ -25,6 +27,8 @@ module KG
 
         show: boolean;
         classAndVisibility: () => string;
+        xDomain?: KG.Domain;
+        yDomain?: KG.Domain;
 
         // Creation and rendering
         initGroupFn: (svgType:string, className: string) => any;
@@ -77,6 +81,8 @@ module KG
             super(definition, modelPath);
 
             var viewObj = this;
+
+            /* Set drag behavior on object */
             viewObj.xDragDelta = 0;
             viewObj.yDragDelta = 0;
 

@@ -21,8 +21,6 @@ module EconGraphs {
         px: number;
         py: number;
         priceRatio: number;
-        xDomain: KG.Domain;
-        yDomain: KG.Domain;
         isAffordable: (bundle:KG.ICoordinates) => boolean;
         budgetLine: KGMath.Functions.Linear;
     }
@@ -35,13 +33,14 @@ module EconGraphs {
         public priceRatio;
         public xDomain;
         public yDomain;
+        public budgetLine;
 
         constructor(definition:BudgetSegmentDefinition, modelPath?: string) {
 
             if(definition.hasOwnProperty('endowment')) {
                 if(definition.endowment.hasOwnProperty('x') && definition.endowment.hasOwnProperty('y')) {
                     var endowmentValueX = KG.multiplyDefs(definition.endowment.x,definition.px),
-                        endowmentValueY = KG.multiplyDefs(definition.endowment.y,definition.y);
+                        endowmentValueY = KG.multiplyDefs(definition.endowment.y,definition.py);
                     definition.income = KG.addDefs(endowmentValueX,endowmentValueY);
                 } else {
                     console.log('Endowment must have x and y properties:');

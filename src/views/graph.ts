@@ -36,6 +36,10 @@ module KG
 
         // Check to see if a point is on the graph
         onGraph(coordinates:ICoordinates) {
+            var ok = (coordinates != null) && (coordinates != undefined) && coordinates.hasOwnProperty('x') && coordinates.hasOwnProperty('y');
+            if(!ok) {
+                return false;
+            }
             return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
         }
 
