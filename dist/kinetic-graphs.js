@@ -662,7 +662,7 @@ var KGMath;
                 var fn = this;
                 fn.xFunction = new KGMath.Functions[definition.xFunctionType](definition.xFunctionDef, fn.modelProperty('xFunction'));
                 fn.yFunction = new KGMath.Functions[definition.yFunctionType](definition.yFunctionDef, fn.modelProperty('yFunction'));
-                fn.tDomain = new KG.Domain(tDomainDef.min, tDomainDef.max);
+                fn.tDomain = new KG.Domain(definition.tDomainDef.min, definition.tDomainDef.max);
             }
             Implicit.prototype._update = function (scope) {
                 var fn = this;
@@ -713,7 +713,7 @@ var KGMath;
                 definition.inverse = definition.inverse || false;
                 _super.call(this, definition, modelPath);
                 var f = this;
-                f.fn = new KGMath.Functions[definition.functionType](definition.functionDef, fn.modelProperty('fn'));
+                f.fn = new KGMath.Functions[definition.functionType](definition.functionDef, f.modelProperty('fn'));
             }
             // Returns the slope between (a,f(a)) and (b,f(b)).
             // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
@@ -1568,6 +1568,41 @@ var KG;
     var Point = (function (_super) {
         __extends(Point, _super);
         function Point(definition, modelPath) {
+            if (definition.hasOwnProperty('pointParams')) {
+                var p = definition.pointParams;
+                if (p.hasOwnProperty('className')) {
+                    if (definition.hasOwnProperty('className')) {
+                        definition.className += ' ' + p.className;
+                    }
+                    else {
+                        definition.className = p.className;
+                    }
+                }
+                if (p.hasOwnProperty('id')) {
+                    if (definition.hasOwnProperty('name')) {
+                        definition.name += ' ' + p.id;
+                    }
+                    else {
+                        definition.name = p.id;
+                    }
+                }
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    };
+                }
+                if (p.hasOwnProperty('xAxisLabel') || p.hasOwnProperty('yAxisLabel')) {
+                    if (!definition.hasOwnProperty('droplines')) {
+                        definition.droplines = {};
+                    }
+                    if (p.hasOwnProperty('xAxisLabel')) {
+                        definition.droplines.vertical = p.xAxisLabel;
+                    }
+                    if (p.hasOwnProperty('yAxisLabel')) {
+                        definition.droplines.horizontal = p.yAxisLabel;
+                    }
+                }
+            }
             var defaultSize = 100;
             if (definition.hasOwnProperty('label')) {
                 if (definition.label.hasOwnProperty('text')) {
@@ -1576,7 +1611,11 @@ var KG;
                     }
                 }
             }
-            definition = _.defaults(definition, { coordinates: { x: 0, y: 0 }, size: defaultSize, symbol: 'circle' });
+            definition = _.defaults(definition, {
+                coordinates: { x: 0, y: 0 },
+                size: defaultSize,
+                symbol: 'circle'
+            });
             _super.call(this, definition, modelPath);
             if (definition.label) {
                 var labelDef = _.defaults(definition.label, {
@@ -2245,15 +2284,38 @@ var KG;
         };
         FunctionPlot.prototype.updateDataForView = function (view) {
             var p = this;
-            if (typeof p.fn == 'function') {
-                p.fn = new KGMath.Functions.Relation({ fn: p.fn });
-            }
             p.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
             return p;
         };
         return FunctionPlot;
     })(KG.Curve);
     KG.FunctionPlot = FunctionPlot;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var FunctionMap = (function (_super) {
+        __extends(FunctionMap, _super);
+        function FunctionMap(definition, modelPath) {
+            definition = _.defaults(definition, { interpolation: 'basis', numSamplePoints: 51 });
+            _super.call(this, definition, modelPath);
+        }
+        FunctionMap.prototype._update = function (scope) {
+            var p = this;
+            p.fn.update(scope);
+            return p;
+        };
+        FunctionMap.prototype.updateDataForView = function (view) {
+            var p = this;
+            p.data = p.levels.map(function (level) {
+                return p.fn.setLevel(level).points(view);
+            });
+            return p;
+        };
+        return FunctionMap;
+    })(KG.PathFamily);
+    KG.FunctionMap = FunctionMap;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -4428,28 +4490,26 @@ var EconGraphs;
         OneGoodUtility.prototype.marginalUtilityAtQuantity = function (c) {
             return this.marginalUtilityFunction.yValue(c);
         };
-        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (c, label) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (c, slopeLineParams) {
             return new KG.Line({
-                name: 'slopeLine' + label,
+                name: 'slopeLine_' + slopeLineParams.id,
                 className: 'demand dotted',
                 lineDef: {
                     point: { x: c, y: this.utilityAtQuantity(c) },
                     slope: this.marginalUtilityAtQuantity(c)
                 },
                 label: {
-                    text: "\\text{slope} = u\'(c" + labelSubscript + ")"
+                    text: "\\text{slope} = " + slopeLineParams.label
                 }
             });
         };
-        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, pointParams) {
             return new KG.Point({
-                name: 'utilityAtQ' + label,
+                name: 'utilityAtQ_' + pointParams.id,
                 coordinates: { x: q, y: this.utilityAtQuantity(q) },
                 size: 500,
-                class: 'utility',
-                xDrag: dragParam,
+                class: pointParams.className || 'utility',
+                xDrag: pointParams.dragParam,
                 label: {
                     text: label
                 },
@@ -4648,6 +4708,88 @@ var EconGraphs;
 /// <reference path="../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
+    var UtilityRedistribution = (function (_super) {
+        __extends(UtilityRedistribution, _super);
+        function UtilityRedistribution(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+            this.utility = new EconGraphs[definition.utilityType](definition.utilityDef, this.modelPath + '.utility');
+            this.lowUtilityChangeArrow = new KG.Arrow({
+                name: 'lowChangeSegment',
+                className: 'diff2',
+                begin: {
+                    x: 5,
+                    y: this.modelProperty('uLow')
+                },
+                end: {
+                    x: 5,
+                    y: this.modelProperty('uLowNew')
+                }
+            });
+            this.highUtilityChangeArrow = new KG.Arrow({
+                name: 'highChangeSegment',
+                className: 'diff1',
+                begin: {
+                    x: 10,
+                    y: this.modelProperty('uHigh')
+                },
+                end: {
+                    x: 10,
+                    y: this.modelProperty('uHighNew')
+                }
+            });
+            this.lowConsumptionChangeArrow = new KG.Arrow({
+                name: 'lowConsumptionChangeSegment',
+                className: 'diff2',
+                show: '(' + this.modelProperty('transfer') + ' > 0)',
+                begin: {
+                    x: this.modelProperty('cLow'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.05'
+                },
+                end: {
+                    x: this.modelProperty('cLowNew'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.05'
+                },
+                label: {
+                    text: 'model.transfer | number:0',
+                    valign: 'top'
+                }
+            });
+            this.highConsumptionChangeArrow = new KG.Arrow({
+                name: 'highConsumptionChangeSegment',
+                className: 'diff1',
+                show: '(' + this.modelProperty('transfer') + ' > 0)',
+                begin: {
+                    x: this.modelProperty('cHigh'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.1'
+                },
+                end: {
+                    x: this.modelProperty('cHighNew'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.1'
+                },
+                label: {
+                    text: '-model.transfer | number:0',
+                    valign: 'top'
+                }
+            });
+        }
+        UtilityRedistribution.prototype._update = function (scope) {
+            var r = this;
+            r.utility = r.utility.update(scope);
+            r.uLow = r.utility.utilityFunction.yValue(r.cLow);
+            r.uHigh = r.utility.utilityFunction.yValue(r.cHigh);
+            r.cLowNew = r.cLow + r.transfer;
+            r.cHighNew = r.cHigh - r.transfer;
+            r.uLowNew = r.utility.utilityFunction.yValue(r.cLowNew);
+            r.uHighNew = r.utility.utilityFunction.yValue(r.cHighNew);
+            return r;
+        };
+        return UtilityRedistribution;
+    })(KG.Model);
+    EconGraphs.UtilityRedistribution = UtilityRedistribution;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
     var TwoGoodUtility = (function (_super) {
         __extends(TwoGoodUtility, _super);
         function TwoGoodUtility(definition, modelPath) {
@@ -4680,6 +4822,22 @@ var EconGraphs;
                 slope: -1 * u.mrs(bundle)
             });
         };
+        TwoGoodUtility.prototype.indifferenceCurveAtUtility = function (utility) {
+            var u = this;
+            return new KG.FunctionPlot({
+                fn: u.modelProperty('utilityFunction.setLevel(' + utility + ')')
+            });
+        };
+        TwoGoodUtility.prototype.indifferenceCurveThroughBundle = function (bundle) {
+            var u = this, utility = u.utility(bundle);
+            return u.indifferenceCurveAtUtility(utility);
+        };
+        TwoGoodUtility.prototype.indifferenceCurveFamily = function (levels) {
+            var u = this;
+            return new KG.FunctionMap({
+                fn: u.modelProperty('utilityFunction')
+            });
+        };
         TwoGoodUtility.prototype.optimalBundle = function (budget) {
             return { x: 0, y: 0 };
         };
@@ -4700,158 +4858,6 @@ var EconGraphs;
             }
             return 0; //indifferent between two bundles
         };
-        /*
-
-         Find the price-consumption curve for a given income and other price
-
-         The pccParams object should have the following structure:
-         {
-         good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
-         minPrice: the minimum price to evaluate (0 by default)
-         maxPrice: the maximum price to evaluate (50 by default)
-         income: the consumer's income, OR a bundle {x:x, y:y} to be evaluated at current prices
-         otherPrice: the price of the other good
-         }
-
-         */
-        TwoGoodUtility.prototype.priceConsumptionCurve = function (pccParams) {
-            var u = this;
-            return {
-                points: function (xDomain, yDomain) {
-                    var px, py, isGoodX = ('y' != pccParams['good']), minPrice = pccParams['minPrice'] || 0, maxPrice = pccParams['maxPrice'] || 100, income = pccParams['income'], endowment = pccParams['endowment'] || {}, samplePoints = pccParams['samplePoints'] || 51, otherPrice = pccParams['otherPrice'], priceConsumptionFunction = function (price) {
-                        px = isGoodX ? price : otherPrice;
-                        py = isGoodX ? otherPrice : price;
-                        if (endowment.hasOwnProperty('x')) {
-                            income = endowment.x * px + endowment.y * py;
-                        }
-                        return u.optimalBundle(income, px, py);
-                    };
-                    return functionPoints(priceConsumptionFunction, xDomain, yDomain, {
-                        min: minPrice,
-                        max: maxPrice,
-                        dependentVariable: 'p'
-                    });
-                }
-            };
-        };
-        /*
-
-         Find the income expansion path for a given set of prices.
-         The incomeExpansionParams object should have the following structure:
-
-         {
-         minIncome: the minimum income to evaluate (0 by default)
-         maxIncome: the maximum income to evaluate (50 by default)
-         px: price of x
-         py: price of y
-         }
-
-         */
-        TwoGoodUtility.prototype.incomeConsumptionCurve = function (iccParams) {
-            var u = this;
-            return {
-                points: function (xDomain, yDomain) {
-                    var minIncome = iccParams['minIncome'] || 0, maxIncome = iccParams['maxIncome'] || 50, px = iccParams['px'], py = iccParams['py'], samplePoints = iccParams['samplePoints'] || 51, incomeConsumptionFunction = function (income) {
-                        return u.optimalBundle(income, px, py);
-                    };
-                    return functionPoints(incomeConsumptionFunction, xDomain, yDomain, {
-                        min: minIncome,
-                        max: maxIncome,
-                        dependentVariable: 'i'
-                    });
-                }
-            };
-        };
-        /*
-
-         Find the Engel curve for a given set of prices
-         The engelCurveParams object should have the following structure:
-         {
-         good: the good whose quantity demanded we are going to plot
-         minIncome: the minimum income to evaluate (0 by default)
-         maxIncome: the maximum income to evaluate (50 by default)
-         px: price of x
-         py: price of y
-         }
-
-         */
-        TwoGoodUtility.prototype.engelCurve = function (engelParams) {
-            var u = this;
-            return {
-                points: function (xDomain, yDomain) {
-                    var isGoodX = ('y' != engelParams['good']), px = engelParams['px'], py = engelParams['py'], engelFunction = function (income) {
-                        return isGoodX ? u.optimalBundle(income, px, py)[0] : u.optimalBundle(income, px, py)[1];
-                    };
-                    return functionPoints(engelFunction, xDomain, yDomain, { dependentVariable: 'y' });
-                }
-            };
-        };
-        /*
-
-         Find the demand curve for a given income and other price
-
-         The demandParams object should have the following structure:
-         {
-         good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
-         minPrice: the minimum price to evaluate (0 by default)
-         maxPrice: the maximum price to evaluate (50 by default)
-         income: the consumer's income
-         otherPrice: the price of the other good
-         }
-
-         */
-        TwoGoodUtility.prototype.demandCurve = function (demandParams) {
-            var u = this;
-            return {
-                points: function (xDomain, yDomain) {
-                    yDomain = domainAsObject(yDomain);
-                    var compensatedIncome, isGoodX = ('y' != demandParams['good']), compensationPrice = demandParams['compensationPrice'] || 0, income = demandParams['income'], numberOfConsumers = demandParams['numberOfConsumers'] || 1, minPrice = demandParams['minPrice'] || yDomain.min, maxPrice = demandParams['maxPrice'] || yDomain.max, otherPrice = demandParams['otherPrice'], samplePoints = demandParams['samplePoints'] || 51, demandFunction = function (price) {
-                        if (isGoodX) {
-                            compensatedIncome = (compensationPrice > 0) ? u.compensatedIncome(income, compensationPrice, price, otherPrice) : income;
-                            return u.optimalBundle(compensatedIncome, price, otherPrice)[0] * numberOfConsumers;
-                        }
-                        else {
-                            return u.optimalBundle(income, otherPrice, price)[1] * numberOfConsumers;
-                        }
-                    };
-                    return functionPoints(demandFunction, xDomain, yDomain, {
-                        dependentVariable: 'y',
-                        min: minPrice,
-                        max: maxPrice
-                    });
-                },
-                area: function (xDomain, yDomain) {
-                    xDomain = domainAsObject(xDomain);
-                    yDomain = domainAsObject(yDomain);
-                    var points = this.points(xDomain, yDomain), minPrice = demandParams['minPrice'] || yDomain.min, maxPrice = demandParams['maxPrice'] || yDomain.max;
-                    points.push({ x: 0, y: maxPrice });
-                    points.push({ x: 0, y: minPrice });
-                    return points;
-                }
-            };
-        };
-        // Find the lowest possible cost for a given level of utility, given px and py
-        TwoGoodUtility.prototype.lowestPossibleCost = function (utility, px, py) {
-            return 0; // overridden by specific utility function
-        };
-        // Return the bundle that provides a given level of utility at lowest cost
-        TwoGoodUtility.prototype.lowestCostBundle = function (utility, px, py) {
-            var u = this;
-            // set income to lowest necessary to achieve utility
-            var income = u.lowestPossibleCost(utility, px, py);
-            return u.optimalBundle(income, px, py);
-        };
-        // Return the income necessary to achieve v(income,px1,py) if px is now px2
-        TwoGoodUtility.prototype.compensatedIncome = function (income, px1, px2, py) {
-            var u = this;
-            var utility = u.utility(u.optimalBundle(income, px1, py));
-            return u.lowestPossibleCost(utility, px2, py);
-        };
-        // Return the decomposition bundle for a price change from px1 to px2
-        TwoGoodUtility.prototype.decompositionBundle = function (income, px1, px2, py) {
-            var u = this;
-            return u.optimalBundle(u.compensatedIncome(income, px1, px2, py), px2, py);
-        };
         return TwoGoodUtility;
     })(EconGraphs.Utility);
     EconGraphs.TwoGoodUtility = TwoGoodUtility;
@@ -4864,7 +4870,7 @@ var EconGraphs;
         function UtilityDemand(definition, modelPath) {
             _super.call(this, definition, modelPath);
             var d = this;
-            d.utilityFunction = new Econgraphs[definition.utilityFnDef.utilityType](definition.utilityFnDef.utilityDef, d.modelProperty('utilityFn'));
+            d.utilityFunction = new EconGraphs[definition.utilityFnDef.utilityType](definition.utilityFnDef.utilityDef, d.modelProperty('utilityFn'));
             d.demandCurve = new KG.FunctionPlot({
                 fn: d.modelProperty('demandFunction'),
                 yIsIndependent: true
@@ -4874,6 +4880,19 @@ var EconGraphs;
             var m = this;
             m.utilityFunction.update(scope);
             return m;
+        };
+        UtilityDemand.prototype.quantityAtPrice = function (price) {
+            return 0; // TODO implement
+        };
+        UtilityDemand.prototype.quantityAtPricePoint = function (price) {
+            var d = this;
+            return new KG.Point({
+                className: 'demand',
+                coordinates: {
+                    x: d.modelProperty('quantityAtPrice(' + price + ')'),
+                    y: price
+                }
+            });
         };
         return UtilityDemand;
     })(KG.Model);
@@ -5061,7 +5080,8 @@ var EconGraphs;
 /// <reference path="utility/utility.ts"/>
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
-/// <reference path="utility/risk_aversion.ts"/>
+/// <reference path="utility/riskAversion.ts"/>
+/// <reference path="utility/utilityRedistribution.ts"/>
 /// <reference path="utility/twoGoodUtility.ts"/>
 /// <reference path="utility/utilityDemand.ts"/>
 /// <reference path="monopoly/monopoly.ts"/>
@@ -5167,6 +5187,7 @@ var PhysicsGraphs;
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="viewObjects/functionPlot.ts"/>
+/// <reference path="viewObjects/functionMap.ts"/>
 /// <reference path="viewObjects/area.ts"/>
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />

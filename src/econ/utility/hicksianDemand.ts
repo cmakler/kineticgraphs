@@ -92,4 +92,29 @@ module EconGraphs {
 
     }
 
+
+}
+
+// Return the income necessary to achieve v(income,px1,py) if px is now px2
+compensatedIncome(income, px1, px2, py) {
+    var u = this;
+    var utility = u.utility(u.optimalBundle(income, px1, py));
+    return u.lowestPossibleCost(utility, px2, py);
+
+}
+
+// Find the lowest possible cost for a given level of utility, given px and py
+lowestPossibleCost(utility, px, py) {
+    return 0; // overridden by specific utility function
+}
+
+// Return the bundle that provides a given level of utility at lowest cost
+lowestCostBundle(utility, px, py) {
+
+    var u = this;
+
+    // set income to lowest necessary to achieve utility
+    var income = u.lowestPossibleCost(utility, px, py);
+    return u.optimalBundle(income, px, py);
+
 }

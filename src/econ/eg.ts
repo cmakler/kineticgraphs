@@ -19,7 +19,8 @@
 
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
-/// <reference path="utility/risk_aversion.ts"/>
+/// <reference path="utility/riskAversion.ts"/>
+/// <reference path="utility/utilityRedistribution.ts"/>
 
 /// <reference path="utility/twoGoodUtility.ts"/>
 /// <reference path="utility/utilityDemand.ts"/>

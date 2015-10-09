@@ -87,29 +87,27 @@ module EconGraphs {
             return this.marginalUtilityFunction.yValue(c)
         }
 
-        marginalUtilityAtQuantitySlope(c, label?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        marginalUtilityAtQuantitySlope(c, slopeLineParams: {id?: string; label?:string;}) {
             return new KG.Line({
-                name: 'slopeLine' + label,
+                name: 'slopeLine_' + slopeLineParams.id,
                 className: 'demand dotted',
                 lineDef: {
                     point: {x: c, y: this.utilityAtQuantity(c)},
                     slope: this.marginalUtilityAtQuantity(c)
                 },
                 label: {
-                    text: "\\text{slope} = u\'(c"+ labelSubscript +")"
+                    text: "\\text{slope} = " + slopeLineParams.label
                 }
             });
         }
 
-        utilityAtQuantityPoint(q, label?, dragParam?) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        utilityAtQuantityPoint(q, pointParams: {id?: string; label?:string; xAxisLabel?:string; yAxisLabel?:string; className?:string; dragParam?:string}) {
             return new KG.Point({
-                name: 'utilityAtQ' + label,
+                name: 'utilityAtQ_' + pointParams.id,
                 coordinates: {x: q, y: this.utilityAtQuantity(q)},
                 size: 500,
-                class: 'utility',
-                xDrag: dragParam,
+                class: pointParams.className || 'utility',
+                xDrag: pointParams.dragParam,
                 label: {
                     text: label
                 },

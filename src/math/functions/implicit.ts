@@ -29,7 +29,7 @@ module KGMath.Functions {
             var fn = this;
             fn.xFunction = new KGMath.Functions[definition.xFunctionType](definition.xFunctionDef, fn.modelProperty('xFunction'));
             fn.yFunction = new KGMath.Functions[definition.yFunctionType](definition.yFunctionDef, fn.modelProperty('yFunction'));
-            fn.tDomain = new KG.Domain(tDomainDef.min, tDomainDef.max);
+            fn.tDomain = new KG.Domain(definition.tDomainDef.min, definition.tDomainDef.max);
 
         }
 

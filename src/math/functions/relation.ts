@@ -8,7 +8,6 @@ module KGMath.Functions {
 
     export interface IRelation extends KG.IModel {
         fn: Base;
-        point: (t:number) => KG.ICoordinates;
         slopeBetweenPoints: (t1: number, t2: number, inverse?:boolean) => number;
         points: (graph:KG.Graph, numSamplePoints?:number) => KG.ICoordinates[];
     }
@@ -23,7 +22,7 @@ module KGMath.Functions {
             super(definition,modelPath);
 
             var f = this;
-            f.fn = new KGMath.Functions[definition.functionType](definition.functionDef, fn.modelProperty('fn'));
+            f.fn = new KGMath.Functions[definition.functionType](definition.functionDef, f.modelProperty('fn'));
         }
 
         // Returns the slope between (a,f(a)) and (b,f(b)).

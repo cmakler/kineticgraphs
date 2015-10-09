@@ -4,6 +4,10 @@
 
 module KG {
 
+    export interface PathFamilyDefinition extends ViewObjectDefinition {
+        interpolation?: any;
+    }
+
     export interface IPathFamily extends IViewObject {
 
         data: ICoordinates[][];
@@ -15,7 +19,7 @@ module KG {
         public data;
         public interpolation;
 
-        constructor(definition, modelPath?: string) {
+        constructor(definition:PathFamilyDefinition, modelPath?: string) {
 
             definition = _.defaults(definition, {
                 data: [],

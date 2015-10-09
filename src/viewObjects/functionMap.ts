@@ -4,26 +4,26 @@
 
 module KG {
 
-    export interface FunctionPlotDefinition extends CurveDefinition {
+    export interface FunctionMapDefinition extends PathFamilyDefinition {
         fn: any;
-        yIsIndependent?: boolean;
+        levels: any[];
         numSamplePoints?: number;
     }
 
-    export interface IFunctionPlot extends ICurve {
+    export interface IFunctionMap extends IPathFamily {
         fn: KGMath.Functions.Base;
-        yIsIndependent: boolean;
+        levels: number[];
         numSamplePoints: number;
     }
 
-    export class FunctionPlot extends Curve implements IFunctionPlot {
+    export class FunctionMap extends PathFamily implements IFunctionMap {
 
         public fn;
-        public yIsIndependent;
+        public levels;
         public numSamplePoints;
 
         constructor(definition:FunctionPlotDefinition, modelPath?: string) {
-            definition = _.defaults(definition, {yIsIndependent: false, interpolation: 'linear', numSamplePoints: 51});
+            definition = _.defaults(definition, {interpolation: 'basis', numSamplePoints: 51});
             super(definition, modelPath);
         }
 
@@ -35,7 +35,7 @@ module KG {
 
         updateDataForView(view) {
             var p = this;
-            p.data = p.fn.points(view,p.yIsIndependent,p.numSamplePoints);
+            p.data = p.levels.map(function(level) { return p.fn.setLevel(level).points(view) });
             return p;
         }
 
