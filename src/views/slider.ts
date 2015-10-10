@@ -56,7 +56,7 @@ module KG
             definition.yDrag = false;
             definition.coordinates = {x: definition.param, y:0};
             super(definition, modelPath);
-            this.viewObjectSVGtype = 'circle';
+            this.viewObjectSVGtype = 'g';
             this.viewObjectClass = 'sliderControl';
         }
 
@@ -66,17 +66,37 @@ module KG
 
             var group:D3.Selection = view.objectGroup(control.name, control.initGroupFn(), true);
 
-            var controlCircle:D3.Selection = group.select('.'+ control.viewObjectClass);
+            var controlGroup:D3.Selection = group.select('.'+ control.viewObjectClass);
 
-            controlCircle
-                .attr({
-                    'class': control.classAndVisibility(),
-                    'r': view.dimensions.height/3,
-                    'cx': view.xAxis.scale(control.param),
-                    'cy': 0
-                });
+            var controlSquare = controlGroup.selectAll('rect').data([0])
 
-            return control.setDragBehavior(view,controlCircle)
+            controlSquare.enter().append('rect').attr({
+                opacity: 0,
+                y: -view.dimensions.height*0.5,
+                width: 50,
+                height: view.dimensions.height
+            });
+
+            controlSquare.attr({
+                'x': view.xAxis.scale(control.param) - 25
+            });
+
+            var controlCircle = controlGroup.selectAll('circle').data([0])
+
+            controlCircle.enter().append('circle').attr({
+                'class': control.classAndVisibility(),
+                'r': view.dimensions.height/5,
+                'cy': 0
+            });
+
+            controlCircle.attr({
+                'cx': view.xAxis.scale(control.param)
+            });
+
+            control.setDragBehavior(view,controlSquare);
+            control.setDragBehavior(view,controlCircle);
+
+            return control;
 
         }
     }

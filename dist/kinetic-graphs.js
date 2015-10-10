@@ -2815,20 +2815,35 @@ var KG;
             definition.yDrag = false;
             definition.coordinates = { x: definition.param, y: 0 };
             _super.call(this, definition, modelPath);
-            this.viewObjectSVGtype = 'circle';
+            this.viewObjectSVGtype = 'g';
             this.viewObjectClass = 'sliderControl';
         }
         SliderControl.prototype.render = function (view) {
             var control = this;
             var group = view.objectGroup(control.name, control.initGroupFn(), true);
-            var controlCircle = group.select('.' + control.viewObjectClass);
-            controlCircle.attr({
+            var controlGroup = group.select('.' + control.viewObjectClass);
+            var controlSquare = controlGroup.selectAll('rect').data([0]);
+            controlSquare.enter().append('rect').attr({
+                opacity: 0,
+                y: -view.dimensions.height * 0.5,
+                width: 50,
+                height: view.dimensions.height
+            });
+            controlSquare.attr({
+                'x': view.xAxis.scale(control.param) - 25
+            });
+            var controlCircle = controlGroup.selectAll('circle').data([0]);
+            controlCircle.enter().append('circle').attr({
                 'class': control.classAndVisibility(),
-                'r': view.dimensions.height / 3,
-                'cx': view.xAxis.scale(control.param),
+                'r': view.dimensions.height / 5,
                 'cy': 0
             });
-            return control.setDragBehavior(view, controlCircle);
+            controlCircle.attr({
+                'cx': view.xAxis.scale(control.param)
+            });
+            control.setDragBehavior(view, controlSquare);
+            control.setDragBehavior(view, controlCircle);
+            return control;
         };
         return SliderControl;
     })(KG.ViewObject);
