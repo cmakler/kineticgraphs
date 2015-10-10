@@ -2,6 +2,8 @@ module KGMath.Functions {
 
     export interface BaseDefinition {
         level?: any;
+        xDomainDef?: KG.DomainDef;
+        yDomainDef?: KG.DomainDef;
     }
 
     export interface IBase extends KG.IModel {
@@ -15,16 +17,28 @@ module KGMath.Functions {
         yValue: (y:number) => number;
         points: (view:KG.View, yIsIndependent?:boolean, numSamplePoints?:number) => KG.ICoordinates[];
         slopeBetweenPoints: (a: number, b?: number, inverse?: boolean) => number;
+        xDomain: KG.IDomain;
+        yDomain: KG.IDomain;
     }
 
     export class Base extends KG.Model {
 
         public level;
         public bases;
+        public xDomain;
+        public yDomain;
 
         constructor(definition,modelPath?) {
             definition.level = definition.level || 0;
             super(definition,modelPath);
+
+            var fn = this;
+            if(definition.hasOwnProperty('xDomainDef')) {
+                fn.xDomain = new KG.Domain(definition.xDomainDef.min, definition.xDomainDef.max);
+            }
+            if(definition.hasOwnProperty('yDomainDef')) {
+                fn.yDomain = new KG.Domain(definition.yDomainDef.min, definition.yDomainDef.max);
+            }
         }
 
         // Returns the slope between (a,f(a)) and (b,f(b)).

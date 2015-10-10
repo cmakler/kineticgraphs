@@ -5,6 +5,13 @@
 module KG
 {
 
+    export interface ViewObjectParamsDefinition {
+        name?: string;
+        className?: string;
+        xDrag?: any;
+        yDrag?: any;
+    }
+
     export interface ViewObjectDefinition extends ModelDefinition
     {
         name?: string;
@@ -14,6 +21,9 @@ module KG
         yDrag?: any;
         color?: string;
         coordinates?: ICoordinates;
+        xDomainDef?: DomainDef;
+        yDomainDef?: DomainDef;
+        params?: ViewObjectParamsDefinition;
     }
 
     export interface IViewObject extends IModel
@@ -25,6 +35,8 @@ module KG
 
         show: boolean;
         classAndVisibility: () => string;
+        xDomain?: KG.Domain;
+        yDomain?: KG.Domain;
 
         // Creation and rendering
         initGroupFn: (svgType:string, className: string) => any;
@@ -66,6 +78,36 @@ module KG
 
         constructor(definition:ViewObjectDefinition, modelPath?: string) {
 
+            if(definition.hasOwnProperty('params')) {
+
+                var p = definition.params;
+
+                if(p.hasOwnProperty('className')) {
+                    if(definition.hasOwnProperty('className')) {
+                        definition.className += ' ' + p.className;
+                    } else {
+                        definition.className = p.className;
+                    }
+                }
+
+                if(p.hasOwnProperty('name')) {
+                    if(definition.hasOwnProperty('name')) {
+                        definition.name += '_' + p.name;
+                    } else {
+                        definition.name = p.name;
+                    }
+                }
+
+                if(p.hasOwnProperty('xDrag')) {
+                    definition.xDrag = p.xDrag;
+                }
+
+                if(p.hasOwnProperty('xDragParam')) {
+                    definition.yDrag = p.yDrag;
+                }
+
+            }
+
             definition = _.defaults(definition, {
                 name: '',
                 className: '',
@@ -77,6 +119,8 @@ module KG
             super(definition, modelPath);
 
             var viewObj = this;
+
+            /* Set drag behavior on object */
             viewObj.xDragDelta = 0;
             viewObj.yDragDelta = 0;
 

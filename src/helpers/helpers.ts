@@ -24,6 +24,11 @@ module KG
         return colorArray;
     }
 
+    export interface DomainDef {
+        min: any;
+        max: any;
+    }
+
     export interface IDomain
     {
         min: number;
@@ -31,6 +36,7 @@ module KG
         samplePoints: (numSamples:number) => number[];
         toArray: () => number[];
         contains: (x:number, strict?:boolean) => boolean;
+        intersection: (otherDomain:Domain) => Domain;
     }
 
     export class Domain implements IDomain
@@ -59,6 +65,20 @@ module KG
                 sp.push(min + (i/(numSamples-1))*(max - min));
             }
             return sp;
+        }
+
+        intersection(otherDomain:Domain) {
+            var thisDomain = this;
+            if(!otherDomain || otherDomain == undefined) {
+                return thisDomain;
+            }
+            var min = Math.max(thisDomain.min, otherDomain.min),
+                max = Math.min(thisDomain.max, otherDomain.max);
+            if(max < min) {
+                return null;
+            } else {
+                return new Domain(min,max);
+            }
         }
 
     }
@@ -167,6 +187,7 @@ module KG
         return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
     }
 
+    // Takes a variety of ways of defining x-y coordinates and returns an object with x and y properties
     export function getCoordinates(def) {
         var defaultCoordinates:{} = {x: 0, y: 0};
         if(!def || def == undefined) {
@@ -181,6 +202,12 @@ module KG
         } else {
             return defaultCoordinates;
         }
+    }
+
+    // Takes a variety of ways of defining x-y coordinates and returns an array [x,y]
+    export function getBases(def) {
+        var coordinates = getCoordinates(def);
+        return [coordinates.x, coordinates.y];
     }
 
     export function sortObjects(key, descending?) {

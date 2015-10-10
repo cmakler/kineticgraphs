@@ -162,6 +162,11 @@ a {
   stroke: #1f77b4;
   fill: #1f77b4;
 }
+.utility-old {
+  color: #aec7e8;
+  stroke: #aec7e8;
+  fill: #aec7e8;
+}
 .expectedUtility {
   color: #2ca02c;
   stroke: #2ca02c;

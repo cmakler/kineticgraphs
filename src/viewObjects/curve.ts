@@ -79,7 +79,7 @@ module KG {
                     color: definition.color,
                     show: definition.show
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 this.labelDiv = new GraphDiv(labelDef);
             }
 

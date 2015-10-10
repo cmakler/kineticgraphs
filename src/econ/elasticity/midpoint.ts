@@ -102,6 +102,7 @@ module EconGraphs {
                         x: 'params.x2',
                         y: 'params.y2'
                     }
+
                 }
             });
             this.xDiffSegment = new KG.Arrow({

@@ -5,11 +5,20 @@
 module KG
 {
 
+    export interface PointParamsDefinition extends ViewObjectParamsDefinition {
+        label?:string;
+        xAxisLabel?:string;
+        yAxisLabel?:string;
+        xDragParam?:string;
+        yDragParam?:string;
+    }
+
     export interface PointDefinition extends ViewObjectDefinition {
         symbol?: string;
         size?: number;
         label?: GraphDivDefinition;
         droplines?: any;
+        params?: PointParamsDefinition;
     }
 
     export interface IPoint extends IViewObject {
@@ -35,7 +44,32 @@ module KG
 
         constructor(definition:PointDefinition, modelPath?: string) {
 
+            if(definition.hasOwnProperty('params')) {
+
+                var p = definition.params;
+
+                if(p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    }
+                }
+
+                if(p.hasOwnProperty('xAxisLabel') || p.hasOwnProperty('yAxisLabel')) {
+                    if(!definition.hasOwnProperty('droplines')) {
+                        definition.droplines = {}
+                    }
+                    if(p.hasOwnProperty('xAxisLabel')) {
+                        definition.droplines.vertical = p.xAxisLabel;
+                    }
+                    if(p.hasOwnProperty('yAxisLabel')) {
+                        definition.droplines.horizontal = p.yAxisLabel;
+                    }
+                }
+
+            }
+
             var defaultSize = 100;
+
             if(definition.hasOwnProperty('label')) {
                 if(definition.label.hasOwnProperty('text')) {
                     if(definition.label.text.length > 0) {
@@ -44,7 +78,12 @@ module KG
                 }
             }
 
-            definition = _.defaults(definition, {coordinates: {x:0,y:0}, size: defaultSize, symbol: 'circle'});
+            definition = _.defaults(definition, {
+                coordinates: {x:0,y:0},
+                size: defaultSize,
+                symbol: 'circle'
+            });
+
             super(definition, modelPath);
 
             if(definition.label) {
@@ -97,6 +136,7 @@ module KG
                 if(p.verticalDropline) {
                     var continuationDropLine = new VerticalDropline({
                         name: p.verticalDropline.name,
+                        className: p.verticalDropline.className,
                         coordinates: {x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max},
                         draggable: p.verticalDropline.draggable,
                         axisLabel: p.verticalDropline.axisLabel

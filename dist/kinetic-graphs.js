@@ -105,6 +105,19 @@ var KG;
             }
             return sp;
         };
+        Domain.prototype.intersection = function (otherDomain) {
+            var thisDomain = this;
+            if (!otherDomain || otherDomain == undefined) {
+                return thisDomain;
+            }
+            var min = Math.max(thisDomain.min, otherDomain.min), max = Math.min(thisDomain.max, otherDomain.max);
+            if (max < min) {
+                return null;
+            }
+            else {
+                return new Domain(min, max);
+            }
+        };
         return Domain;
     })();
     KG.Domain = Domain;
@@ -198,6 +211,7 @@ var KG;
         return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
     }
     KG.distanceBetweenCoordinates = distanceBetweenCoordinates;
+    // Takes a variety of ways of defining x-y coordinates and returns an object with x and y properties
     function getCoordinates(def) {
         var defaultCoordinates = { x: 0, y: 0 };
         if (!def || def == undefined) {
@@ -217,6 +231,12 @@ var KG;
         }
     }
     KG.getCoordinates = getCoordinates;
+    // Takes a variety of ways of defining x-y coordinates and returns an array [x,y]
+    function getBases(def) {
+        var coordinates = getCoordinates(def);
+        return [coordinates.x, coordinates.y];
+    }
+    KG.getBases = getBases;
     function sortObjects(key, descending) {
         return function (a, b) {
             var lower = descending ? a[key] : b[key], higher = descending ? b[key] : a[key];
@@ -540,6 +560,13 @@ var KGMath;
             function Base(definition, modelPath) {
                 definition.level = definition.level || 0;
                 _super.call(this, definition, modelPath);
+                var fn = this;
+                if (definition.hasOwnProperty('xDomainDef')) {
+                    fn.xDomain = new KG.Domain(definition.xDomainDef.min, definition.xDomainDef.max);
+                }
+                if (definition.hasOwnProperty('yDomainDef')) {
+                    fn.yDomain = new KG.Domain(definition.yDomainDef.min, definition.yDomainDef.max);
+                }
             }
             // Returns the slope between (a,f(a)) and (b,f(b)).
             // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
@@ -628,17 +655,101 @@ var KGMath;
 (function (KGMath) {
     var Functions;
     (function (Functions) {
-        var OneVariable = (function (_super) {
-            __extends(OneVariable, _super);
-            function OneVariable(definition, modelPath) {
+        var Implicit = (function (_super) {
+            __extends(Implicit, _super);
+            function Implicit(definition, modelPath) {
                 _super.call(this, definition, modelPath);
+                var fn = this;
+                fn.xFunction = new KGMath.Functions[definition.xFunctionType](definition.xFunctionDef, fn.modelProperty('xFunction'));
+                fn.yFunction = new KGMath.Functions[definition.yFunctionType](definition.yFunctionDef, fn.modelProperty('yFunction'));
+                fn.tDomain = new KG.Domain(definition.tDomainDef.min, definition.tDomainDef.max);
             }
-            OneVariable.prototype.yValue = function (x) {
-                return this.fn(x);
+            Implicit.prototype._update = function (scope) {
+                var fn = this;
+                fn.xFunction.update(scope);
+                fn.yFunction.update(scope);
+                fn.tDomain.update(scope);
+                return fn;
             };
-            return OneVariable;
-        })(Functions.Base);
-        Functions.OneVariable = OneVariable;
+            Implicit.prototype.point = function (t) {
+                var fn = this;
+                return {
+                    x: fn.xFunction.yValue(t),
+                    y: fn.yFunction.yValue(t)
+                };
+            };
+            // Returns the slope between (x(t1), y(t1)) and (x(t2),y(t2)).
+            // If inverse = true, return 1 / that slope.
+            Implicit.prototype.slopeBetweenPoints = function (t1, t2, inverse) {
+                var p1 = this.point(t1), p2 = this.point(t2);
+                inverse = inverse || false;
+                var s = (p1.y - p2.y) / (p1.x - p2.x);
+                return inverse ? 1 / s : s;
+            };
+            Implicit.prototype.points = function (view, numSamplePoints) {
+                var fn = this, points = [];
+                numSamplePoints = numSamplePoints || 51;
+                var samplePoints = fn.tDomain.samplePoints(numSamplePoints);
+                for (var i = 0; i < numSamplePoints; i++) {
+                    var previousPoint = (i > 0) ? fn.point(samplePoints[i - 1]) : null, point = fn.point(samplePoints[i]), nextPoint = (i < numSamplePoints - 1) ? fn.point(samplePoints[i + 1]) : null;
+                    if (view.onGraph(point) || view.onGraph(previousPoint) || view.onGraph(nextPoint)) {
+                        points.push(point);
+                    }
+                }
+                return points;
+            };
+            return Implicit;
+        })(KG.Model);
+        Functions.Implicit = Implicit;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var Relation = (function (_super) {
+            __extends(Relation, _super);
+            function Relation(definition, modelPath) {
+                definition.inverse = definition.inverse || false;
+                _super.call(this, definition, modelPath);
+                var f = this;
+                f.fn = new KGMath.Functions[definition.functionType](definition.functionDef, f.modelProperty('fn'));
+            }
+            // Returns the slope between (a,f(a)) and (b,f(b)).
+            // If inverse = true, returns the slope between (f(a),a) and (f(b),b).
+            // Assumes that a and b are both scalars (for now).
+            Relation.prototype.slopeBetweenPoints = function (a, b, inverse) {
+                var f = this;
+                b = b || 0;
+                inverse = inverse || false;
+                var s = (f.fn.yValue(a) - f.fn.yValue(b)) / (a - b);
+                return (inverse != f.inverse) ? 1 / s : s;
+            };
+            Relation.prototype.points = function (view, numSamplePoints) {
+                var f = this, points = [];
+                numSamplePoints = numSamplePoints || 51;
+                var independentAxis = f.inverse ? view.yAxis : view.xAxis, sampleIndependentValues = independentAxis.domain.samplePoints(numSamplePoints), sampleDependentValues = sampleIndependentValues.map(f.fn.yValue);
+                for (var i = 0; i < numSamplePoints; i++) {
+                    var point, previousPoint, nextPoint;
+                    if (f.inverse) {
+                        previousPoint = (i > 0) ? { x: sampleDependentValues[i - 1], y: sampleIndependentValues[i - 1] } : null;
+                        point = { x: sampleDependentValues[i], y: sampleIndependentValues[i] };
+                        nextPoint = (i < numSamplePoints - 1) ? { x: sampleDependentValues[i + 1], y: sampleIndependentValues[i + 1] } : null;
+                    }
+                    else {
+                        previousPoint = (i > 0) ? { x: sampleIndependentValues[i - 1], y: sampleDependentValues[i - 1] } : null;
+                        point = { x: sampleIndependentValues[i], y: sampleDependentValues[i] };
+                        nextPoint = (i < numSamplePoints - 1) ? { x: sampleIndependentValues[i + 1], y: sampleDependentValues[i + 1] } : null;
+                    }
+                    if (view.onGraph(point) || view.onGraph(previousPoint) || view.onGraph(nextPoint)) {
+                        points.push(point);
+                    }
+                }
+                return points;
+            };
+            return Relation;
+        })(KG.Model);
+        Functions.Relation = Relation;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
 /*
@@ -1071,7 +1182,7 @@ var KGMath;
             };
             Linear.prototype.points = function (view) {
                 var l = this;
-                var xDomain = view.xAxis.domain, yDomain = view.yAxis.domain;
+                var xDomain = view.xAxis.domain.intersection(l.xDomain), yDomain = view.yAxis.domain.intersection(l.yDomain);
                 var points = [];
                 if (l.isVertical) {
                     points = [{ x: l.xIntercept, y: yDomain.min }, { x: l.xIntercept, y: yDomain.max }];
@@ -1360,7 +1471,8 @@ var KGMath;
 })(KGMath || (KGMath = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
-/// <reference path="functions/oneVariable.ts"/>
+/// <reference path="functions/implicit.ts"/>
+/// <reference path="functions/relation.ts"/>
 /// <reference path="functions/monomial.ts"/>
 /// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
@@ -1372,6 +1484,31 @@ var KG;
     var ViewObject = (function (_super) {
         __extends(ViewObject, _super);
         function ViewObject(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('className')) {
+                    if (definition.hasOwnProperty('className')) {
+                        definition.className += ' ' + p.className;
+                    }
+                    else {
+                        definition.className = p.className;
+                    }
+                }
+                if (p.hasOwnProperty('name')) {
+                    if (definition.hasOwnProperty('name')) {
+                        definition.name += '_' + p.name;
+                    }
+                    else {
+                        definition.name = p.name;
+                    }
+                }
+                if (p.hasOwnProperty('xDrag')) {
+                    definition.xDrag = p.xDrag;
+                }
+                if (p.hasOwnProperty('xDragParam')) {
+                    definition.yDrag = p.yDrag;
+                }
+            }
             definition = _.defaults(definition, {
                 name: '',
                 className: '',
@@ -1382,6 +1519,7 @@ var KG;
             });
             _super.call(this, definition, modelPath);
             var viewObj = this;
+            /* Set drag behavior on object */
             viewObj.xDragDelta = 0;
             viewObj.yDragDelta = 0;
             if (definition.xDrag) {
@@ -1455,6 +1593,25 @@ var KG;
     var Point = (function (_super) {
         __extends(Point, _super);
         function Point(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    };
+                }
+                if (p.hasOwnProperty('xAxisLabel') || p.hasOwnProperty('yAxisLabel')) {
+                    if (!definition.hasOwnProperty('droplines')) {
+                        definition.droplines = {};
+                    }
+                    if (p.hasOwnProperty('xAxisLabel')) {
+                        definition.droplines.vertical = p.xAxisLabel;
+                    }
+                    if (p.hasOwnProperty('yAxisLabel')) {
+                        definition.droplines.horizontal = p.yAxisLabel;
+                    }
+                }
+            }
             var defaultSize = 100;
             if (definition.hasOwnProperty('label')) {
                 if (definition.label.hasOwnProperty('text')) {
@@ -1463,7 +1620,11 @@ var KG;
                     }
                 }
             }
-            definition = _.defaults(definition, { coordinates: { x: 0, y: 0 }, size: defaultSize, symbol: 'circle' });
+            definition = _.defaults(definition, {
+                coordinates: { x: 0, y: 0 },
+                size: defaultSize,
+                symbol: 'circle'
+            });
             _super.call(this, definition, modelPath);
             if (definition.label) {
                 var labelDef = _.defaults(definition.label, {
@@ -1512,6 +1673,7 @@ var KG;
                 if (p.verticalDropline) {
                     var continuationDropLine = new KG.VerticalDropline({
                         name: p.verticalDropline.name,
+                        className: p.verticalDropline.className,
                         coordinates: { x: p.verticalDropline.definition.coordinates.x, y: view.bottomGraph.yAxis.domain.max },
                         draggable: p.verticalDropline.draggable,
                         axisLabel: p.verticalDropline.axisLabel
@@ -1692,7 +1854,7 @@ var KG;
                     color: definition.color,
                     show: definition.show
                 });
-                console.log(labelDef);
+                //console.log(labelDef);
                 this.labelDiv = new KG.GraphDiv(labelDef);
             }
             this.startArrow = (definition.arrows == Curve.START_ARROW_STRING || definition.arrows == Curve.BOTH_ARROW_STRING);
@@ -1819,6 +1981,14 @@ var KG;
     var Line = (function (_super) {
         __extends(Line, _super);
         function Line(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    };
+                }
+            }
             _super.call(this, definition, modelPath);
             var line = this;
             if (line instanceof HorizontalLine) {
@@ -2132,15 +2302,38 @@ var KG;
         };
         FunctionPlot.prototype.updateDataForView = function (view) {
             var p = this;
-            if (typeof p.fn == 'function') {
-                p.fn = new KGMath.Functions.OneVariable({ fn: p.fn });
-            }
             p.data = p.fn.points(view, p.yIsIndependent, p.numSamplePoints);
             return p;
         };
         return FunctionPlot;
     })(KG.Curve);
     KG.FunctionPlot = FunctionPlot;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var FunctionMap = (function (_super) {
+        __extends(FunctionMap, _super);
+        function FunctionMap(definition, modelPath) {
+            definition = _.defaults(definition, { interpolation: 'basis', numSamplePoints: 51 });
+            _super.call(this, definition, modelPath);
+        }
+        FunctionMap.prototype._update = function (scope) {
+            var p = this;
+            p.fn.update(scope);
+            return p;
+        };
+        FunctionMap.prototype.updateDataForView = function (view) {
+            var p = this;
+            p.data = p.levels.map(function (level) {
+                return p.fn.setLevel(level).points(view);
+            });
+            return p;
+        };
+        return FunctionMap;
+    })(KG.PathFamily);
+    KG.FunctionMap = FunctionMap;
 })(KG || (KG = {}));
 /// <reference path="../kg.ts"/>
 'use strict';
@@ -2479,6 +2672,10 @@ var KG;
         }
         // Check to see if a point is on the graph
         Graph.prototype.onGraph = function (coordinates) {
+            var ok = (coordinates != null) && (coordinates != undefined) && coordinates.hasOwnProperty('x') && coordinates.hasOwnProperty('y');
+            if (!ok) {
+                return false;
+            }
             return (this.xOnGraph(coordinates.x) && this.yOnGraph(coordinates.y));
         };
         // Convert model coordinates to pixel coordinates for a single point
@@ -2618,20 +2815,35 @@ var KG;
             definition.yDrag = false;
             definition.coordinates = { x: definition.param, y: 0 };
             _super.call(this, definition, modelPath);
-            this.viewObjectSVGtype = 'circle';
+            this.viewObjectSVGtype = 'g';
             this.viewObjectClass = 'sliderControl';
         }
         SliderControl.prototype.render = function (view) {
             var control = this;
             var group = view.objectGroup(control.name, control.initGroupFn(), true);
-            var controlCircle = group.select('.' + control.viewObjectClass);
-            controlCircle.attr({
+            var controlGroup = group.select('.' + control.viewObjectClass);
+            var controlSquare = controlGroup.selectAll('rect').data([0]);
+            controlSquare.enter().append('rect').attr({
+                opacity: 0,
+                y: -view.dimensions.height * 0.5,
+                width: 50,
+                height: view.dimensions.height
+            });
+            controlSquare.attr({
+                'x': view.xAxis.scale(control.param) - 25
+            });
+            var controlCircle = controlGroup.selectAll('circle').data([0]);
+            controlCircle.enter().append('circle').attr({
                 'class': control.classAndVisibility(),
-                'r': view.dimensions.height / 3,
-                'cx': view.xAxis.scale(control.param),
+                'r': view.dimensions.height / 5,
                 'cy': 0
             });
-            return control.setDragBehavior(view, controlCircle);
+            controlCircle.attr({
+                'cx': view.xAxis.scale(control.param)
+            });
+            control.setDragBehavior(view, controlSquare);
+            control.setDragBehavior(view, controlCircle);
+            return control;
         };
         return SliderControl;
     })(KG.ViewObject);
@@ -4151,6 +4363,117 @@ var EconGraphs;
     })(EconGraphs.ProductionCost);
     EconGraphs.QuadraticMarginalCost = QuadraticMarginalCost;
 })(EconGraphs || (EconGraphs = {}));
+/**
+ * Created by cmakler on 10/2/15.
+ */
+var EconGraphs;
+(function (EconGraphs) {
+    var Budget = (function (_super) {
+        __extends(Budget, _super);
+        function Budget(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+        }
+        Budget.prototype.isAffordable = function (bundle) {
+            return true; // TODO update
+        };
+        Budget.prototype.frontier = function (graph) {
+            return new KG.FunctionPlot({
+                fn: 'foo'
+            });
+        };
+        Budget.prototype.feasibleSet = function (graph) {
+            return new KG.Area({});
+        };
+        Budget.prototype.frontierSegments = function (graph) {
+            return this.budgetSegments.map(function (b) {
+                return b.budgetSegment(graph);
+            });
+        };
+        return Budget;
+    })(KG.Model);
+    EconGraphs.Budget = Budget;
+})(EconGraphs || (EconGraphs = {}));
+/**
+ * Created by cmakler on 10/2/15.
+ */
+var EconGraphs;
+(function (EconGraphs) {
+    var BudgetSegment = (function (_super) {
+        __extends(BudgetSegment, _super);
+        function BudgetSegment(definition, modelPath) {
+            if (definition.hasOwnProperty('endowment')) {
+                if (definition.endowment.hasOwnProperty('x') && definition.endowment.hasOwnProperty('y')) {
+                    var endowmentValueX = KG.multiplyDefs(definition.endowment.x, definition.px), endowmentValueY = KG.multiplyDefs(definition.endowment.y, definition.py);
+                    definition.income = KG.addDefs(endowmentValueX, endowmentValueY);
+                }
+                else {
+                    console.log('Endowment must have x and y properties:');
+                    console.log(definition.endowment);
+                }
+            }
+            definition.priceRatio = KG.divideDefs(definition.px, definition.py);
+            _super.call(this, definition, modelPath);
+            var b = this;
+            var xMin = definition.xMin || 0, xMax = definition.xMax || KG.divideDefs(definition.income, definition.px), yMin = definition.yMin || 0, yMax = definition.yMax || KG.divideDefs(definition.income, definition.py);
+            b.xDomain = new KG.Domain(xMin, xMax);
+            b.yDomain = new KG.Domain(yMin, yMax);
+            if (definition.hasOwnProperty('endowment')) {
+                b.budgetLine = new KGMath.Functions.Linear({
+                    point: definition.endowment,
+                    slope: KG.multiplyDefs(-1, definition.priceRatio)
+                });
+            }
+            else {
+                b.budgetLine = new KGMath.Functions.Linear({
+                    slope: KG.multiplyDefs(-1, definition.priceRatio),
+                    intercept: KG.divideDefs(definition.income, definition.py)
+                });
+            }
+        }
+        BudgetSegment.prototype._update = function (scope) {
+            var b = this;
+            b.budgetLine.update(scope);
+            return b;
+        };
+        BudgetSegment.prototype.isAffordable = function (bundle) {
+            var b = this;
+            // return false if not in the domain for which this budget segment is relevant
+            if (!b.xDomain.contains(bundle.x) || !b.xDomain.contains(bundle.y)) {
+                return false;
+            }
+            // the bundle's cost is the quantities of x and y times their prices
+            var bundleCost = b.px * bundle.x + b.py * bundle.y;
+            // return true if the bundle's cost is less than or equal to constraint's income
+            return (bundleCost <= b.income);
+        };
+        return BudgetSegment;
+    })(KG.Model);
+    EconGraphs.BudgetSegment = BudgetSegment;
+})(EconGraphs || (EconGraphs = {}));
+/**
+ * Created by cmakler on 9/23/15.
+ */
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var Utility = (function (_super) {
+        __extends(Utility, _super);
+        function Utility(definition, modelPath) {
+            definition = _.defaults(definition, {
+                className: 'utility'
+            });
+            _super.call(this, definition, modelPath);
+            this.utilityFunction = new KGMath.Functions[definition.type](definition.def);
+        }
+        Utility.prototype._update = function (scope) {
+            var u = this;
+            u.utilityFunction.update(scope);
+            return u;
+        };
+        return Utility;
+    })(KG.Model);
+    EconGraphs.Utility = Utility;
+})(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
@@ -4158,12 +4481,10 @@ var EconGraphs;
         __extends(OneGoodUtility, _super);
         function OneGoodUtility(definition, modelPath) {
             definition = _.defaults(definition, {
-                className: 'utility',
                 curveLabel: 'u(c)',
                 marginalCurveLabel: 'u\'(c)'
             });
             _super.call(this, definition, modelPath);
-            this.utilityFunction = new KGMath.Functions[definition.type](definition.def);
             this.utilityFunctionView = new KG.FunctionPlot({
                 name: 'utilityFunction',
                 className: this.className,
@@ -4202,58 +4523,38 @@ var EconGraphs;
         OneGoodUtility.prototype.marginalUtilityAtQuantity = function (c) {
             return this.marginalUtilityFunction.yValue(c);
         };
-        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (q, label) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        OneGoodUtility.prototype.marginalUtilityAtQuantitySlope = function (c, params) {
             return new KG.Line({
-                name: 'slopeLine' + label,
+                name: 'marginalUtilityAtQuantitySlope',
                 className: 'demand dotted',
                 lineDef: {
-                    point: { x: q, y: this.utilityAtQuantity(q) },
-                    slope: this.marginalUtilityAtQuantity(q)
+                    point: { x: c, y: this.utilityAtQuantity(c) },
+                    slope: this.marginalUtilityAtQuantity(c)
                 },
-                label: {
-                    text: "\\text{slope} = u\'(c" + labelSubscript + ")"
-                }
+                params: params
             });
         };
-        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        OneGoodUtility.prototype.utilityAtQuantityPoint = function (q, params) {
             return new KG.Point({
-                name: 'utilityAtQ' + label,
                 coordinates: { x: q, y: this.utilityAtQuantity(q) },
-                size: 500,
-                class: 'utility',
-                xDrag: dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    vertical: 'c' + labelSubscript,
-                    horizontal: 'u(c' + labelSubscript + ')'
-                }
+                name: 'utilityAtQ',
+                className: 'utility',
+                params: params
             });
         };
-        OneGoodUtility.prototype.marginalUtilityAtQuantityPoint = function (q, label, dragParam) {
-            var labelSubscript = label ? '_{' + label + '}' : '';
+        OneGoodUtility.prototype.marginalUtilityAtQuantityPoint = function (q, params) {
             return new KG.Point({
-                name: 'marginalUtilityAtQ' + label,
+                name: 'marginalUtilityAtQ',
                 coordinates: { x: q, y: this.marginalUtilityFunction.yValue(q) },
-                size: 500,
-                class: 'utility',
-                xDrag: dragParam,
-                label: {
-                    text: label
-                },
-                droplines: {
-                    horizontal: 'u\'(c' + labelSubscript + ')'
-                }
+                className: 'utility',
+                params: params
             });
         };
         OneGoodUtility.prototype.consumptionYieldingUtility = function (u) {
             return this.utilityFunction.xValue(u);
         };
         return OneGoodUtility;
-    })(KG.Model);
+    })(EconGraphs.Utility);
     EconGraphs.OneGoodUtility = OneGoodUtility;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
@@ -4418,6 +4719,199 @@ var EconGraphs;
         return RiskAversion;
     })(KG.Model);
     EconGraphs.RiskAversion = RiskAversion;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var UtilityRedistribution = (function (_super) {
+        __extends(UtilityRedistribution, _super);
+        function UtilityRedistribution(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+            this.utility = new EconGraphs[definition.utilityType](definition.utilityDef, this.modelPath + '.utility');
+            this.lowUtilityChangeArrow = new KG.Arrow({
+                name: 'lowChangeSegment',
+                className: 'diff2',
+                begin: {
+                    x: 5,
+                    y: this.modelProperty('uLow')
+                },
+                end: {
+                    x: 5,
+                    y: this.modelProperty('uLowNew')
+                }
+            });
+            this.highUtilityChangeArrow = new KG.Arrow({
+                name: 'highChangeSegment',
+                className: 'diff1',
+                begin: {
+                    x: 10,
+                    y: this.modelProperty('uHigh')
+                },
+                end: {
+                    x: 10,
+                    y: this.modelProperty('uHighNew')
+                }
+            });
+            this.lowConsumptionChangeArrow = new KG.Arrow({
+                name: 'lowConsumptionChangeSegment',
+                className: 'diff2',
+                show: '(' + this.modelProperty('transfer') + ' > 0)',
+                begin: {
+                    x: this.modelProperty('cLow'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.05'
+                },
+                end: {
+                    x: this.modelProperty('cLowNew'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.05'
+                },
+                label: {
+                    text: 'T',
+                    valign: 'top'
+                }
+            });
+            this.highConsumptionChangeArrow = new KG.Arrow({
+                name: 'highConsumptionChangeSegment',
+                className: 'diff1',
+                show: '(' + this.modelProperty('transfer') + ' > 0)',
+                begin: {
+                    x: this.modelProperty('cHigh'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.1'
+                },
+                end: {
+                    x: this.modelProperty('cHighNew'),
+                    y: this.modelProperty('utility.utilityAtQuantity(100)') + '*0.1'
+                },
+                label: {
+                    text: 'T',
+                    valign: 'top'
+                }
+            });
+        }
+        UtilityRedistribution.prototype._update = function (scope) {
+            var r = this;
+            r.utility = r.utility.update(scope);
+            r.uLow = r.utility.utilityFunction.yValue(r.cLow);
+            r.uHigh = r.utility.utilityFunction.yValue(r.cHigh);
+            r.cLowNew = r.cLow + r.transfer;
+            r.cHighNew = r.cHigh - r.transfer;
+            r.uLowNew = r.utility.utilityFunction.yValue(r.cLowNew);
+            r.uHighNew = r.utility.utilityFunction.yValue(r.cHighNew);
+            return r;
+        };
+        return UtilityRedistribution;
+    })(KG.Model);
+    EconGraphs.UtilityRedistribution = UtilityRedistribution;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var TwoGoodUtility = (function (_super) {
+        __extends(TwoGoodUtility, _super);
+        function TwoGoodUtility(definition, modelPath) {
+            definition = _.defaults(definition, {
+                indifferenceCurveLabel: 'U'
+            });
+            _super.call(this, definition, modelPath);
+        }
+        TwoGoodUtility.prototype._update = function (scope) {
+            var u = this;
+            u.utilityFunction.update(scope);
+            return u;
+        };
+        TwoGoodUtility.prototype.utility = function (bundle) {
+            return this.utilityFunction.value(KG.getBases(bundle));
+        };
+        TwoGoodUtility.prototype.mux = function (bundle) {
+            return this.utilityFunction.derivative(1).value(KG.getBases(bundle));
+        };
+        TwoGoodUtility.prototype.muy = function (bundle) {
+            return this.utilityFunction.derivative(2).value(KG.getBases(bundle));
+        };
+        TwoGoodUtility.prototype.mrs = function (bundle) {
+            return this.mux(bundle) / this.muy(bundle);
+        };
+        TwoGoodUtility.prototype.mrsLine = function (bundle) {
+            var u = this;
+            return new KG.Line({
+                point: bundle,
+                slope: -1 * u.mrs(bundle)
+            });
+        };
+        TwoGoodUtility.prototype.indifferenceCurveAtUtility = function (utility) {
+            var u = this;
+            return new KG.FunctionPlot({
+                fn: u.modelProperty('utilityFunction.setLevel(' + utility + ')')
+            });
+        };
+        TwoGoodUtility.prototype.indifferenceCurveThroughBundle = function (bundle) {
+            var u = this, utility = u.utility(bundle);
+            return u.indifferenceCurveAtUtility(utility);
+        };
+        TwoGoodUtility.prototype.indifferenceCurveFamily = function (levels) {
+            var u = this;
+            return new KG.FunctionMap({
+                fn: u.modelProperty('utilityFunction')
+            });
+        };
+        TwoGoodUtility.prototype.optimalBundle = function (budget) {
+            return { x: 0, y: 0 };
+        };
+        TwoGoodUtility.prototype.indirectUtility = function (budget) {
+            var u = this;
+            return u.utility(u.optimalBundle(budget));
+        };
+        // Given two bundles, evaluates whether agent prefers first or second, or is indifferent
+        TwoGoodUtility.prototype.bundlePreferred = function (bundles, tolerance) {
+            var u = this;
+            tolerance = tolerance || 0.01; // percent difference within which one is thought to be indifferent
+            var u1 = u.utility(bundles[0]), u2 = u.utility(bundles[1]), percentUilityDifference = (u2 - u1) / (0.5 * (u1 + u2));
+            if (percentUilityDifference > tolerance) {
+                return 2; //second bundle preferred
+            }
+            if (percentUilityDifference < -tolerance) {
+                return 1; //first bundle preferred
+            }
+            return 0; //indifferent between two bundles
+        };
+        return TwoGoodUtility;
+    })(EconGraphs.Utility);
+    EconGraphs.TwoGoodUtility = TwoGoodUtility;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var UtilityDemand = (function (_super) {
+        __extends(UtilityDemand, _super);
+        function UtilityDemand(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+            var d = this;
+            d.utilityFunction = new EconGraphs[definition.utilityFnDef.utilityType](definition.utilityFnDef.utilityDef, d.modelProperty('utilityFn'));
+            d.demandCurve = new KG.FunctionPlot({
+                fn: d.modelProperty('demandFunction'),
+                yIsIndependent: true
+            });
+        }
+        UtilityDemand.prototype._update = function (scope) {
+            var m = this;
+            m.utilityFunction.update(scope);
+            return m;
+        };
+        UtilityDemand.prototype.quantityAtPrice = function (price) {
+            return 0; // TODO implement
+        };
+        UtilityDemand.prototype.quantityAtPricePoint = function (price) {
+            var d = this;
+            return new KG.Point({
+                className: 'demand',
+                coordinates: {
+                    x: d.modelProperty('quantityAtPrice(' + price + ')'),
+                    y: price
+                }
+            });
+        };
+        return UtilityDemand;
+    })(KG.Model);
+    EconGraphs.UtilityDemand = UtilityDemand;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../eg.ts"/>
 var EconGraphs;
@@ -4596,9 +5090,15 @@ var EconGraphs;
 /// <reference path="production/linearMarginalCost.ts"/>
 /// <reference path="production/constantMarginalCost.ts"/>
 /// <reference path="production/quadraticMarginalCost.ts"/>
+/// <reference path="budget/budget.ts"/>
+/// <reference path="budget/budgetSegment.ts"/>
+/// <reference path="utility/utility.ts"/>
 /// <reference path="utility/oneGoodUtility.ts"/>
 /// <reference path="utility/crra.ts"/>
-/// <reference path="utility/risk_aversion.ts"/>
+/// <reference path="utility/riskAversion.ts"/>
+/// <reference path="utility/utilityRedistribution.ts"/>
+/// <reference path="utility/twoGoodUtility.ts"/>
+/// <reference path="utility/utilityDemand.ts"/>
 /// <reference path="monopoly/monopoly.ts"/>
 /// <reference path="oligopoly/cournotDuopoly.ts"/> 
 /**
@@ -4702,6 +5202,7 @@ var PhysicsGraphs;
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="viewObjects/functionPlot.ts"/>
+/// <reference path="viewObjects/functionMap.ts"/>
 /// <reference path="viewObjects/area.ts"/>
 /// <reference path="view.ts" />
 /// <reference path="views/axis.ts" />
@@ -4718,5 +5219,30 @@ angular.module('KineticGraphs', []).controller('KineticGraphCtrl', ['$scope', '$
     return function (input, decimals) {
         return $filter('number')(input * 100, decimals) + '\\%';
     };
-}]);
+}]).filter('extendedReal', ['$filter', function ($filter) {
+    return function (input, decimals) {
+        if (input == Infinity) {
+            return '\\infty';
+        }
+        else if (input == -Infinity) {
+            return '-\\infty';
+        }
+        else
+            return $filter('number')(input, decimals);
+    };
+}]).directive('toggle', function () {
+    function link(scope, el, attrs) {
+        scope.toggle = function () {
+            scope.params[attrs.param] = !scope.params[attrs.param];
+        };
+    }
+    return {
+        link: link,
+        restrict: 'E',
+        replace: true,
+        scope: true,
+        transclude: true,
+        template: "<button ng-click='toggle()' style='width: 100%'><span ng-transclude/></button>"
+    };
+});
 //# sourceMappingURL=kinetic-graphs.js.map

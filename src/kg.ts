@@ -22,6 +22,7 @@
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>
 /// <reference path="viewObjects/functionPlot.ts"/>
+/// <reference path="viewObjects/functionMap.ts"/>
 /// <reference path="viewObjects/area.ts"/>
 
 /// <reference path="view.ts" />
@@ -45,4 +46,33 @@ angular.module('KineticGraphs', [])
         return function (input, decimals) {
             return $filter('number')(input * 100, decimals) + '\\%';
         };
-    }]);
+    }])
+    .filter('extendedReal', ['$filter', function ($filter) {
+        return function (input, decimals) {
+            if(input == Infinity) {
+                return '\\infty'
+            } else if(input == -Infinity) {
+                return '-\\infty'
+            } else
+                return $filter('number')(input, decimals);
+        };
+    }])
+    .directive('toggle', function () {
+
+        function link(scope, el, attrs) {
+
+            scope.toggle = function() {
+                scope.params[attrs.param] = !scope.params[attrs.param];
+            };
+
+        }
+
+        return {
+            link: link,
+            restrict: 'E',
+            replace: true,
+            scope: true,
+            transclude: true,
+            template: "<button ng-click='toggle()' style='width: 100%'><span ng-transclude/></button>"
+        };
+    });

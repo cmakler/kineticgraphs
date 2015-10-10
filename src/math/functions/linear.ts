@@ -182,8 +182,8 @@ module KGMath.Functions {
 
             var l = this;
 
-            var xDomain = view.xAxis.domain,
-                yDomain = view.yAxis.domain;
+            var xDomain = view.xAxis.domain.intersection(l.xDomain),
+                yDomain = view.yAxis.domain.intersection(l.yDomain);
 
             var points: KG.ICoordinates[] = [];
 
