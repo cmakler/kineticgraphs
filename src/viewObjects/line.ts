@@ -5,7 +5,11 @@
 module KG {
 
     export interface LineParamsDefinition extends ViewObjectParamsDefinition {
-        label?:string;
+        label?: string;
+        yInterceptLabel?: string;
+        xInterceptLabel?: string;
+        areaUnderLabel?: string;
+        areaOverLabel?: string;
     }
 
     export interface LineDefinition extends ViewObjectDefinition {
@@ -18,6 +22,8 @@ module KG {
         x?: any;
         y?: any;
         params?: LineParamsDefinition;
+        areaUnderDef?: AreaDefinition;
+        areaOverDef?: AreaDefinition;
     }
 
     export interface ILine extends IViewObject {
@@ -27,6 +33,8 @@ module KG {
         xInterceptLabelDiv: GraphDiv;
         yInterceptLabelDiv: GraphDiv;
         arrows: string;
+        areaUnder: Area;
+        areaOver: Area;
     }
 
     export class Line extends ViewObject implements ILine {
@@ -35,6 +43,8 @@ module KG {
         public arrows;
 
         public labelDiv;
+        public areaUnder;
+        public areaOver;
         public xInterceptLabelDiv;
         public yInterceptLabelDiv;
 
@@ -48,6 +58,34 @@ module KG {
                     definition.label = {
                         text: p.label
                     }
+                }
+
+                if(p.hasOwnProperty('areaUnderLabel')) {
+                    definition.areaUnderDef = {
+                        name: definition.name + '_areaUnder',
+                        className: definition.className,
+                        label: {
+                            text: p.areaUnderLabel
+                        }
+                    }
+                }
+
+                if(p.hasOwnProperty('areaOverLabel')) {
+                    definition.areaOverDef = {
+                        name: definition.name + 'areaOver',
+                        className: definition.className,
+                        label: {
+                            text: p.areaOverLabel
+                        }
+                    }
+                }
+
+                if(p.hasOwnProperty('xInterceptLabel')) {
+                    definition.xInterceptLabel = p.xInterceptLabel;
+                }
+
+                if(p.hasOwnProperty('yInterceptLabel')) {
+                    definition.yInterceptLabel = p.yInterceptLabel;
                 }
 
             }
@@ -79,6 +117,14 @@ module KG {
                 line.labelDiv = new GraphDiv(labelDef);
             }
 
+            if(definition.areaUnderDef) {
+                line.areaUnder = new Area(definition.areaUnderDef);
+            }
+
+            if(definition.areaOverDef) {
+                line.areaOver = new Area(definition.areaOverDef);
+            }
+
             if(definition.hasOwnProperty('xInterceptLabel')) {
                 var xInterceptLabelDef:GraphDivDefinition = {
                     name: definition.name + 'x_intercept_label',
@@ -95,7 +141,7 @@ module KG {
                 var yInterceptLabelDef:GraphDivDefinition = {
                     name: definition.name + 'y_intercept_label',
                     color: definition.color,
-                    text: definition.xInterceptLabel,
+                    text: definition.yInterceptLabel,
                     dimensions: {width: 30, height:20},
                     yDrag: definition.yDrag,
                     backgroundColor: 'white'
@@ -126,14 +172,19 @@ module KG {
                 view.addObject(line.labelDiv)
             }
 
+            if(line.areaUnder) {
+                view.addObject(line.areaUnder);
+                view.addObject(line.areaUnder.labelDiv);
+            }
+
             return view;
         }
 
         render(view) {
 
-        var NO_ARROW_STRING = 'NONE',
-            BOTH_ARROW_STRING = 'BOTH',
-            OPEN_ARROW_STRING = 'OPEN';
+            var NO_ARROW_STRING = 'NONE',
+                BOTH_ARROW_STRING = 'BOTH',
+                OPEN_ARROW_STRING = 'OPEN';
 
             var line = this,
                 linear = this.linear,
@@ -146,6 +197,8 @@ module KG {
 
             var yIntercept = (startPoint.x == view.xAxis.min) ? startPoint : (endPoint.x == view.xAxis.min) ? endPoint : null;
             var xIntercept = (startPoint.y == view.yAxis.min) ? startPoint : (endPoint.y == view.yAxis.min) ? endPoint : null;
+            var yRightEdge = (startPoint.x == view.xAxis.max) ? startPoint : (endPoint.x == view.xAxis.max) ? endPoint : null;
+            var xTopEdge = (startPoint.y == view.yAxis.max) ? startPoint : (endPoint.y == view.yAxis.max) ? endPoint : null;
             var startIsOpen = (startPoint !== yIntercept && startPoint !== xIntercept);
             var endIsOpen = (endPoint !== yIntercept && endPoint !== xIntercept);
 
@@ -190,12 +243,96 @@ module KG {
                 }
             }
 
-            if(line.xInterceptLabelDiv && xIntercept) {
-                line.xInterceptLabelDiv.coordinates = {x: xIntercept.x, y: 'AXIS'};
+            if(line.areaUnder) {
+                var areaData = [view.corners.bottom.left];
+                if(xIntercept) {
+                    if(yIntercept) {
+                        // line connects x-axis and y-intercept; color triangle below and to the left
+                        areaData.push(xIntercept);
+                        areaData.push(yIntercept);
+                    } else if(xTopEdge) {
+                        // line connects x-axis and top of graph; color quadrilateral formed by line and y-axis
+                        areaData.push(xIntercept);
+                        areaData.push(xTopEdge);
+                        areaData.push(view.corners.top.left);
+                    } else if(yRightEdge) {
+                        // line connects x-axis and right of graph; color everything but the triangle in the lower-right
+                        areaData.push(xIntercept);
+                        areaData.push(yRightEdge);
+                        areaData.push(view.corners.top.right);
+                        areaData.push(view.corners.top.left);
+                    }
+                } else if(yIntercept) {
+                    if(xTopEdge && areNotTheSamePoint(xTopEdge,yIntercept)) {
+                        // line connects y-axis and top of graph; color everything but the triangle in upper-left
+                        areaData.push(yIntercept);
+                        areaData.push(xTopEdge);
+                        areaData.push(view.corners.top.right);
+                        areaData.push(view.corners.bottom.right);
+                    } else if(yRightEdge) {
+                        // line connects y-axis and right of graph; color quadrilateral beneath the line
+                        areaData.push(yIntercept);
+                        areaData.push(yRightEdge);
+                        areaData.push(view.corners.bottom.right);
+                    }
+                } else {
+                    // line connects top and right of graph; color everything except triangle in upper right
+                    areaData.push(view.corners.top.left);
+                    areaData.push(xTopEdge);
+                    areaData.push(yRightEdge);
+                    areaData.push(view.corners.bottom.right);
+                }
+                line.areaUnder.data = areaData;
             }
 
-            if(line.yInterceptLabelDiv && yIntercept) {
-                line.yInterceptLabelDiv.coordinates = {x: 'AXIS', y: yIntercept.y};
+            if(line.areaOver) {
+                var areaData = [view.corners.top.right];
+                if(xIntercept) {
+                    if(yIntercept) {
+                        // line connects x-axis and y-intercept; color everything but the triangle below and to the left
+                        areaData.push(view.corners.bottom.right);
+                        areaData.push(xIntercept);
+                        areaData.push(yIntercept);
+                        areaData.push(view.corners.top.left);
+                    } else if(xTopEdge) {
+                        // line connects x-axis and top of graph; color quadrilateral formed by line and right edge
+                        areaData.push(xTopEdge);
+                        areaData.push(xIntercept);
+                        areaData.push(view.corners.bottom.right);
+                    } else if(yRightEdge) {
+                        // line connects x-axis and right of graph; color everything but the triangle in the lower-right
+                        areaData.push(yRightEdge);
+                        areaData.push(xIntercept);
+                        areaData.push(view.corners.bottom.left);
+                        areaData.push(view.corners.top.left);
+                    }
+                } else if(yIntercept) {
+                    if(xTopEdge) {
+                        // line connects y-axis and top of graph; color everything but the triangle in upper-left
+                        areaData.push(xTopEdge);
+                        areaData.push(yIntercept);
+                        areaData.push(view.corners.bottom.left);
+                        areaData.push(view.corners.bottom.right);
+                    } else if(yRightEdge) {
+                        // line connects y-axis and right of graph; color quadrilateral above the line
+                        areaData.push(yRightEdge);
+                        areaData.push(yIntercept);
+                        areaData.push(view.corners.top.left);
+                    }
+                } else {
+                    // line connects top and right of graph; color triangle in upper right
+                    areaData.push(xTopEdge);
+                    areaData.push(yRightEdge);
+                }
+                line.areaOver.data = areaData;
+            }
+
+            if(line.xInterceptLabelDiv) {
+                line.xInterceptLabelDiv.coordinates = {x: line.linear.xValue(view.yAxis.min), y: 'AXIS'};
+            }
+
+            if(line.yInterceptLabelDiv) {
+                line.yInterceptLabelDiv.coordinates = {x: 'AXIS', y: line.linear.yValue(view.xAxis.min)};
             }
 
             var dataLine = d3.svg.line()

@@ -207,10 +207,10 @@ module KGMath.Functions {
                 }
 
                 // add endpoints on the top or bottom, not including the corners
-                if(xDomain.contains(xBottom, true)) {
+                if(xDomain.contains(xBottom, true) && yLeft != yDomain.min && yRight != yDomain.min) {
                     points.push({x:xBottom, y:yDomain.min});
                 }
-                if(xDomain.contains(xTop, true)) {
+                if(xDomain.contains(xTop, true) && yLeft != yDomain.max && yRight != yDomain.max) {
                     points.push({x:xTop, y:yDomain.max});
                 }
 
