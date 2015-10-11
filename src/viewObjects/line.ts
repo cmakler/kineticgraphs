@@ -195,163 +195,167 @@ module KG {
             var startPoint = linear.points(view)[0],
                 endPoint = linear.points(view)[1];
 
-            var yIntercept = (startPoint.x == view.xAxis.min) ? startPoint : (endPoint.x == view.xAxis.min) ? endPoint : null;
-            var xIntercept = (startPoint.y == view.yAxis.min) ? startPoint : (endPoint.y == view.yAxis.min) ? endPoint : null;
-            var yRightEdge = (startPoint.x == view.xAxis.max) ? startPoint : (endPoint.x == view.xAxis.max) ? endPoint : null;
-            var xTopEdge = (startPoint.y == view.yAxis.max) ? startPoint : (endPoint.y == view.yAxis.max) ? endPoint : null;
-            var startIsOpen = (startPoint !== yIntercept && startPoint !== xIntercept);
-            var endIsOpen = (endPoint !== yIntercept && endPoint !== xIntercept);
+            if(startPoint == undefined || endPoint == undefined) {
+                console.log('point is undefined')
+            } else {
+                var yIntercept = (startPoint.x == view.xAxis.min) ? startPoint : (endPoint.x == view.xAxis.min) ? endPoint : null;
+                var xIntercept = (startPoint.y == view.yAxis.min) ? startPoint : (endPoint.y == view.yAxis.min) ? endPoint : null;
+                var yRightEdge = (startPoint.x == view.xAxis.max) ? startPoint : (endPoint.x == view.xAxis.max) ? endPoint : null;
+                var xTopEdge = (startPoint.y == view.yAxis.max) ? startPoint : (endPoint.y == view.yAxis.max) ? endPoint : null;
+                var startIsOpen = (startPoint !== yIntercept && startPoint !== xIntercept);
+                var endIsOpen = (endPoint !== yIntercept && endPoint !== xIntercept);
 
-            if(line.arrows == BOTH_ARROW_STRING) {
-                line.addArrow(group,'start');
-                line.addArrow(group,'end');
-            } else if(line.arrows == OPEN_ARROW_STRING) {
-                if(startIsOpen) {
+                if(line.arrows == BOTH_ARROW_STRING) {
                     line.addArrow(group,'start');
-                } else {
-                    line.removeArrow(group,'start');
-                }
-                if(endIsOpen) {
                     line.addArrow(group,'end');
-                } else {
+                } else if(line.arrows == OPEN_ARROW_STRING) {
+                    if(startIsOpen) {
+                        line.addArrow(group,'start');
+                    } else {
+                        line.removeArrow(group,'start');
+                    }
+                    if(endIsOpen) {
+                        line.addArrow(group,'end');
+                    } else {
+                        line.removeArrow(group,'end');
+                    }
+                } else if(line.arrows == NO_ARROW_STRING) {
+                    line.removeArrow(group,'start');
                     line.removeArrow(group,'end');
                 }
-            } else if(line.arrows == NO_ARROW_STRING) {
-                line.removeArrow(group,'start');
-                line.removeArrow(group,'end');
-            }
 
-            if(line.labelDiv) {
-                // If one end of the line is open, label that point
-                if(endIsOpen || startIsOpen) {
-                    line.labelDiv.coordinates = endIsOpen ? _.clone(endPoint) : _.clone(startPoint);
-                    if(line.labelDiv.coordinates.x == view.xAxis.max) {
-                        line.labelDiv.align = 'left';
-                        line.labelDiv.valign = 'middle';
+                if(line.labelDiv) {
+                    // If one end of the line is open, label that point
+                    if(endIsOpen || startIsOpen) {
+                        line.labelDiv.coordinates = endIsOpen ? _.clone(endPoint) : _.clone(startPoint);
+                        if(line.labelDiv.coordinates.x == view.xAxis.max) {
+                            line.labelDiv.align = 'left';
+                            line.labelDiv.valign = 'middle';
+                        } else {
+                            line.labelDiv.align = 'center';
+                            line.labelDiv.valign = 'bottom';
+                        }
                     } else {
-                        line.labelDiv.align = 'center';
+                        var yLevel = view.yAxis.min + (view.yAxis.max - view.yAxis.min)*0.05;
+                        line.labelDiv.coordinates = {
+                            x: linear.xValue(yLevel),
+                            y: yLevel
+                        };
                         line.labelDiv.valign = 'bottom';
+                        line.labelDiv.align = (linear.slope > 0) ? 'right' : 'left';
                     }
-                } else {
-                    var yLevel = view.yAxis.min + (view.yAxis.max - view.yAxis.min)*0.05;
-                    line.labelDiv.coordinates = {
-                        x: linear.xValue(yLevel),
-                        y: yLevel
-                    };
-                    line.labelDiv.valign = 'bottom';
-                    line.labelDiv.align = (linear.slope > 0) ? 'right' : 'left';
                 }
-            }
 
-            if(line.areaUnder) {
-                var areaData = [view.corners.bottom.left];
-                if(xIntercept) {
-                    if(yIntercept) {
-                        // line connects x-axis and y-intercept; color triangle below and to the left
-                        areaData.push(xIntercept);
-                        areaData.push(yIntercept);
-                    } else if(xTopEdge) {
-                        // line connects x-axis and top of graph; color quadrilateral formed by line and y-axis
-                        areaData.push(xIntercept);
-                        areaData.push(xTopEdge);
+                if(line.areaUnder) {
+                    var areaData = [view.corners.bottom.left];
+                    if(xIntercept) {
+                        if(yIntercept) {
+                            // line connects x-axis and y-intercept; color triangle below and to the left
+                            areaData.push(xIntercept);
+                            areaData.push(yIntercept);
+                        } else if(xTopEdge) {
+                            // line connects x-axis and top of graph; color quadrilateral formed by line and y-axis
+                            areaData.push(xIntercept);
+                            areaData.push(xTopEdge);
+                            areaData.push(view.corners.top.left);
+                        } else if(yRightEdge) {
+                            // line connects x-axis and right of graph; color everything but the triangle in the lower-right
+                            areaData.push(xIntercept);
+                            areaData.push(yRightEdge);
+                            areaData.push(view.corners.top.right);
+                            areaData.push(view.corners.top.left);
+                        }
+                    } else if(yIntercept) {
+                        if(xTopEdge && areNotTheSamePoint(xTopEdge,yIntercept)) {
+                            // line connects y-axis and top of graph; color everything but the triangle in upper-left
+                            areaData.push(yIntercept);
+                            areaData.push(xTopEdge);
+                            areaData.push(view.corners.top.right);
+                            areaData.push(view.corners.bottom.right);
+                        } else if(yRightEdge) {
+                            // line connects y-axis and right of graph; color quadrilateral beneath the line
+                            areaData.push(yIntercept);
+                            areaData.push(yRightEdge);
+                            areaData.push(view.corners.bottom.right);
+                        }
+                    } else {
+                        // line connects top and right of graph; color everything except triangle in upper right
                         areaData.push(view.corners.top.left);
-                    } else if(yRightEdge) {
-                        // line connects x-axis and right of graph; color everything but the triangle in the lower-right
-                        areaData.push(xIntercept);
-                        areaData.push(yRightEdge);
-                        areaData.push(view.corners.top.right);
-                        areaData.push(view.corners.top.left);
-                    }
-                } else if(yIntercept) {
-                    if(xTopEdge && areNotTheSamePoint(xTopEdge,yIntercept)) {
-                        // line connects y-axis and top of graph; color everything but the triangle in upper-left
-                        areaData.push(yIntercept);
                         areaData.push(xTopEdge);
-                        areaData.push(view.corners.top.right);
-                        areaData.push(view.corners.bottom.right);
-                    } else if(yRightEdge) {
-                        // line connects y-axis and right of graph; color quadrilateral beneath the line
-                        areaData.push(yIntercept);
                         areaData.push(yRightEdge);
                         areaData.push(view.corners.bottom.right);
                     }
-                } else {
-                    // line connects top and right of graph; color everything except triangle in upper right
-                    areaData.push(view.corners.top.left);
-                    areaData.push(xTopEdge);
-                    areaData.push(yRightEdge);
-                    areaData.push(view.corners.bottom.right);
+                    line.areaUnder.data = areaData;
                 }
-                line.areaUnder.data = areaData;
-            }
 
-            if(line.areaOver) {
-                var areaData = [view.corners.top.right];
-                if(xIntercept) {
-                    if(yIntercept) {
-                        // line connects x-axis and y-intercept; color everything but the triangle below and to the left
-                        areaData.push(view.corners.bottom.right);
-                        areaData.push(xIntercept);
-                        areaData.push(yIntercept);
-                        areaData.push(view.corners.top.left);
-                    } else if(xTopEdge) {
-                        // line connects x-axis and top of graph; color quadrilateral formed by line and right edge
+                if(line.areaOver) {
+                    var areaData = [view.corners.top.right];
+                    if(xIntercept) {
+                        if(yIntercept) {
+                            // line connects x-axis and y-intercept; color everything but the triangle below and to the left
+                            areaData.push(view.corners.bottom.right);
+                            areaData.push(xIntercept);
+                            areaData.push(yIntercept);
+                            areaData.push(view.corners.top.left);
+                        } else if(xTopEdge) {
+                            // line connects x-axis and top of graph; color quadrilateral formed by line and right edge
+                            areaData.push(xTopEdge);
+                            areaData.push(xIntercept);
+                            areaData.push(view.corners.bottom.right);
+                        } else if(yRightEdge) {
+                            // line connects x-axis and right of graph; color everything but the triangle in the lower-right
+                            areaData.push(yRightEdge);
+                            areaData.push(xIntercept);
+                            areaData.push(view.corners.bottom.left);
+                            areaData.push(view.corners.top.left);
+                        }
+                    } else if(yIntercept) {
+                        if(xTopEdge) {
+                            // line connects y-axis and top of graph; color everything but the triangle in upper-left
+                            areaData.push(xTopEdge);
+                            areaData.push(yIntercept);
+                            areaData.push(view.corners.bottom.left);
+                            areaData.push(view.corners.bottom.right);
+                        } else if(yRightEdge) {
+                            // line connects y-axis and right of graph; color quadrilateral above the line
+                            areaData.push(yRightEdge);
+                            areaData.push(yIntercept);
+                            areaData.push(view.corners.top.left);
+                        }
+                    } else {
+                        // line connects top and right of graph; color triangle in upper right
                         areaData.push(xTopEdge);
-                        areaData.push(xIntercept);
-                        areaData.push(view.corners.bottom.right);
-                    } else if(yRightEdge) {
-                        // line connects x-axis and right of graph; color everything but the triangle in the lower-right
                         areaData.push(yRightEdge);
-                        areaData.push(xIntercept);
-                        areaData.push(view.corners.bottom.left);
-                        areaData.push(view.corners.top.left);
                     }
-                } else if(yIntercept) {
-                    if(xTopEdge) {
-                        // line connects y-axis and top of graph; color everything but the triangle in upper-left
-                        areaData.push(xTopEdge);
-                        areaData.push(yIntercept);
-                        areaData.push(view.corners.bottom.left);
-                        areaData.push(view.corners.bottom.right);
-                    } else if(yRightEdge) {
-                        // line connects y-axis and right of graph; color quadrilateral above the line
-                        areaData.push(yRightEdge);
-                        areaData.push(yIntercept);
-                        areaData.push(view.corners.top.left);
-                    }
-                } else {
-                    // line connects top and right of graph; color triangle in upper right
-                    areaData.push(xTopEdge);
-                    areaData.push(yRightEdge);
+                    line.areaOver.data = areaData;
                 }
-                line.areaOver.data = areaData;
-            }
 
-            if(line.xInterceptLabelDiv) {
-                line.xInterceptLabelDiv.coordinates = {x: line.linear.xValue(view.yAxis.min), y: 'AXIS'};
-            }
+                if(line.xInterceptLabelDiv) {
+                    line.xInterceptLabelDiv.coordinates = {x: line.linear.xValue(view.yAxis.min), y: 'AXIS'};
+                }
 
-            if(line.yInterceptLabelDiv) {
-                line.yInterceptLabelDiv.coordinates = {x: 'AXIS', y: line.linear.yValue(view.xAxis.min)};
-            }
+                if(line.yInterceptLabelDiv) {
+                    line.yInterceptLabelDiv.coordinates = {x: 'AXIS', y: line.linear.yValue(view.xAxis.min)};
+                }
 
-            var dataLine = d3.svg.line()
-                .x(function (d) { return view.xAxis.scale(d.x) })
-                .y(function (d) { return view.yAxis.scale(d.y) });
+                var dataLine = d3.svg.line()
+                    .x(function (d) { return view.xAxis.scale(d.x) })
+                    .y(function (d) { return view.yAxis.scale(d.y) });
 
-            var lineSelection:D3.Selection = group.select('.'+ line.viewObjectClass);
+                var lineSelection:D3.Selection = group.select('.'+ line.viewObjectClass);
 
-            lineSelection
-                .attr({
-                    'class': line.classAndVisibility(),
-                    'd': dataLine([startPoint,endPoint]),
-                    'stroke': line.color,
-                });
+                lineSelection
+                    .attr({
+                        'class': line.classAndVisibility(),
+                        'd': dataLine([startPoint,endPoint]),
+                        'stroke': line.color,
+                    });
 
-            if(draggable){
-                return line.setDragBehavior(view,lineSelection);
-            } else {
-                return view;
+                if(draggable){
+                    return line.setDragBehavior(view,lineSelection);
+                } else {
+                    return view;
+                }
             }
 
         }
