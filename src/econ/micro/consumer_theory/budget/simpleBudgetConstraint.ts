@@ -3,7 +3,8 @@
 module EconGraphs {
 
     export interface SimpleBudgetConstraintDefinition extends BudgetDefinition {
-        income: any;
+        income?: any;
+        endowment?: any;
         px: any;
         py: any;
     }
@@ -13,7 +14,6 @@ module EconGraphs {
         px: number;
         py: number;
         budgetLine: KG.Line;
-        budgetSet: KG.Area;
     }
 
     export class SimpleBudgetConstraint extends Budget implements ISimpleBudgetConstraint {
@@ -22,7 +22,6 @@ module EconGraphs {
         public px;
         public py;
         public budgetLine;
-        public budgetSet;
 
         constructor(definition: SimpleBudgetConstraintDefinition, modelPath: string) {
             super(definition,modelPath);
@@ -55,9 +54,6 @@ module EconGraphs {
             }, b.modelProperty('budgetLine'));
 
         }
-
-
-
 
     }
 

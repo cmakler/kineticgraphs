@@ -1212,7 +1212,7 @@ var KGMath;
                         console.log('Oh noes! More than two points! Investigate!');
                     }
                 }
-                return points;
+                return points.sort(KG.sortObjects('x'));
             };
             return Linear;
         })(Functions.Base);
@@ -2290,6 +2290,146 @@ var KG;
 'use strict';
 var KG;
 (function (KG) {
+    var PiecewiseLinear = (function (_super) {
+        __extends(PiecewiseLinear, _super);
+        function PiecewiseLinear(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    };
+                }
+                if (p.hasOwnProperty('areaUnderLabel')) {
+                    definition.areaUnderDef = {
+                        name: definition.name + '_areaUnder',
+                        className: definition.className,
+                        label: {
+                            text: p.areaUnderLabel
+                        }
+                    };
+                }
+                if (p.hasOwnProperty('areaOverLabel')) {
+                    definition.areaOverDef = {
+                        name: definition.name + 'areaOver',
+                        className: definition.className,
+                        label: {
+                            text: p.areaOverLabel
+                        }
+                    };
+                }
+                if (p.hasOwnProperty('xInterceptLabel')) {
+                    definition.xInterceptLabel = p.xInterceptLabel;
+                }
+                if (p.hasOwnProperty('yInterceptLabel')) {
+                    definition.yInterceptLabel = p.yInterceptLabel;
+                }
+            }
+            _super.call(this, definition, modelPath);
+            var piecewiseLinear = this;
+            if (definition.hasOwnProperty('sectionDefs')) {
+                piecewiseLinear.sections = definition.sectionDefs.map(function (def) {
+                    return new KGMath.Functions.Linear(def);
+                });
+            }
+            piecewiseLinear.viewObjectSVGtype = 'path';
+            piecewiseLinear.viewObjectClass = 'line';
+            if (definition.label) {
+                var labelDef = _.defaults(definition.label, {
+                    name: definition.name + '_label',
+                    className: definition.className,
+                    xDrag: definition.xDrag,
+                    yDrag: definition.yDrag,
+                    color: definition.color,
+                    show: definition.show
+                });
+                //console.log(labelDef);
+                piecewiseLinear.labelDiv = new KG.GraphDiv(labelDef);
+            }
+            if (definition.areaUnderDef) {
+                piecewiseLinear.areaUnder = new KG.Area(definition.areaUnderDef);
+            }
+            if (definition.areaOverDef) {
+                piecewiseLinear.areaOver = new KG.Area(definition.areaOverDef);
+            }
+            if (definition.hasOwnProperty('xInterceptLabel')) {
+                var xInterceptLabelDef = {
+                    name: definition.name + 'x_intercept_label',
+                    color: definition.color,
+                    text: definition.xInterceptLabel,
+                    dimensions: { width: 30, height: 20 },
+                    xDrag: definition.xDrag,
+                    backgroundColor: 'white'
+                };
+                piecewiseLinear.xInterceptLabelDiv = new KG.GraphDiv(xInterceptLabelDef);
+            }
+            if (definition.hasOwnProperty('yInterceptLabel')) {
+                var yInterceptLabelDef = {
+                    name: definition.name + 'y_intercept_label',
+                    color: definition.color,
+                    text: definition.yInterceptLabel,
+                    dimensions: { width: 30, height: 20 },
+                    yDrag: definition.yDrag,
+                    backgroundColor: 'white'
+                };
+                piecewiseLinear.yInterceptLabelDiv = new KG.GraphDiv(yInterceptLabelDef);
+            }
+        }
+        PiecewiseLinear.prototype._update = function (scope) {
+            var piecewiseLinear = this;
+            piecewiseLinear.sections.forEach(function (section) {
+                section.update(scope);
+            });
+            return this;
+        };
+        PiecewiseLinear.prototype.createSubObjects = function (view) {
+            var piecewiseLinear = this;
+            piecewiseLinear.sections.forEach(function (section, index) {
+                if (piecewiseLinear.labelDiv && index == piecewiseLinear.sections.length - 1) {
+                    var newLine = new KG.Line({
+                        name: piecewiseLinear.name + '_section' + index,
+                        className: piecewiseLinear.className,
+                        linear: section.linear,
+                        xDomain: section.xDomain,
+                        yDomain: section.yDomain,
+                        label: piecewiseLinear.labelDiv
+                    });
+                    view.addObject(newLine);
+                    view.addObject(newLine.labelDiv);
+                }
+                else {
+                    view.addObject(new KG.Line({
+                        name: piecewiseLinear.name + '_section' + index,
+                        className: piecewiseLinear.className,
+                        xDomain: section.xDomain,
+                        yDomain: section.yDomain,
+                        linear: section.linear
+                    }));
+                }
+            });
+            if (piecewiseLinear.xInterceptLabelDiv) {
+                view.addObject(piecewiseLinear.xInterceptLabelDiv);
+            }
+            if (piecewiseLinear.yInterceptLabelDiv) {
+                view.addObject(piecewiseLinear.yInterceptLabelDiv);
+            }
+            if (piecewiseLinear.labelDiv) {
+                view.addObject(piecewiseLinear.labelDiv);
+            }
+            if (piecewiseLinear.areaUnder) {
+                view.addObject(piecewiseLinear.areaUnder);
+                view.addObject(piecewiseLinear.areaUnder.labelDiv);
+            }
+            return view;
+        };
+        return PiecewiseLinear;
+    })(KG.ViewObject);
+    KG.PiecewiseLinear = PiecewiseLinear;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
     var GraphDiv = (function (_super) {
         __extends(GraphDiv, _super);
         function GraphDiv(definition, modelPath) {
@@ -2642,7 +2782,7 @@ var KG;
         View.prototype.drawObjects = function (scope) {
             var view = this;
             view.objects.forEach(function (object) {
-                object.createSubObjects(view);
+                object.update(scope).createSubObjects(view);
             });
             view.objects.forEach(function (object) {
                 object.update(scope).render(view);
@@ -4062,6 +4202,58 @@ var EconGraphs;
 /// <reference path="../../../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
+    var EndowmentBudgetConstraint = (function (_super) {
+        __extends(EndowmentBudgetConstraint, _super);
+        function EndowmentBudgetConstraint(definition, modelPath) {
+            if (definition.hasOwnProperty('px')) {
+                definition.pxBuy = definition.px;
+                definition.pxSell = definition.px;
+            }
+            if (definition.hasOwnProperty('py')) {
+                definition.pyBuy = definition.py;
+                definition.pySell = definition.py;
+            }
+            _super.call(this, definition, modelPath);
+            var b = this;
+            var params = {};
+            if (definition.hasOwnProperty('budgetConstraintLabel')) {
+                params.label = definition.budgetConstraintLabel;
+            }
+            if (definition.hasOwnProperty('budgetSetLabel')) {
+                params.areaUnderLabel = definition.budgetSetLabel;
+            }
+            b.budgetSegments = [
+                new EconGraphs.BudgetSegment({
+                    endowment: definition.endowment,
+                    px: definition.pxSell,
+                    py: definition.pyBuy,
+                    xMin: 0,
+                    xMax: definition.endowment.x
+                }, b.modelProperty('budgetSegments[0]')),
+                new EconGraphs.BudgetSegment({
+                    endowment: definition.endowment,
+                    px: definition.pxBuy,
+                    py: definition.pySell,
+                    yMin: 0,
+                    yMax: definition.endowment.y
+                }, b.modelProperty('budgetSegments[1]'))
+            ];
+            b.budgetLine = new KG.PiecewiseLinear({
+                name: 'BL',
+                className: 'budget',
+                sections: b.modelProperty('budgetSegments'),
+                xInterceptLabel: definition.xInterceptLabel,
+                yInterceptLabel: definition.yInterceptLabel,
+                params: params
+            }, b.modelProperty('budgetLine'));
+        }
+        return EndowmentBudgetConstraint;
+    })(EconGraphs.Budget);
+    EconGraphs.EndowmentBudgetConstraint = EndowmentBudgetConstraint;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../../../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
     var Utility = (function (_super) {
         __extends(Utility, _super);
         function Utility(definition, modelPath) {
@@ -5280,6 +5472,7 @@ var EconGraphs;
 /// <reference path="micro/consumer_theory/budget/budget.ts"/>
 /// <reference path="micro/consumer_theory/budget/budgetSegment.ts"/>
 /// <reference path="micro/consumer_theory/budget/simpleBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/budget/endowmentBudgetConstraint.ts"/>
 /// <reference path="micro/consumer_theory/utility/utility.ts"/>
 /// <reference path="micro/consumer_theory/utility/oneGoodUtility.ts"/>
 /// <reference path="micro/consumer_theory/utility/crra.ts"/>
@@ -5394,6 +5587,7 @@ var PhysicsGraphs;
 /// <reference path="viewObjects/segment.ts"/>
 /// <reference path="viewObjects/arrow.ts"/>
 /// <reference path="viewObjects/line.ts"/>
+/// <reference path="viewObjects/piecewiseLinear.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>

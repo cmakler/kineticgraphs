@@ -221,7 +221,7 @@ module KGMath.Functions {
 
             }
 
-            return points;
+            return points.sort(KG.sortObjects('x'));
         }
 
         linearIntersection = function(otherLine:Linear, delta?:number) {
