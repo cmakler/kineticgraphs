@@ -68,9 +68,11 @@
                 pyBuy: 'params.pyBuy',
                 pySell: 'params.pySell',
                 budgetConstraintLabel: 'BL',
-                //budgetSetLabel: "\\text{Budget Set}",
-                xInterceptLabel: "\\frac{I}{P_x}",
-                yInterceptLabel: "\\frac{I}{P_y}"
+                budgetSetLabel: "\\text{Budget Set}",
+                xInterceptLabel: "\\frac{E(x,y)}{P_x^B}",
+                yInterceptLabel: "\\frac{E(x,y)}{P_y^B}",
+                xLabel: 'params.x | number: 0',
+                yLabel: 'params.y | number: 0'
             }
         },
         views: [
@@ -81,7 +83,7 @@
                     xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
                     yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
                     objects: [
-                        'model.budgetLine'
+                        'model.budgetLine', "model.endowmentPoint"
                     ]
                 }
             },

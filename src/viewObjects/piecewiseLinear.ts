@@ -13,37 +13,37 @@ module KG {
     }
 
     export interface PiecewiseLinearDefinition extends ViewObjectDefinition {
-        sectionDefs?: KGMath.Functions.LinearDefinition[];
-        sections?: KGMath.Functions.Linear[];
+        sectionDefs?: any;
+        sections?: any;
         arrows?: string;
-        label?: GraphDivDefinition;
+        label?: string;
         xInterceptLabel?: string;
         yInterceptLabel?: string;
         params?: PiecewiseLinearParamsDefinition;
-        areaUnderDef?: AreaDefinition;
-        areaOverDef?: AreaDefinition;
+        areaUnderLabel?: string;
+        areaOverLabel?: string;
     }
 
     export interface IPiecewiseLinear extends IViewObject {
 
+        label?: string;
         sections: KGMath.Functions.Linear[];
-        labelDiv: GraphDiv;
-        xInterceptLabelDiv: GraphDiv;
-        yInterceptLabelDiv: GraphDiv;
+        xInterceptLabel: string;
+        yInterceptLabel: string;
         arrows: string;
-        areaUnder: Area;
-        areaOver: Area;
+        areaUnderLabel?: string;
+        areaOverLabel?: string;
     }
 
     export class PiecewiseLinear extends ViewObject implements IPiecewiseLinear {
 
         public sections;
         public arrows;
-        public labelDiv;
-        public areaUnder;
-        public areaOver;
-        public xInterceptLabelDiv;
-        public yInterceptLabelDiv;
+        public label;
+        public areaUnderLabel;
+        public areaOverLabel;
+        public xInterceptLabel;
+        public yInterceptLabel;
 
         constructor(definition:PiecewiseLinearDefinition, modelPath?: string) {
 
@@ -52,29 +52,15 @@ module KG {
                 var p = definition.params;
 
                 if(p.hasOwnProperty('label')) {
-                    definition.label = {
-                        text: p.label
-                    }
+                    definition.label = p.label;
                 }
 
                 if(p.hasOwnProperty('areaUnderLabel')) {
-                    definition.areaUnderDef = {
-                        name: definition.name + '_areaUnder',
-                        className: definition.className,
-                        label: {
-                            text: p.areaUnderLabel
-                        }
-                    }
+                    definition.areaUnderLabel = p.areaUnderLabel;
                 }
 
                 if(p.hasOwnProperty('areaOverLabel')) {
-                    definition.areaOverDef = {
-                        name: definition.name + 'areaOver',
-                        className: definition.className,
-                        label: {
-                            text: p.areaOverLabel
-                        }
-                    }
+                    definition.areaOverLabel = p.areaOverLabel;
                 }
 
                 if(p.hasOwnProperty('xInterceptLabel')) {
@@ -100,51 +86,6 @@ module KG {
             piecewiseLinear.viewObjectSVGtype = 'path';
             piecewiseLinear.viewObjectClass = 'line';
 
-            if(definition.label) {
-                var labelDef:GraphDivDefinition = _.defaults(definition.label, {
-                    name: definition.name + '_label',
-                    className: definition.className,
-                    xDrag: definition.xDrag,
-                    yDrag: definition.yDrag,
-                    color: definition.color,
-                    show: definition.show
-                });
-                //console.log(labelDef);
-                piecewiseLinear.labelDiv = new GraphDiv(labelDef);
-            }
-
-            if(definition.areaUnderDef) {
-                piecewiseLinear.areaUnder = new Area(definition.areaUnderDef);
-            }
-
-            if(definition.areaOverDef) {
-                piecewiseLinear.areaOver = new Area(definition.areaOverDef);
-            }
-
-            if(definition.hasOwnProperty('xInterceptLabel')) {
-                var xInterceptLabelDef:GraphDivDefinition = {
-                    name: definition.name + 'x_intercept_label',
-                    color: definition.color,
-                    text: definition.xInterceptLabel,
-                    dimensions: {width: 30, height:20},
-                    xDrag: definition.xDrag,
-                    backgroundColor: 'white'
-                };
-                piecewiseLinear.xInterceptLabelDiv = new KG.GraphDiv(xInterceptLabelDef);
-            }
-
-            if(definition.hasOwnProperty('yInterceptLabel')) {
-                var yInterceptLabelDef:GraphDivDefinition = {
-                    name: definition.name + 'y_intercept_label',
-                    color: definition.color,
-                    text: definition.yInterceptLabel,
-                    dimensions: {width: 30, height:20},
-                    yDrag: definition.yDrag,
-                    backgroundColor: 'white'
-                };
-                piecewiseLinear.yInterceptLabelDiv = new KG.GraphDiv(yInterceptLabelDef);
-            }
-
         }
 
         _update(scope) {
@@ -158,16 +99,33 @@ module KG {
             var piecewiseLinear = this;
 
             piecewiseLinear.sections.forEach(function(section, index){
-                if(piecewiseLinear.labelDiv && index == piecewiseLinear.sections.length - 1){
+                if(index == 0){
                     var newLine = new Line({
                         name: piecewiseLinear.name + '_section' + index,
                         className: piecewiseLinear.className,
                         linear: section.linear,
                         xDomain: section.xDomain,
                         yDomain: section.yDomain,
-                        label: piecewiseLinear.labelDiv});
+                        params: {
+                            yInterceptLabel: piecewiseLinear.yInterceptLabel
+                        }
+                    });
                     view.addObject(newLine);
-                    view.addObject(newLine.labelDiv);
+                    view = newLine.createSubObjects(view);
+                } else if(index == piecewiseLinear.sections.length - 1){
+                    var newLine = new Line({
+                        name: piecewiseLinear.name + '_section' + index,
+                        className: piecewiseLinear.className,
+                        linear: section.linear,
+                        xDomain: section.xDomain,
+                        yDomain: section.yDomain,
+                        params: {
+                            label: piecewiseLinear.label,
+                            xInterceptLabel: piecewiseLinear.xInterceptLabel
+                        }
+                    });
+                    view.addObject(newLine);
+                    view = newLine.createSubObjects(view);
                 } else {
                     view.addObject(new Line({
                         name: piecewiseLinear.name + '_section' + index,
@@ -178,23 +136,6 @@ module KG {
                     }))
                 }
             });
-
-            if(piecewiseLinear.xInterceptLabelDiv) {
-                view.addObject(piecewiseLinear.xInterceptLabelDiv)
-            }
-
-            if(piecewiseLinear.yInterceptLabelDiv) {
-                view.addObject(piecewiseLinear.yInterceptLabelDiv)
-            }
-
-            if(piecewiseLinear.labelDiv) {
-                view.addObject(piecewiseLinear.labelDiv)
-            }
-
-            if(piecewiseLinear.areaUnder) {
-                view.addObject(piecewiseLinear.areaUnder);
-                view.addObject(piecewiseLinear.areaUnder.labelDiv);
-            }
 
             return view;
         }

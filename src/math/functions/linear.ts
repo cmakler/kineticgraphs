@@ -207,16 +207,24 @@ module KGMath.Functions {
                 }
 
                 // add endpoints on the top or bottom, not including the corners
-                if(xDomain.contains(xBottom, true) && yLeft != yDomain.min && yRight != yDomain.min) {
-                    points.push({x:xBottom, y:yDomain.min});
+                if(xDomain.contains(xBottom, true)) {
+                    if(KG.arrayDoesNotHavePoint(points,{x: xBottom,y:yDomain.min})) {
+                        points.push({x:xBottom, y:yDomain.min});
+                    }
                 }
                 if(xDomain.contains(xTop, true) && yLeft != yDomain.max && yRight != yDomain.max) {
-                    points.push({x:xTop, y:yDomain.max});
+                    if(KG.arrayDoesNotHavePoint(points,{x: xTop,y:yDomain.max})) {
+                        points.push({x:xTop, y:yDomain.max});
+                    }
                 }
 
                 // A maximimum of two points should have been added. If not, something is wrong.
                 if(points.length > 2) {
                     console.log('Oh noes! More than two points! Investigate!')
+                }
+
+                if(points.length < 2) {
+                    console.log('Oh noes! Only one point! Investigate!')
                 }
 
             }

@@ -10,6 +10,8 @@ module EconGraphs {
         pyBuy?: any;
         pxSell?: any;
         pySell?: any;
+        xLabel?: string;
+        yLabel?: string;
     }
 
     export interface IEndowmentBudgetConstraint extends IBudget {
@@ -21,6 +23,7 @@ module EconGraphs {
         pxSell: number;
         pySell: number;
         budgetLine: KG.Line;
+        endowmentPoint: KG.Point;
     }
 
     export class EndowmentBudgetConstraint extends Budget implements IEndowmentBudgetConstraint {
@@ -33,6 +36,7 @@ module EconGraphs {
         public pxSell;
         public pySell;
         public budgetLine;
+        public endowmentPoint;
 
         constructor(definition: EndowmentBudgetConstraintDefinition, modelPath: string) {
 
@@ -50,12 +54,29 @@ module EconGraphs {
 
             var b = this;
 
-            var params:KG.LineParamsDefinition = {};
+            var pointParams:KG.PointParamsDefinition = {};
+            if(definition.hasOwnProperty('xLabel')) {
+                pointParams.xAxisLabel = definition.xLabel;
+            }
+            if(definition.hasOwnProperty('yLabel')) {
+                pointParams.yAxisLabel = definition.yLabel;
+            }
+
+            b.endowmentPoint = new KG.Point({
+                name: 'endowmentPoint',
+                coordinates: definition.endowment,
+                xDrag: definition.endowment.x,
+                yDrag: definition.endowment.y,
+                className: 'budget',
+                params: pointParams
+            })
+
+            var lineParams:KG.LineParamsDefinition = {};
             if(definition.hasOwnProperty('budgetConstraintLabel')) {
-                params.label = definition.budgetConstraintLabel;
+                lineParams.label = definition.budgetConstraintLabel;
             }
             if(definition.hasOwnProperty('budgetSetLabel')) {
-                params.areaUnderLabel = definition.budgetSetLabel;
+                lineParams.areaUnderLabel = definition.budgetSetLabel;
             }
 
             b.budgetSegments = [
@@ -64,14 +85,16 @@ module EconGraphs {
                     px: definition.pxSell,
                     py: definition.pyBuy,
                     xMin: 0,
-                    xMax: definition.endowment.x
+                    xMax: definition.endowment.x,
+                    yMin: definition.endowment.y
                 }, b.modelProperty('budgetSegments[0]')),
                 new BudgetSegment({
                     endowment: definition.endowment,
                     px: definition.pxBuy,
                     py: definition.pySell,
                     yMin: 0,
-                    yMax: definition.endowment.y
+                    yMax: definition.endowment.y,
+                    xMin: definition.endowment.x
                 }, b.modelProperty('budgetSegments[1]'))
             ];
 
@@ -81,7 +104,7 @@ module EconGraphs {
                 sections: b.modelProperty('budgetSegments'),
                 xInterceptLabel: definition.xInterceptLabel,
                 yInterceptLabel: definition.yInterceptLabel,
-                params: params
+                params: lineParams
             }, b.modelProperty('budgetLine'));
 
         }

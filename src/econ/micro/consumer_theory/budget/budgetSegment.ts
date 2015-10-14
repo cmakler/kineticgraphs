@@ -63,7 +63,9 @@ module EconGraphs {
             if(definition.hasOwnProperty('endowment')) {
                 b.linear = new KGMath.Functions.Linear({
                     point: definition.endowment,
-                    slope: KG.multiplyDefs(-1,definition.priceRatio)
+                    slope: KG.multiplyDefs(-1,definition.priceRatio),
+                    xDomain: b.xDomain,
+                    yDomain: b.yDomain
                 })
             } else {
                 b.linear = new KGMath.Functions.Linear({
@@ -71,7 +73,9 @@ module EconGraphs {
                         a: definition.px,
                         b: definition.py,
                         c: KG.multiplyDefs(-1,definition.income)
-                    }
+                    },
+                    xDomain: b.xDomain,
+                    yDomain: b.yDomain
                 })
             }
 

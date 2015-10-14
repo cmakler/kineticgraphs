@@ -95,8 +95,8 @@ var KG;
             if (x == undefined || x == null || isNaN(x)) {
                 return false;
             }
-            var lowEnough = strict ? (this.max > x) : (this.max >= x);
-            var highEnough = strict ? (this.min < x) : (this.min <= x);
+            var lowEnough = strict ? (this.max > x) : (this.max - x >= -0.0001);
+            var highEnough = strict ? (this.min < x) : (this.min - x <= 0.0001);
             return lowEnough && highEnough;
         };
         Domain.prototype.samplePoints = function (numSamples) {
@@ -125,17 +125,32 @@ var KG;
     function isAlmostTo(a, b, t, basis) {
         t = t || 0.01;
         var diff = Math.abs(a - b), avg = basis || 0.5 * (a + b);
-        return (diff / avg < t);
+        if (avg > t * 10) {
+            return (diff / avg < t);
+        }
+        else {
+            return diff < t;
+        }
     }
     KG.isAlmostTo = isAlmostTo;
     function areTheSamePoint(a, b) {
-        return (a.x === b.x && a.y === b.y);
+        return isAlmostTo(a.x, b.x) && isAlmostTo(a.y, b.y);
     }
     KG.areTheSamePoint = areTheSamePoint;
     function areNotTheSamePoint(a, b) {
         return !areTheSamePoint(a, b);
     }
     KG.areNotTheSamePoint = areNotTheSamePoint;
+    function arrayDoesNotHavePoint(a, b) {
+        var foundIt = true;
+        a.forEach(function (p) {
+            if (areTheSamePoint(b, p)) {
+                foundIt = false;
+            }
+        });
+        return foundIt;
+    }
+    KG.arrayDoesNotHavePoint = arrayDoesNotHavePoint;
     function arrayAverage(o) {
         var allNumbers = true;
         o.forEach(function (obj) {
@@ -1201,15 +1216,22 @@ var KGMath;
                         points.push({ x: xDomain.max, y: yRight });
                     }
                     // add endpoints on the top or bottom, not including the corners
-                    if (xDomain.contains(xBottom, true) && yLeft != yDomain.min && yRight != yDomain.min) {
-                        points.push({ x: xBottom, y: yDomain.min });
+                    if (xDomain.contains(xBottom, true)) {
+                        if (KG.arrayDoesNotHavePoint(points, { x: xBottom, y: yDomain.min })) {
+                            points.push({ x: xBottom, y: yDomain.min });
+                        }
                     }
                     if (xDomain.contains(xTop, true) && yLeft != yDomain.max && yRight != yDomain.max) {
-                        points.push({ x: xTop, y: yDomain.max });
+                        if (KG.arrayDoesNotHavePoint(points, { x: xTop, y: yDomain.max })) {
+                            points.push({ x: xTop, y: yDomain.max });
+                        }
                     }
                     // A maximimum of two points should have been added. If not, something is wrong.
                     if (points.length > 2) {
                         console.log('Oh noes! More than two points! Investigate!');
+                    }
+                    if (points.length < 2) {
+                        console.log('Oh noes! Only one point! Investigate!');
                     }
                 }
                 return points.sort(KG.sortObjects('x'));
@@ -2098,10 +2120,10 @@ var KG;
                 console.log('point is undefined');
             }
             else {
-                var yIntercept = (startPoint.x == view.xAxis.min) ? startPoint : (endPoint.x == view.xAxis.min) ? endPoint : null;
-                var xIntercept = (startPoint.y == view.yAxis.min) ? startPoint : (endPoint.y == view.yAxis.min) ? endPoint : null;
-                var yRightEdge = (startPoint.x == view.xAxis.max) ? startPoint : (endPoint.x == view.xAxis.max) ? endPoint : null;
-                var xTopEdge = (startPoint.y == view.yAxis.max) ? startPoint : (endPoint.y == view.yAxis.max) ? endPoint : null;
+                var yIntercept = KG.isAlmostTo(startPoint.x, view.xAxis.min) ? startPoint : KG.isAlmostTo(endPoint.x, view.xAxis.min) ? endPoint : null;
+                var xIntercept = KG.isAlmostTo(startPoint.y, view.yAxis.min) ? startPoint : KG.isAlmostTo(endPoint.y, view.yAxis.min) ? endPoint : null;
+                var yRightEdge = KG.isAlmostTo(startPoint.x, view.xAxis.max) ? startPoint : KG.isAlmostTo(endPoint.x, view.xAxis.max) ? endPoint : null;
+                var xTopEdge = KG.isAlmostTo(startPoint.y, view.yAxis.max) ? startPoint : KG.isAlmostTo(endPoint.y, view.yAxis.max) ? endPoint : null;
                 var startIsOpen = (startPoint !== yIntercept && startPoint !== xIntercept);
                 var endIsOpen = (endPoint !== yIntercept && endPoint !== xIntercept);
                 if (line.arrows == BOTH_ARROW_STRING) {
@@ -2127,27 +2149,25 @@ var KG;
                     line.removeArrow(group, 'end');
                 }
                 if (line.labelDiv) {
-                    // If one end of the line is open, label that point
-                    if (endIsOpen || startIsOpen) {
-                        line.labelDiv.coordinates = endIsOpen ? _.clone(endPoint) : _.clone(startPoint);
-                        if (line.labelDiv.coordinates.x == view.xAxis.max) {
-                            line.labelDiv.align = 'left';
-                            line.labelDiv.valign = 'middle';
-                        }
-                        else {
-                            line.labelDiv.align = 'center';
-                            line.labelDiv.valign = 'bottom';
-                        }
+                    var labelPoint, labelAlign = 'left', labelValign = 'bottom';
+                    if (line instanceof VerticalLine) {
+                        labelPoint = xTopEdge;
+                        labelAlign = 'center';
+                    }
+                    else if (line instanceof HorizontalLine) {
+                        labelPoint = yRightEdge;
+                        labelValign = 'middle';
+                    }
+                    else if (linear.slope > 0) {
+                        labelPoint = (startPoint.y > endPoint.y) ? startPoint : endPoint;
                     }
                     else {
-                        var yLevel = view.yAxis.min + (view.yAxis.max - view.yAxis.min) * 0.05;
-                        line.labelDiv.coordinates = {
-                            x: linear.xValue(yLevel),
-                            y: yLevel
-                        };
-                        line.labelDiv.valign = 'bottom';
-                        line.labelDiv.align = (linear.slope > 0) ? 'right' : 'left';
+                        labelPoint = (startPoint.x > endPoint.x) ? startPoint : endPoint;
                     }
+                    var yMin = view.yAxis.min + (view.yAxis.max - view.yAxis.min) * 0.02;
+                    line.labelDiv.coordinates = { x: labelPoint.x, y: Math.max(yMin, labelPoint.y) };
+                    line.labelDiv.align = labelAlign;
+                    line.labelDiv.valign = labelValign;
                 }
                 if (line.areaUnder) {
                     var areaData = [view.corners.bottom.left];
@@ -2296,27 +2316,13 @@ var KG;
             if (definition.hasOwnProperty('params')) {
                 var p = definition.params;
                 if (p.hasOwnProperty('label')) {
-                    definition.label = {
-                        text: p.label
-                    };
+                    definition.label = p.label;
                 }
                 if (p.hasOwnProperty('areaUnderLabel')) {
-                    definition.areaUnderDef = {
-                        name: definition.name + '_areaUnder',
-                        className: definition.className,
-                        label: {
-                            text: p.areaUnderLabel
-                        }
-                    };
+                    definition.areaUnderLabel = p.areaUnderLabel;
                 }
                 if (p.hasOwnProperty('areaOverLabel')) {
-                    definition.areaOverDef = {
-                        name: definition.name + 'areaOver',
-                        className: definition.className,
-                        label: {
-                            text: p.areaOverLabel
-                        }
-                    };
+                    definition.areaOverLabel = p.areaOverLabel;
                 }
                 if (p.hasOwnProperty('xInterceptLabel')) {
                     definition.xInterceptLabel = p.xInterceptLabel;
@@ -2334,46 +2340,6 @@ var KG;
             }
             piecewiseLinear.viewObjectSVGtype = 'path';
             piecewiseLinear.viewObjectClass = 'line';
-            if (definition.label) {
-                var labelDef = _.defaults(definition.label, {
-                    name: definition.name + '_label',
-                    className: definition.className,
-                    xDrag: definition.xDrag,
-                    yDrag: definition.yDrag,
-                    color: definition.color,
-                    show: definition.show
-                });
-                //console.log(labelDef);
-                piecewiseLinear.labelDiv = new KG.GraphDiv(labelDef);
-            }
-            if (definition.areaUnderDef) {
-                piecewiseLinear.areaUnder = new KG.Area(definition.areaUnderDef);
-            }
-            if (definition.areaOverDef) {
-                piecewiseLinear.areaOver = new KG.Area(definition.areaOverDef);
-            }
-            if (definition.hasOwnProperty('xInterceptLabel')) {
-                var xInterceptLabelDef = {
-                    name: definition.name + 'x_intercept_label',
-                    color: definition.color,
-                    text: definition.xInterceptLabel,
-                    dimensions: { width: 30, height: 20 },
-                    xDrag: definition.xDrag,
-                    backgroundColor: 'white'
-                };
-                piecewiseLinear.xInterceptLabelDiv = new KG.GraphDiv(xInterceptLabelDef);
-            }
-            if (definition.hasOwnProperty('yInterceptLabel')) {
-                var yInterceptLabelDef = {
-                    name: definition.name + 'y_intercept_label',
-                    color: definition.color,
-                    text: definition.yInterceptLabel,
-                    dimensions: { width: 30, height: 20 },
-                    yDrag: definition.yDrag,
-                    backgroundColor: 'white'
-                };
-                piecewiseLinear.yInterceptLabelDiv = new KG.GraphDiv(yInterceptLabelDef);
-            }
         }
         PiecewiseLinear.prototype._update = function (scope) {
             var piecewiseLinear = this;
@@ -2385,17 +2351,34 @@ var KG;
         PiecewiseLinear.prototype.createSubObjects = function (view) {
             var piecewiseLinear = this;
             piecewiseLinear.sections.forEach(function (section, index) {
-                if (piecewiseLinear.labelDiv && index == piecewiseLinear.sections.length - 1) {
+                if (index == 0) {
                     var newLine = new KG.Line({
                         name: piecewiseLinear.name + '_section' + index,
                         className: piecewiseLinear.className,
                         linear: section.linear,
                         xDomain: section.xDomain,
                         yDomain: section.yDomain,
-                        label: piecewiseLinear.labelDiv
+                        params: {
+                            yInterceptLabel: piecewiseLinear.yInterceptLabel
+                        }
                     });
                     view.addObject(newLine);
-                    view.addObject(newLine.labelDiv);
+                    view = newLine.createSubObjects(view);
+                }
+                else if (index == piecewiseLinear.sections.length - 1) {
+                    var newLine = new KG.Line({
+                        name: piecewiseLinear.name + '_section' + index,
+                        className: piecewiseLinear.className,
+                        linear: section.linear,
+                        xDomain: section.xDomain,
+                        yDomain: section.yDomain,
+                        params: {
+                            label: piecewiseLinear.label,
+                            xInterceptLabel: piecewiseLinear.xInterceptLabel
+                        }
+                    });
+                    view.addObject(newLine);
+                    view = newLine.createSubObjects(view);
                 }
                 else {
                     view.addObject(new KG.Line({
@@ -2407,19 +2390,6 @@ var KG;
                     }));
                 }
             });
-            if (piecewiseLinear.xInterceptLabelDiv) {
-                view.addObject(piecewiseLinear.xInterceptLabelDiv);
-            }
-            if (piecewiseLinear.yInterceptLabelDiv) {
-                view.addObject(piecewiseLinear.yInterceptLabelDiv);
-            }
-            if (piecewiseLinear.labelDiv) {
-                view.addObject(piecewiseLinear.labelDiv);
-            }
-            if (piecewiseLinear.areaUnder) {
-                view.addObject(piecewiseLinear.areaUnder);
-                view.addObject(piecewiseLinear.areaUnder.labelDiv);
-            }
             return view;
         };
         return PiecewiseLinear;
@@ -4131,7 +4101,9 @@ var EconGraphs;
             if (definition.hasOwnProperty('endowment')) {
                 b.linear = new KGMath.Functions.Linear({
                     point: definition.endowment,
-                    slope: KG.multiplyDefs(-1, definition.priceRatio)
+                    slope: KG.multiplyDefs(-1, definition.priceRatio),
+                    xDomain: b.xDomain,
+                    yDomain: b.yDomain
                 });
             }
             else {
@@ -4140,7 +4112,9 @@ var EconGraphs;
                         a: definition.px,
                         b: definition.py,
                         c: KG.multiplyDefs(-1, definition.income)
-                    }
+                    },
+                    xDomain: b.xDomain,
+                    yDomain: b.yDomain
                 });
             }
         }
@@ -4215,12 +4189,27 @@ var EconGraphs;
             }
             _super.call(this, definition, modelPath);
             var b = this;
-            var params = {};
+            var pointParams = {};
+            if (definition.hasOwnProperty('xLabel')) {
+                pointParams.xAxisLabel = definition.xLabel;
+            }
+            if (definition.hasOwnProperty('yLabel')) {
+                pointParams.yAxisLabel = definition.yLabel;
+            }
+            b.endowmentPoint = new KG.Point({
+                name: 'endowmentPoint',
+                coordinates: definition.endowment,
+                xDrag: definition.endowment.x,
+                yDrag: definition.endowment.y,
+                className: 'budget',
+                params: pointParams
+            });
+            var lineParams = {};
             if (definition.hasOwnProperty('budgetConstraintLabel')) {
-                params.label = definition.budgetConstraintLabel;
+                lineParams.label = definition.budgetConstraintLabel;
             }
             if (definition.hasOwnProperty('budgetSetLabel')) {
-                params.areaUnderLabel = definition.budgetSetLabel;
+                lineParams.areaUnderLabel = definition.budgetSetLabel;
             }
             b.budgetSegments = [
                 new EconGraphs.BudgetSegment({
@@ -4228,14 +4217,16 @@ var EconGraphs;
                     px: definition.pxSell,
                     py: definition.pyBuy,
                     xMin: 0,
-                    xMax: definition.endowment.x
+                    xMax: definition.endowment.x,
+                    yMin: definition.endowment.y
                 }, b.modelProperty('budgetSegments[0]')),
                 new EconGraphs.BudgetSegment({
                     endowment: definition.endowment,
                     px: definition.pxBuy,
                     py: definition.pySell,
                     yMin: 0,
-                    yMax: definition.endowment.y
+                    yMax: definition.endowment.y,
+                    xMin: definition.endowment.x
                 }, b.modelProperty('budgetSegments[1]'))
             ];
             b.budgetLine = new KG.PiecewiseLinear({
@@ -4244,7 +4235,7 @@ var EconGraphs;
                 sections: b.modelProperty('budgetSegments'),
                 xInterceptLabel: definition.xInterceptLabel,
                 yInterceptLabel: definition.yInterceptLabel,
-                params: params
+                params: lineParams
             }, b.modelProperty('budgetLine'));
         }
         return EndowmentBudgetConstraint;

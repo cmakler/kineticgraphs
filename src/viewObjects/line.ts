@@ -198,10 +198,10 @@ module KG {
             if(startPoint == undefined || endPoint == undefined) {
                 console.log('point is undefined')
             } else {
-                var yIntercept = (startPoint.x == view.xAxis.min) ? startPoint : (endPoint.x == view.xAxis.min) ? endPoint : null;
-                var xIntercept = (startPoint.y == view.yAxis.min) ? startPoint : (endPoint.y == view.yAxis.min) ? endPoint : null;
-                var yRightEdge = (startPoint.x == view.xAxis.max) ? startPoint : (endPoint.x == view.xAxis.max) ? endPoint : null;
-                var xTopEdge = (startPoint.y == view.yAxis.max) ? startPoint : (endPoint.y == view.yAxis.max) ? endPoint : null;
+                var yIntercept = isAlmostTo(startPoint.x,view.xAxis.min) ? startPoint : isAlmostTo(endPoint.x,view.xAxis.min) ? endPoint : null;
+                var xIntercept = isAlmostTo(startPoint.y,view.yAxis.min) ? startPoint : isAlmostTo(endPoint.y,view.yAxis.min) ? endPoint : null;
+                var yRightEdge = isAlmostTo(startPoint.x,view.xAxis.max) ? startPoint : isAlmostTo(endPoint.x,view.xAxis.max) ? endPoint : null;
+                var xTopEdge = isAlmostTo(startPoint.y,view.yAxis.max) ? startPoint : isAlmostTo(endPoint.y,view.yAxis.max) ? endPoint : null;
                 var startIsOpen = (startPoint !== yIntercept && startPoint !== xIntercept);
                 var endIsOpen = (endPoint !== yIntercept && endPoint !== xIntercept);
 
@@ -225,6 +225,27 @@ module KG {
                 }
 
                 if(line.labelDiv) {
+
+                    var labelPoint, labelAlign = 'left', labelValign = 'bottom';
+
+                    if(line instanceof VerticalLine) {
+                        labelPoint = xTopEdge;
+                        labelAlign = 'center';
+                    } else if (line instanceof HorizontalLine) {
+                        labelPoint = yRightEdge;
+                        labelValign = 'middle';
+                    } else if (linear.slope > 0) {
+                        labelPoint = (startPoint.y > endPoint.y) ? startPoint : endPoint;
+                    } else {
+                        labelPoint = (startPoint.x > endPoint.x) ? startPoint : endPoint;
+                    }
+
+                    var yMin = view.yAxis.min + (view.yAxis.max - view.yAxis.min)*0.02;
+                    line.labelDiv.coordinates = {x: labelPoint.x, y: Math.max(yMin, labelPoint.y)};
+                    line.labelDiv.align = labelAlign;
+                    line.labelDiv.valign = labelValign;
+
+                    /* OLD LOGIC
                     // If one end of the line is open, label that point
                     if(endIsOpen || startIsOpen) {
                         line.labelDiv.coordinates = endIsOpen ? _.clone(endPoint) : _.clone(startPoint);
@@ -243,7 +264,7 @@ module KG {
                         };
                         line.labelDiv.valign = 'bottom';
                         line.labelDiv.align = (linear.slope > 0) ? 'right' : 'left';
-                    }
+                    } */
                 }
 
                 if(line.areaUnder) {

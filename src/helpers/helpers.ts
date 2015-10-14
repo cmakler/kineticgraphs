@@ -54,8 +54,8 @@ module KG
         contains(x, strict?) {
             strict = strict || false;
             if(x == undefined || x == null || isNaN(x)) { return false }
-            var lowEnough:boolean = strict ? (this.max > x) : (this.max >= x);
-            var highEnough:boolean = strict ? (this.min < x) : (this.min <= x);
+            var lowEnough:boolean = strict ? (this.max > x) : (this.max - x >= -0.0001);
+            var highEnough:boolean = strict ? (this.min < x) : (this.min - x <= 0.0001);
             return lowEnough && highEnough;
         }
 
@@ -107,15 +107,30 @@ module KG
         t = t || 0.01;
         var diff = Math.abs(a - b),
             avg = basis || 0.5*(a + b);
-        return (diff/avg < t);
+        if(avg > t*10) {
+            return (diff/avg < t);
+        } else {
+            return diff < t;
+        }
+
     }
 
     export function areTheSamePoint(a:ICoordinates, b:ICoordinates) {
-        return (a.x === b.x && a.y === b.y);
+        return isAlmostTo(a.x, b.x) && isAlmostTo(a.y,b.y);
     }
 
     export function areNotTheSamePoint(a:ICoordinates, b:ICoordinates) {
         return !areTheSamePoint(a,b);
+    }
+
+    export function arrayDoesNotHavePoint(a:ICoordinates[], b:ICoordinates){
+        var foundIt = true;
+        a.forEach(function(p){
+            if(areTheSamePoint(b,p)) {
+                foundIt = false;
+            }
+        });
+        return foundIt;
     }
 
     export function arrayAverage(o: any[]) {
