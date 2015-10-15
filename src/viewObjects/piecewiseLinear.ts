@@ -112,6 +112,7 @@ module KG {
                     });
                     view.addObject(newLine);
                     view = newLine.createSubObjects(view);
+                    piecewiseLinear.yIntercept = newLine.linear.yIntercept;
                 } else if(index == piecewiseLinear.sections.length - 1){
                     var newLine = new Line({
                         name: piecewiseLinear.name + '_section' + index,
@@ -126,6 +127,7 @@ module KG {
                     });
                     view.addObject(newLine);
                     view = newLine.createSubObjects(view);
+                    piecewiseLinear.xIntercept = newLine.linear.xIntercept;
                 } else {
                     view.addObject(new Line({
                         name: piecewiseLinear.name + '_section' + index,

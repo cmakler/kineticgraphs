@@ -23,23 +23,26 @@
         </div>
         <div class="col-md-4">
             <div class="well">
+                <div>Prices to buy</div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\text{buy }P_x:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x^B = {{ params.pxBuy | number: 2 }}:
                     </div>
                     <div class="col-xs-9" id="pxBuySlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\text{buy } P_y:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y^B = {{ params.pyBuy | number: 2 }}:
                     </div>
                     <div class="col-xs-9" id="pyBuySlider"></div>
                 </div>
+                <hr/>
+                <div>Prices to sell</div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\text{sell }P_x:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x^{S} = {{ params.pxSell | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="pxSellSlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\text{sell }P_y:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y^{S} = {{ params.pySell | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="pySellSlider"></div>
                 </div>
@@ -69,8 +72,8 @@
                 pySell: 'params.pySell',
                 budgetConstraintLabel: 'BL',
                 budgetSetLabel: "\\text{Budget Set}",
-                xInterceptLabel: "\\frac{E(x,y)}{P_x^B}",
-                yInterceptLabel: "\\frac{E(x,y)}{P_y^B}",
+                xInterceptLabel: 'model.maxX',
+                yInterceptLabel: 'model.maxY',
                 xLabel: 'params.x | number: 0',
                 yLabel: 'params.y | number: 0'
             }

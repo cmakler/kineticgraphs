@@ -128,7 +128,7 @@ module KG {
             if(definition.hasOwnProperty('xInterceptLabel')) {
                 var xInterceptLabelDef:GraphDivDefinition = {
                     name: definition.name + 'x_intercept_label',
-                    color: definition.color,
+                    className: definition.className,
                     text: definition.xInterceptLabel,
                     dimensions: {width: 30, height:20},
                     xDrag: definition.xDrag,
@@ -140,7 +140,7 @@ module KG {
             if(definition.hasOwnProperty('yInterceptLabel')) {
                 var yInterceptLabelDef:GraphDivDefinition = {
                     name: definition.name + 'y_intercept_label',
-                    color: definition.color,
+                    className: definition.className,
                     text: definition.yInterceptLabel,
                     dimensions: {width: 30, height:20},
                     yDrag: definition.yDrag,
@@ -353,6 +353,9 @@ module KG {
 
                 if(line.xInterceptLabelDiv) {
                     line.xInterceptLabelDiv.coordinates = {x: line.linear.xValue(view.yAxis.min), y: 'AXIS'};
+                    if(line.xInterceptLabelDiv.definition.text == 'foo') {
+                        line.xInterceptLabelDiv.text = line.linear.xValue(view.yAxis.min);
+                    }
                 }
 
                 if(line.yInterceptLabelDiv) {

@@ -483,9 +483,6 @@ var KG;
             _super.call(this, definition);
         }
         Restriction.prototype.validate = function (params) {
-            var RANGE_TYPE = "range";
-            var SET_TYPE = "set";
-            var BOOLEAN_TYPE = "boolean";
             var r = this;
             function isSimpleParam(name) {
                 var match = name.match(/params\.[a-zA-Z0-9]+/);
@@ -499,7 +496,7 @@ var KG;
             function paramName(name) {
                 return name.split('params.')[1];
             }
-            if (r.restrictionType === RANGE_TYPE) {
+            if (r.restrictionType === Restriction.RANGE_TYPE) {
                 if (r.min > r.max) {
                     var maxName = r.definition['max'];
                     if (isSimpleParam(maxName)) {
@@ -535,7 +532,7 @@ var KG;
                     return false;
                 }
             }
-            if (r.restrictionType === SET_TYPE) {
+            if (r.restrictionType === Restriction.SET_TYPE) {
                 if (r.set.indexOf(r.expression) > -1) {
                     return params;
                 }
@@ -543,7 +540,7 @@ var KG;
                     return false;
                 }
             }
-            if (r.restrictionType === BOOLEAN_TYPE) {
+            if (r.restrictionType === Restriction.BOOLEAN_TYPE) {
                 if (r.expression) {
                     return params;
                 }
@@ -563,6 +560,9 @@ var KG;
                 return r.expression;
             }
         };
+        Restriction.RANGE_TYPE = "range";
+        Restriction.SET_TYPE = "set";
+        Restriction.BOOLEAN_TYPE = "boolean";
         return Restriction;
     })(KG.Model);
     KG.Restriction = Restriction;
@@ -2070,7 +2070,7 @@ var KG;
             if (definition.hasOwnProperty('xInterceptLabel')) {
                 var xInterceptLabelDef = {
                     name: definition.name + 'x_intercept_label',
-                    color: definition.color,
+                    className: definition.className,
                     text: definition.xInterceptLabel,
                     dimensions: { width: 30, height: 20 },
                     xDrag: definition.xDrag,
@@ -2081,7 +2081,7 @@ var KG;
             if (definition.hasOwnProperty('yInterceptLabel')) {
                 var yInterceptLabelDef = {
                     name: definition.name + 'y_intercept_label',
-                    color: definition.color,
+                    className: definition.className,
                     text: definition.yInterceptLabel,
                     dimensions: { width: 30, height: 20 },
                     yDrag: definition.yDrag,
@@ -2263,6 +2263,9 @@ var KG;
                 }
                 if (line.xInterceptLabelDiv) {
                     line.xInterceptLabelDiv.coordinates = { x: line.linear.xValue(view.yAxis.min), y: 'AXIS' };
+                    if (line.xInterceptLabelDiv.definition.text == 'foo') {
+                        line.xInterceptLabelDiv.text = line.linear.xValue(view.yAxis.min);
+                    }
                 }
                 if (line.yInterceptLabelDiv) {
                     line.yInterceptLabelDiv.coordinates = { x: 'AXIS', y: line.linear.yValue(view.xAxis.min) };
@@ -2364,6 +2367,7 @@ var KG;
                     });
                     view.addObject(newLine);
                     view = newLine.createSubObjects(view);
+                    piecewiseLinear.yIntercept = newLine.linear.yIntercept;
                 }
                 else if (index == piecewiseLinear.sections.length - 1) {
                     var newLine = new KG.Line({
@@ -2379,6 +2383,7 @@ var KG;
                     });
                     view.addObject(newLine);
                     view = newLine.createSubObjects(view);
+                    piecewiseLinear.xIntercept = newLine.linear.xIntercept;
                 }
                 else {
                     view.addObject(new KG.Line({
@@ -3139,6 +3144,18 @@ var KG;
                 }
                 $scope.restrictions = definition.restrictions.map(function (restrictionDefinition) {
                     return new KG.Restriction(restrictionDefinition);
+                });
+                definition.views.forEach(function (viewDefinition) {
+                    if (viewDefinition.type == 'KG.Slider') {
+                        var sliderDefinition = viewDefinition.definition;
+                        $scope.restrictions.push(new KG.Restriction({
+                            expression: 'params.' + sliderDefinition['param'],
+                            restrictionType: KG.Restriction.RANGE_TYPE,
+                            min: sliderDefinition['axisDef'].min,
+                            max: sliderDefinition['axisDef'].max,
+                            precision: sliderDefinition['precision']
+                        }));
+                    }
                 });
                 $scope.model = KG.createInstance(definition.model);
                 $scope.model.update($scope, function () {
@@ -4237,6 +4254,8 @@ var EconGraphs;
                 yInterceptLabel: definition.yInterceptLabel,
                 params: lineParams
             }, b.modelProperty('budgetLine'));
+            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(0)');
+            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(0)');
         }
         return EndowmentBudgetConstraint;
     })(EconGraphs.Budget);

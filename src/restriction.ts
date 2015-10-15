@@ -8,9 +8,9 @@ module KG
         restrictionType: string;
         min?: number;
         max?: number;
-        precision: number;
-        set: any[];
-        error: string;
+        precision?: number;
+        set?: any[];
+        error?: string;
     }
 
     export interface IRestriction extends IModel
@@ -30,15 +30,15 @@ module KG
         private precision;
         public error;
 
+        static RANGE_TYPE = "range";
+        static SET_TYPE = "set";
+        static BOOLEAN_TYPE = "boolean";
+
         constructor(definition:RestrictionDefinition) {
             super(definition);
         }
 
         validate(params) {
-
-            var RANGE_TYPE = "range";
-            var SET_TYPE = "set";
-            var BOOLEAN_TYPE = "boolean";
 
             var r = this;
 
@@ -56,7 +56,7 @@ module KG
                 return name.split('params.')[1];
             }
 
-            if(r.restrictionType === RANGE_TYPE){
+            if(r.restrictionType === Restriction.RANGE_TYPE){
                 if(r.min > r.max){
                     var maxName = r.definition['max'];
                     if(isSimpleParam(maxName)){
@@ -89,7 +89,7 @@ module KG
                 }
             }
 
-            if(r.restrictionType === SET_TYPE){
+            if(r.restrictionType === Restriction.SET_TYPE){
                 if(r.set.indexOf(r.expression) > -1) {
                     return params;
                 } else {
@@ -97,7 +97,7 @@ module KG
                 }
             }
 
-            if(r.restrictionType === BOOLEAN_TYPE){
+            if(r.restrictionType === Restriction.BOOLEAN_TYPE){
                 if(r.expression){
                     return params;
                 } else {

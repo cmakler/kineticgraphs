@@ -22,6 +22,8 @@ module EconGraphs {
         pyBuy: number;
         pxSell: number;
         pySell: number;
+        maxX: number;
+        maxY: number;
         budgetLine: KG.Line;
         endowmentPoint: KG.Point;
     }
@@ -35,6 +37,8 @@ module EconGraphs {
         public pyBuy;
         public pxSell;
         public pySell;
+        public maxX;
+        public maxY;
         public budgetLine;
         public endowmentPoint;
 
@@ -69,7 +73,7 @@ module EconGraphs {
                 yDrag: definition.endowment.y,
                 className: 'budget',
                 params: pointParams
-            })
+            });
 
             var lineParams:KG.LineParamsDefinition = {};
             if(definition.hasOwnProperty('budgetConstraintLabel')) {
@@ -106,6 +110,9 @@ module EconGraphs {
                 yInterceptLabel: definition.yInterceptLabel,
                 params: lineParams
             }, b.modelProperty('budgetLine'));
+
+            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(0)');
+            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(0)');
 
         }
 

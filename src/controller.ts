@@ -11,7 +11,7 @@ module KG
         graphParams: string[];
         restrictions: RestrictionDefinition[];
         model: ModelDefinition;
-        views: ViewDefinition[];
+        views: {type: string; definition: ViewDefinition;}[];
     }
 
     export interface IScope extends ng.IScope
@@ -39,7 +39,7 @@ module KG
 
             $scope.color = function(className) {
                 return KG.colorForClassName(className);
-            }
+            };
 
             $scope.init = function(definition:ScopeDefinition) {
                 $scope.params = definition.params;
@@ -51,9 +51,25 @@ module KG
                         }
                     })
                 }
+
                 $scope.restrictions = definition.restrictions.map(function(restrictionDefinition) {
                     return new Restriction(restrictionDefinition);
                 });
+
+                definition.views.forEach(function(viewDefinition) {
+                    if(viewDefinition.type == 'KG.Slider') {
+                        var sliderDefinition = viewDefinition.definition;
+                        $scope.restrictions.push(new Restriction({
+                            expression: 'params.' + sliderDefinition['param'],
+                            restrictionType: Restriction.RANGE_TYPE,
+                            min: sliderDefinition['axisDef'].min,
+                            max: sliderDefinition['axisDef'].max,
+                            precision: sliderDefinition['precision']
+                        }))
+                    }
+                });
+
+
                 $scope.model = createInstance(definition.model);
                 $scope.model.update($scope, function() {
                     $scope.views = definition.views.map(function(view) {
