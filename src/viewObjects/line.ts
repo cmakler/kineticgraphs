@@ -142,7 +142,7 @@ module KG {
                     name: definition.name + 'y_intercept_label',
                     className: definition.className,
                     text: definition.yInterceptLabel,
-                    dimensions: {width: 30, height:20},
+                    dimensions: {width: 50, height:20},
                     yDrag: definition.yDrag,
                     backgroundColor: 'white'
                 };

@@ -2083,7 +2083,7 @@ var KG;
                     name: definition.name + 'y_intercept_label',
                     className: definition.className,
                     text: definition.yInterceptLabel,
-                    dimensions: { width: 30, height: 20 },
+                    dimensions: { width: 50, height: 20 },
                     yDrag: definition.yDrag,
                     backgroundColor: 'white'
                 };
@@ -4254,8 +4254,8 @@ var EconGraphs;
                 yInterceptLabel: definition.yInterceptLabel,
                 params: lineParams
             }, b.modelProperty('budgetLine'));
-            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(0)');
-            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(0)');
+            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(2)');
+            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
         }
         return EndowmentBudgetConstraint;
     })(EconGraphs.Budget);

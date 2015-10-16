@@ -111,8 +111,8 @@ module EconGraphs {
                 params: lineParams
             }, b.modelProperty('budgetLine'));
 
-            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(0)');
-            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(0)');
+            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(2)');
+            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
 
         }
 

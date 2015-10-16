@@ -33,6 +33,10 @@ module KG {
         arrows: string;
         areaUnderLabel?: string;
         areaOverLabel?: string;
+        xIntercept: number;
+        yIntercept: number;
+
+
     }
 
     export class PiecewiseLinear extends ViewObject implements IPiecewiseLinear {
@@ -44,6 +48,8 @@ module KG {
         public areaOverLabel;
         public xInterceptLabel;
         public yInterceptLabel;
+        public xIntercept;
+        public yIntercept;
 
         constructor(definition:PiecewiseLinearDefinition, modelPath?: string) {
 

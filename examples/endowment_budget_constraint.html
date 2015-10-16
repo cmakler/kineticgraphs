@@ -61,7 +61,22 @@
             pySell: 4
         },
         graphParams: [],
-        restrictions: [],
+        restrictions: [
+            {
+                expression: 'params.x',
+                restrictionType: 'range',
+                max: 50,
+                min: 0,
+                precision: 1
+            },
+            {
+                expression: 'params.y',
+                restrictionType: 'range',
+                max: 50,
+                min: 0,
+                precision: 1
+            }
+        ],
         model: {
             type: 'EconGraphs.EndowmentBudgetConstraint',
             definition: {
