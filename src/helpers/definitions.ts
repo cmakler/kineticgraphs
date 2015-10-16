@@ -75,7 +75,7 @@ module KG
         return binaryFunction(def1,def2,'^');
     }
 
-    export function createInstance(definition) {
+    export function createInstance(definition,modelPath?) {
 
         // from http://stackoverflow.com/questions/1366127/
         function typeSpecificConstructor(typeName) {
@@ -95,7 +95,7 @@ module KG
 
         // each object is a new instance of the class named in the 'type' parameter
         var newObjectConstructor = typeSpecificConstructor(definition.type);
-        return new newObjectConstructor(definition.definition);
+        return new newObjectConstructor(definition.definition, modelPath);
 
     }
 

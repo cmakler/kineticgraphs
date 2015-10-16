@@ -36,6 +36,7 @@ module KG
         samplePoints: (numSamples:number) => number[];
         toArray: () => number[];
         contains: (x:number, strict?:boolean) => boolean;
+        closestValueTo: (x:number) => number;
         intersection: (otherDomain:Domain) => Domain;
     }
 
@@ -57,6 +58,17 @@ module KG
             var lowEnough:boolean = strict ? (this.max > x) : (this.max - x >= -0.0001);
             var highEnough:boolean = strict ? (this.min < x) : (this.min - x <= 0.0001);
             return lowEnough && highEnough;
+        }
+
+        closestValueTo(x) {
+            if (x < this.min) {
+                return this.min
+            } else if (x > this.max) {
+                return this.max
+            } else {
+                return x
+            }
+
         }
 
         samplePoints(numSamples) {

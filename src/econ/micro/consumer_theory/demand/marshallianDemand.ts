@@ -1,202 +1,223 @@
 /// <reference path="../../../eg.ts"/>
 
-/*
+module EconGraphs {
 
- Find the price-consumption curve for a given income and other price
+    export interface MarshallianDemandDefinition extends UtilityDemandDefinition{
+        budget: {type: string; definition: BudgetDefinition};
+        utility: {type: string; definition: TwoGoodUtilityDefinition};
+    }
 
- The pccParams object should have the following structure:
- {
- good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
- minPrice: the minimum price to evaluate (0 by default)
- maxPrice: the maximum price to evaluate (50 by default)
- income: the consumer's income, OR a bundle {x:x, y:y} to be evaluated at current prices
- otherPrice: the price of the other good
- }
+    export interface IMarshallianDemand extends IUtilityDemand {
+        budget: Budget;
+        utility: TwoGoodUtility;
 
- */
+        priceConsumptionCurve: (pccParams: any, curveParams: KG.CurveParamsDefinition) => KG.Curve;
+        incomeConsumptionCurve: (iccParams: any, curveParams: KG.CurveParamsDefinition) => KG.Curve;
+        engelCurve: (engelParams: any, curveParams: KG.CurveParamsDefinition) => KG.Curve;
+        demandCurve: (demandParams: any, curveParams: KG.CurveParamsDefinition) => KG.Curve
+    }
 
-priceConsumptionCurve(pccParams) {
+    export class MarshallianDemand extends UtilityDemand implements IMarshallianDemand {
 
-    var u = this;
+        public budget;
+        public utility;
 
-    return {
+        constructor(definition:MarshallianDemandDefinition, modelPath?:string) {
+            super(definition, modelPath);
+        }
 
-        points: function (xDomain, yDomain) {
+        /*
 
-            var px,
-                py,
-                isGoodX = ('y' != pccParams['good']),
-                minPrice = pccParams['minPrice'] || 0,
-                maxPrice = pccParams['maxPrice'] || 100,
-                income = pccParams['income'],
-                endowment = pccParams['endowment'] || {},
-                samplePoints = pccParams['samplePoints'] || 51,
-                otherPrice = pccParams['otherPrice'],
-                priceConsumptionFunction = function (price) {
-                    px = isGoodX ? price : otherPrice;
-                    py = isGoodX ? otherPrice : price;
-                    if (endowment.hasOwnProperty('x')) {
-                        income = endowment.x * px + endowment.y * py;
-                    }
-                    return u.optimalBundle(income, px, py);
-                };
+         Find the price-consumption curve for a given income and other price
 
-            return functionPoints(priceConsumptionFunction, xDomain, yDomain, {
-                min: minPrice,
-                max: maxPrice,
-                dependentVariable: 'p'
+         The pccParams object should have the following structure:
+         {
+         good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
+         minPrice: the minimum price to evaluate (0 by default)
+         maxPrice: the maximum price to evaluate (100 by default)
+         otherPrice: the price of the other good
+         }
+
+         */
+
+        priceConsumptionCurve(pccParams, curveParams) {
+
+            pccParams = _.defaults(pccParams, {
+                good: 'x',
+                minPrice: 0,
+                maxPrice: 100,
+                samplePoints: 51
+            });
+
+            var d = this,
+                priceDomain = new KG.Domain(pccParams.minPrice, pccParams.maxPrice),
+                samplePoints = priceDomain.samplePoints(pccParams.samplePoints),
+                curveData = [];
+
+            var initialPrice = budget['p' + pccParams.good];
+
+            samplePoints.forEach(function(price) {
+
+                var budget = d.budget;
+                budget['p' + pccParams.good] = price;
+                curveData.push(d.utility.optimalBundle(budget));
+
+            });
+
+            // reset budget price
+            d.budget['p' + pccParams.good] = initialPrice;
+
+            return new KG.Curve({
+                name: 'PCC' + pccParams.good,
+                data: curveData,
+                params: curveParams,
+                className: 'pcc'
+            })
+        }
+
+        /*
+
+         Find the income consumption curve (i.e., expansion path) for a given set of prices.
+         The iccParams object should have the following structure:
+
+         {
+         minIncome: the minimum income to evaluate (0 by default)
+         maxIncome: the maximum income to evaluate (200 by default)
+         samplePoints: number of points to sample (51 by default)
+         }
+
+         */
+
+        incomeConsumptionCurve(iccParams?, curveParams?) {
+
+            iccParams = _.defaults(iccParams, {
+                minIncome: 0,
+                maxIncome: 200,
+                samplePoints: 51
+            });
+
+            var d = this,
+                incomeDomain = new KG.Domain(iccParams.minIncome, iccParams.maxIncome),
+                samplePoints = incomeDomain.samplePoints(pccParams.samplePoints),
+                curveData = [];
+
+            var initialIncome = budget.income;
+
+            samplePoints.forEach(function(income) {
+
+                var budget = d.budget;
+                budget.income = income;
+                curveData.push(d.utility.optimalBundle(budget));
+
+            });
+
+            // reset budget price
+            d.budget.income = initialIncome;
+
+            return new KG.Curve({
+                name: 'ICC',
+                data: curveData,
+                params: curveParams,
+                className: 'icc'
+            });
+        }
+
+        /*
+
+         Find the Engel curve for a given set of prices
+         The engelCurveParams object should have the following structure:
+         {
+         good: the good whose quantity demanded we are going to plot
+         minIncome: the minimum income to evaluate (0 by default)
+         maxIncome: the maximum income to evaluate (50 by default)
+         px: price of x
+         py: price of y
+         }
+
+         */
+
+        engelCurve(engelParams, curveParams) {
+
+            engelParams = _.defaults(engelParams, {
+                good: 'x',
+                minIncome: 0,
+                maxIncome: 200,
+                samplePoints: 51
+            });
+
+            var d = this,
+                incomeDomain = new KG.Domain(iccParams.minIncome, iccParams.maxIncome),
+                samplePoints = incomeDomain.samplePoints(pccParams.samplePoints),
+                curveData = [];
+
+            var initialIncome = budget.income;
+
+            samplePoints.forEach(function(income) {
+
+                var budget = d.budget;
+                budget.income = income;
+                curveData.push({x: d.utility.optimalBundle(budget)[engelParams.good], y: income});
+
+            });
+
+            // reset budget price
+            d.budget.income = initialIncome;
+
+            return new KG.Curve({
+                name: 'Engel' + engelParams.good,
+                data: curveData,
+                params: curveParams,
+                className: 'engel'
             });
 
         }
-    }
-}
 
-/*
+        /*
 
- Find the income expansion path for a given set of prices.
- The incomeExpansionParams object should have the following structure:
+         Find the demand curve for a given income and other price
 
- {
- minIncome: the minimum income to evaluate (0 by default)
- maxIncome: the maximum income to evaluate (50 by default)
- px: price of x
- py: price of y
- }
+         The demandParams object should have the following structure:
+         {
+         good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
+         minPrice: the minimum price to evaluate (0 by default)
+         maxPrice: the maximum price to evaluate (50 by default)
+         samplePoints: the number of points to sample (51 by default)
+         }
 
- */
+         */
+        demandCurve(demandParams, curveParams) {
 
-incomeConsumptionCurve(iccParams) {
-
-    var u = this;
-
-    return {
-
-        points: function (xDomain, yDomain) {
-
-            var minIncome = iccParams['minIncome'] || 0,
-                maxIncome = iccParams['maxIncome'] || 50,
-                px = iccParams['px'],
-                py = iccParams['py'],
-                samplePoints = iccParams['samplePoints'] || 51,
-                incomeConsumptionFunction = function (income) {
-                    return u.optimalBundle(income, px, py);
-                };
-
-            return functionPoints(incomeConsumptionFunction, xDomain, yDomain, {
-                min: minIncome,
-                max: maxIncome,
-                dependentVariable: 'i'
+            demandParams = _.defaults(pccParams, {
+                good: 'x',
+                minPrice: 0,
+                maxPrice: 50,
+                samplePoints: 51
             });
 
-        }
-    }
-}
+            var d = this,
+                priceDomain = new KG.Domain(demandParams.minPrice, demandParams.maxPrice),
+                samplePoints = priceDomain.samplePoints(pccParams.samplePoints),
+                curveData = [];
 
-/*
+            var initialPrice = budget['p' + pccParams.good];
 
- Find the Engel curve for a given set of prices
- The engelCurveParams object should have the following structure:
- {
- good: the good whose quantity demanded we are going to plot
- minIncome: the minimum income to evaluate (0 by default)
- maxIncome: the maximum income to evaluate (50 by default)
- px: price of x
- py: price of y
- }
+            samplePoints.forEach(function(price) {
 
- */
+                var budget = d.budget;
+                budget['p' + demandParams.good] = price;
+                curveData.push({x: d.utility.optimalBundle(budget)[demandParams.good], y: price});
 
-engelCurve(engelParams) {
-
-    var u = this;
-
-    return {
-
-        points: function (xDomain, yDomain) {
-
-            var isGoodX = ('y' != engelParams['good']),
-                px = engelParams['px'],
-                py = engelParams['py'],
-                engelFunction = function (income) {
-                    return isGoodX ? u.optimalBundle(income, px, py)[0] : u.optimalBundle(income, px, py)[1];
-                };
-
-            return functionPoints(engelFunction, xDomain, yDomain, {dependentVariable: 'y'});
-        }
-    }
-
-}
-
-/*
-
- Find the demand curve for a given income and other price
-
- The demandParams object should have the following structure:
- {
- good: the good whose price we are going to vary; must be 'x' or 'y'; 'x' by default
- minPrice: the minimum price to evaluate (0 by default)
- maxPrice: the maximum price to evaluate (50 by default)
- income: the consumer's income
- otherPrice: the price of the other good
- }
-
- */
-demandCurve(demandParams) {
-
-    var u = this;
-
-    return {
-
-        points: function (xDomain, yDomain) {
-
-            yDomain = domainAsObject(yDomain);
-
-            var compensatedIncome,
-                isGoodX = ('y' != demandParams['good']),
-                compensationPrice = demandParams['compensationPrice'] || 0,
-                income = demandParams['income'],
-                numberOfConsumers = demandParams['numberOfConsumers'] || 1,
-                minPrice = demandParams['minPrice'] || yDomain.min,
-                maxPrice = demandParams['maxPrice'] || yDomain.max,
-                otherPrice = demandParams['otherPrice'],
-                samplePoints = demandParams['samplePoints'] || 51,
-                demandFunction = function (price) {
-                    if (isGoodX) {
-                        compensatedIncome = (compensationPrice > 0) ? u.compensatedIncome(income, compensationPrice, price, otherPrice) : income;
-                        return u.optimalBundle(compensatedIncome, price, otherPrice)[0] * numberOfConsumers;
-                    } else {
-                        return u.optimalBundle(income, otherPrice, price)[1] * numberOfConsumers;
-                    }
-                };
-
-            return functionPoints(demandFunction, xDomain, yDomain, {
-                dependentVariable: 'y',
-                min: minPrice,
-                max: maxPrice
             });
-        },
 
-        area: function (xDomain, yDomain) {
+            // reset budget price
+            d.budget['p' + pccParams.good] = initialPrice;
 
-            xDomain = domainAsObject(xDomain);
-            yDomain = domainAsObject(yDomain);
-
-
-            var points = this.points(xDomain, yDomain),
-                minPrice = demandParams['minPrice'] || yDomain.min,
-                maxPrice = demandParams['maxPrice'] || yDomain.max;
-
-            points.push({x: 0, y: maxPrice});
-            points.push({x: 0, y: minPrice});
-
-            return points;
-
+            return new KG.Curve({
+                name: 'demand' + pccParams.good,
+                data: curveData,
+                params: curveParams,
+                className: 'demand'
+            });
         }
     }
-}
-
-// Return the decomposition bundle for a price change from px1 to px2
-decompositionBundle(income, px1, px2, py) {
-    var u = this;
-    return u.optimalBundle(u.compensatedIncome(income, px1, px2, py), px2, py);
 }

@@ -4,12 +4,18 @@
 
 module KG {
 
+    export interface CurveParamsDefinition extends ViewObjectParamsDefinition {
+        label?: string;
+        labelPrefix?: string;
+    }
+
     export interface CurveDefinition extends ViewObjectDefinition {
         data?: any;
         interpolation?: string;
         label?: GraphDivDefinition;
         labelPosition?: string;
         arrows?: string;
+        params?: CurveParamsDefinition;
     }
 
     export interface ICurve extends IViewObject {
@@ -65,6 +71,22 @@ module KG {
 
 
         constructor(definition:CurveDefinition, modelPath?: string) {
+
+            if(definition.hasOwnProperty('params')) {
+
+                var p = definition.params;
+
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    }
+                }
+
+                if (p.hasOwnProperty('labelPrefix')) {
+                    definition.label.text = p.labelPrefix + definition.label.text;
+                }
+
+            }
 
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
 

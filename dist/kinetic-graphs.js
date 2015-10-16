@@ -99,6 +99,17 @@ var KG;
             var highEnough = strict ? (this.min < x) : (this.min - x <= 0.0001);
             return lowEnough && highEnough;
         };
+        Domain.prototype.closestValueTo = function (x) {
+            if (x < this.min) {
+                return this.min;
+            }
+            else if (x > this.max) {
+                return this.max;
+            }
+            else {
+                return x;
+            }
+        };
         Domain.prototype.samplePoints = function (numSamples) {
             var min = this.min, max = this.max, sp = [];
             for (var i = 0; i < numSamples; i++) {
@@ -339,7 +350,7 @@ var KG;
         return binaryFunction(def1, def2, '^');
     }
     KG.raiseDefToDef = raiseDefToDef;
-    function createInstance(definition) {
+    function createInstance(definition, modelPath) {
         // from http://stackoverflow.com/questions/1366127/
         function typeSpecificConstructor(typeName) {
             var arr = typeName.split(".");
@@ -354,7 +365,7 @@ var KG;
         }
         // each object is a new instance of the class named in the 'type' parameter
         var newObjectConstructor = typeSpecificConstructor(definition.type);
-        return new newObjectConstructor(definition.definition);
+        return new newObjectConstructor(definition.definition, modelPath);
     }
     KG.createInstance = createInstance;
 })(KG || (KG = {}));
@@ -371,7 +382,7 @@ var KG;
                 if (definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];
                     if (value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
-                        model[key] = KG.createInstance(value);
+                        model[key] = KG.createInstance(value, modelPath + '.' + key);
                     }
                     else {
                         model[key] = value;
@@ -931,7 +942,12 @@ var KGMath;
                 }
                 else {
                     this.setBase(1, x);
-                    return this.levelCurve(2).value();
+                    if (this.levelCurve(2)) {
+                        return this.levelCurve(2).value();
+                    }
+                    else {
+                        return null;
+                    }
                 }
             };
             // returns the x value corresponding to the given y value for m(x,y) = m.level
@@ -942,7 +958,12 @@ var KGMath;
                 }
                 else {
                     this.setBase(2, y);
-                    return this.levelCurve(1).value();
+                    if (this.levelCurve(1)) {
+                        return this.levelCurve(1).value();
+                    }
+                    else {
+                        return null;
+                    }
                 }
             };
             return Monomial;
@@ -1901,6 +1922,17 @@ var KG;
     var Curve = (function (_super) {
         __extends(Curve, _super);
         function Curve(definition, modelPath) {
+            if (definition.hasOwnProperty('params')) {
+                var p = definition.params;
+                if (p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    };
+                }
+                if (p.hasOwnProperty('labelPrefix')) {
+                    definition.label.text = p.labelPrefix + definition.label.text;
+                }
+            }
             definition = _.defaults(definition, { data: [], interpolation: 'linear' });
             _super.call(this, definition, modelPath);
             if (definition.label) {
@@ -2452,6 +2484,9 @@ var KG;
         }
         GraphDiv.prototype.render = function (view) {
             var divObj = this;
+            if (divObj.text instanceof Array) {
+                divObj.text = divObj.text.join('');
+            }
             if (!divObj.hasOwnProperty('coordinates')) {
                 return view;
             }
@@ -4696,18 +4731,19 @@ var EconGraphs;
             var optimalBundle = this.optimalBundle(budget);
             return this.bundlePoint(optimalBundle, params);
         };
-        TwoGoodUtility.prototype.indifferenceCurveAtUtility = function (utility) {
+        TwoGoodUtility.prototype.indifferenceCurveAtUtility = function (utility, params) {
             var u = this;
             u.utilityFunction.setLevel(utility);
             return new KG.FunctionPlot({
                 name: 'indifferenceCurve',
                 fn: u.modelProperty('utilityFunction'),
-                className: 'utility'
+                className: 'utility',
+                params: params
             });
         };
-        TwoGoodUtility.prototype.indifferenceCurveThroughBundle = function (bundle) {
+        TwoGoodUtility.prototype.indifferenceCurveThroughBundle = function (bundle, params) {
             var u = this, utility = u.utility(bundle);
-            return u.indifferenceCurveAtUtility(utility);
+            return u.indifferenceCurveAtUtility(utility, params);
         };
         TwoGoodUtility.prototype.indifferenceCurveFamily = function (levels) {
             var u = this;
@@ -4718,7 +4754,18 @@ var EconGraphs;
             });
         };
         TwoGoodUtility.prototype.optimalBundle = function (budget) {
-            return { x: 0, y: 0 };
+            var u = this;
+            var candidateBundles = budget.budgetSegments.map(u.optimalBundleAlongSegment);
+            var maxUtilityBundle = candidateBundles[0];
+            candidateBundles.forEach(function (bundle) {
+                if (u.utility(bundle) > u.utility(maxUtilityBundle)) {
+                    maxUtilityBundle = bundle;
+                }
+            });
+            return maxUtilityBundle;
+        };
+        TwoGoodUtility.prototype.optimalBundleAlongSegment = function (budgetSegment) {
+            return { x: 1, y: 1 };
         };
         TwoGoodUtility.prototype.indirectUtility = function (budget) {
             var u = this;
@@ -4751,6 +4798,16 @@ var EconGraphs;
     var CobbDouglasUtility = (function (_super) {
         __extends(CobbDouglasUtility, _super);
         function CobbDouglasUtility(definition, modelPath) {
+            if (definition.hasOwnProperty('yPower')) {
+                var sumOfPowers = KG.addDefs(definition.xPower, definition.yPower);
+                definition.xShare = KG.divideDefs(definition.xPower, sumOfPowers);
+                definition.yShare = KG.divideDefs(definition.yPower, sumOfPowers);
+            }
+            else {
+                definition.yPower = KG.subtractDefs(1, definition.xPower);
+                definition.xShare = definition.xPower;
+                definition.yShare = definition.yPower;
+            }
             definition.type = 'CobbDouglas';
             definition.def = {
                 coefficient: definition.coefficient || 1,
@@ -4759,6 +4816,13 @@ var EconGraphs;
             };
             _super.call(this, definition, modelPath);
         }
+        CobbDouglasUtility.prototype.optimalBundleAlongSegment = function (budgetSegment) {
+            var u = this;
+            var constrainedX, unconstrainedX;
+            unconstrainedX = u.xShare * budgetSegment.income / budgetSegment.px;
+            constrainedX = budgetSegment.xDomain.closestValueTo(unconstrainedX);
+            return { x: constrainedX, y: budgetSegment.linear.yValue(constrainedX) };
+        };
         return CobbDouglasUtility;
     })(EconGraphs.TwoGoodUtility);
     EconGraphs.CobbDouglasUtility = CobbDouglasUtility;

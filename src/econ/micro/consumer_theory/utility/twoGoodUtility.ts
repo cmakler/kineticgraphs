@@ -9,12 +9,10 @@ module EconGraphs {
     }
 
     export interface TwoGoodUtilityDefinition extends UtilityDefinition {
-        indifferenceCurveLabel: string;
+
     }
 
     export interface ITwoGoodUtility extends IUtility {
-
-        indifferenceCurveLabel: string;
 
         utility:(bundle?:TwoGoodBundle) => number;
         mux:(bundle?:TwoGoodBundle) => number;
@@ -23,10 +21,11 @@ module EconGraphs {
 
         bundlePoint: (bundle: TwoGoodBundle, params?: KG.PointParamsDefinition) => KG.Point;
         optimalBundle:(budget:Budget) => KG.ICoordinates;
+        optimalBundleAlongSegment:(budgetSegment:BudgetSegment) => KG.ICoordinates;
         optimalBundlePoint: (budget: Budget, params?: KG.PointParamsDefinition) => KG.Point;
 
-        indifferenceCurveAtUtility: (utility:number) => KG.FunctionPlot;
-        indifferenceCurveThroughBundle: (bundle:TwoGoodBundle) => KG.FunctionPlot;
+        indifferenceCurveAtUtility: (utility:number, params?: KG.CurveParamsDefinition) => KG.ViewObject;
+        indifferenceCurveThroughBundle: (bundle:TwoGoodBundle, params?: KG.CurveParamsDefinition) => KG.ViewObject;
         indifferenceCurveFamily: (levels: number[]) => KG.FunctionMap;
 
         mrsLine: (bundle:TwoGoodBundle, params?: KG.LineParamsDefinition) => KG.Line;
@@ -97,20 +96,21 @@ module EconGraphs {
             return this.bundlePoint(optimalBundle,params)
         }
 
-        indifferenceCurveAtUtility(utility:number) {
+        indifferenceCurveAtUtility(utility:number, params: KG.CurveParamsDefinition) {
             var u = this;
             u.utilityFunction.setLevel(utility);
             return new KG.FunctionPlot({
                 name: 'indifferenceCurve',
                 fn: u.modelProperty('utilityFunction'),
-                className: 'utility'
+                className: 'utility',
+                params: params
             })
         }
 
-        indifferenceCurveThroughBundle(bundle:TwoGoodBundle) {
+        indifferenceCurveThroughBundle(bundle:TwoGoodBundle, params: KG.CurveParamsDefinition) {
             var u = this,
                 utility = u.utility(bundle);
-            return u.indifferenceCurveAtUtility(utility);
+            return u.indifferenceCurveAtUtility(utility,params);
         }
 
         indifferenceCurveFamily(levels:number[]) {
@@ -123,7 +123,19 @@ module EconGraphs {
         }
 
         optimalBundle(budget:Budget) {
-            return {x: 0, y: 0}
+            var u = this;
+            var candidateBundles: TwoGoodBundle[] = budget.budgetSegments.map(u.optimalBundleAlongSegment);
+            var maxUtilityBundle = candidateBundles[0];
+            candidateBundles.forEach(function(bundle) {
+                if(u.utility(bundle) > u.utility(maxUtilityBundle)) {
+                    maxUtilityBundle = bundle;
+                }
+            });
+            return maxUtilityBundle;
+        }
+
+        optimalBundleAlongSegment(budgetSegment:BudgetSegment) {
+            return {x: 1, y: 1}
         }
 
         indirectUtility(budget:Budget) {

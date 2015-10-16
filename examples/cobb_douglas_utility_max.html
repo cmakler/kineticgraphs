@@ -28,6 +28,21 @@
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
+                <div class="row">
+                    <div class="col-xs-3" style="text-align:right;font-size:12pt;padding-top:10px">Income:
+                    </div>
+                    <div class="col-xs-9" id="incomeSlider"></div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x:
+                    </div>
+                    <div class="col-xs-9" id="pxSlider"></div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y:
+                    </div>
+                    <div class="col-xs-9" id="pySlider"></div>
+                </div>
             </div>
             <equation>u(x,y) = x^\alpha y^{1 - \alpha} || u({{params.x}},{{params.y}}) = {{params.x}}^{ {{params.alpha | number: 2}} } \times {{params.y}}^{ {{1-params.alpha | number: 2}} } || = {{ model.utility({x: params.x, y: params.y}) | number:2 }}</equation>
         </div>
@@ -37,30 +52,32 @@
     var scopeDefinition = {
         params: {
             alpha: 0.5,
-            x: 20,
-            y: 20
+            income: 120,
+            px: 4,
+            py: 3
         },
         graphParams: [],
-        restrictions: [
-            {
-                expression: 'params.x',
-                restrictionType: 'range',
-                min: 1,
-                max: 49,
-                precision: 1
-            },
-            {
-                expression: 'params.y',
-                restrictionType: 'range',
-                min: 1,
-                max: 49,
-                precision: 1
-            }
-        ],
+        restrictions: [],
         model: {
             type: 'EconGraphs.CobbDouglasUtility',
             definition: {
-                xPower: 'params.alpha',
+                budget: {
+                    type: 'EconGraphs.SimpleBudgetConstraint',
+                    definition: {
+                        income: 'params.income',
+                        px: 'params.px',
+                        py: 'params.py',
+                        budgetConstraintLabel: 'BL',
+                        xInterceptLabel: "\\frac{I}{P_x}",
+                        yInterceptLabel: "\\frac{I}{P_y}"
+                    }
+                },
+                utility: {
+                    type: 'EconGraphs.CobbDouglasUtility',
+                    definition: {
+                        xPower: 'params.x'
+                    }
+                }
             }
         },
         views: [
@@ -71,7 +88,7 @@
                     xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
                     yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
                     objects: [
-                        "model.bundlePoint({x: 'params.x', y: 'params.y'},{xDragParam: 'x', yDragParam: 'y', xAxisLabel: 'params.x', yAxisLabel: 'params.y'})",
+                        "model.bundlePoint(model.optimalBundle({}))",
                         "model.indifferenceCurveThroughBundle({x: params.x, y: params.y},{label: ['u(x,y) = u(',params.x,',',params.y,') =',model.utility({x: params.x, y: params.y}).toFixed(2)]})",
                         "model.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45])"
                     ]
