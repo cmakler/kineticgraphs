@@ -574,7 +574,6 @@ var KGMath;
         var Base = (function (_super) {
             __extends(Base, _super);
             function Base(definition, modelPath) {
-                definition.level = definition.level || 0;
                 _super.call(this, definition, modelPath);
                 var fn = this;
                 if (definition.hasOwnProperty('xDomainDef')) {
@@ -949,6 +948,35 @@ var KGMath;
             return Monomial;
         })(Functions.Base);
         Functions.Monomial = Monomial;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
+/*
+ A monomial function is a term of the form c(b1^p1)(b2^p2)...(bn^pn)
+ where 'c' is the coefficient, 'bi' is the i'th base, and 'pi' is the i'th power.
+
+ The initializing object, params, should be of the form
+
+ params = {coefficient: (number), bases: (number or array), powers: (number or array)}
+
+ Any of these parameters may be null initially and set later with the setters.
+ */
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var CobbDouglas = (function (_super) {
+            __extends(CobbDouglas, _super);
+            function CobbDouglas(definition, modelPath) {
+                definition.yPower = definition.yPower || KG.subtractDefs(1, definition.xPower);
+                var monomialDef = {
+                    coefficient: definition.coefficient,
+                    powers: [definition.xPower, definition.yPower]
+                };
+                _super.call(this, monomialDef, modelPath);
+            }
+            return CobbDouglas;
+        })(Functions.Monomial);
+        Functions.CobbDouglas = CobbDouglas;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
 /*
@@ -1497,6 +1525,7 @@ var KGMath;
 /// <reference path="functions/implicit.ts"/>
 /// <reference path="functions/relation.ts"/>
 /// <reference path="functions/monomial.ts"/>
+/// <reference path="functions/cobbDouglas.ts"/>
 /// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
 /// <reference path="functions/quadratic.ts"/>
@@ -1528,7 +1557,7 @@ var KG;
                 if (p.hasOwnProperty('xDrag')) {
                     definition.xDrag = p.xDrag;
                 }
-                if (p.hasOwnProperty('xDragParam')) {
+                if (p.hasOwnProperty('yDrag')) {
                     definition.yDrag = p.yDrag;
                 }
             }
@@ -1633,6 +1662,12 @@ var KG;
                     if (p.hasOwnProperty('yAxisLabel')) {
                         definition.droplines.horizontal = p.yAxisLabel;
                     }
+                }
+                if (p.hasOwnProperty('xDragParam')) {
+                    definition.xDrag = 'params.' + p.xDragParam;
+                }
+                if (p.hasOwnProperty('yDragParam')) {
+                    definition.yDrag = 'params.' + p.yDragParam;
                 }
             }
             var defaultSize = 100;
@@ -2513,6 +2548,7 @@ var KG;
         }
         PathFamily.prototype.render = function (view) {
             var pathFamily = this;
+            pathFamily.updateDataForView(view);
             var group = view.objectGroup(pathFamily.name, pathFamily.initGroupFn(), false);
             var dataLine = d3.svg.line().interpolate(this.interpolation).x(function (d) {
                 return view.xAxis.scale(d.x);
@@ -4611,6 +4647,7 @@ var EconGraphs;
     EconGraphs.UtilityRedistribution = UtilityRedistribution;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
+'use strict';
 var EconGraphs;
 (function (EconGraphs) {
     var TwoGoodUtility = (function (_super) {
@@ -4638,17 +4675,34 @@ var EconGraphs;
         TwoGoodUtility.prototype.mrs = function (bundle) {
             return this.mux(bundle) / this.muy(bundle);
         };
-        TwoGoodUtility.prototype.mrsLine = function (bundle) {
+        TwoGoodUtility.prototype.mrsLine = function (bundle, params) {
             var u = this;
             return new KG.Line({
+                name: 'mrsLine',
                 point: bundle,
-                slope: -1 * u.mrs(bundle)
+                slope: -1 * u.mrs(bundle),
+                params: params
             });
+        };
+        TwoGoodUtility.prototype.bundlePoint = function (bundle, params) {
+            return new KG.Point({
+                coordinates: { x: bundle.x, y: bundle.y },
+                name: 'bundlePoint',
+                className: 'utility',
+                params: params
+            });
+        };
+        TwoGoodUtility.prototype.optimalBundlePoint = function (budget, params) {
+            var optimalBundle = this.optimalBundle(budget);
+            return this.bundlePoint(optimalBundle, params);
         };
         TwoGoodUtility.prototype.indifferenceCurveAtUtility = function (utility) {
             var u = this;
+            u.utilityFunction.setLevel(utility);
             return new KG.FunctionPlot({
-                fn: u.modelProperty('utilityFunction.setLevel(' + utility + ')')
+                name: 'indifferenceCurve',
+                fn: u.modelProperty('utilityFunction'),
+                className: 'utility'
             });
         };
         TwoGoodUtility.prototype.indifferenceCurveThroughBundle = function (bundle) {
@@ -4658,6 +4712,8 @@ var EconGraphs;
         TwoGoodUtility.prototype.indifferenceCurveFamily = function (levels) {
             var u = this;
             return new KG.FunctionMap({
+                name: 'indifferenceCurveMap',
+                levels: levels,
                 fn: u.modelProperty('utilityFunction')
             });
         };
@@ -4667,6 +4723,9 @@ var EconGraphs;
         TwoGoodUtility.prototype.indirectUtility = function (budget) {
             var u = this;
             return u.utility(u.optimalBundle(budget));
+        };
+        TwoGoodUtility.prototype.lowestCostBundle = function (utility, px, py) {
+            return { x: null, y: null }; // overridden by subclass
         };
         // Given two bundles, evaluates whether agent prefers first or second, or is indifferent
         TwoGoodUtility.prototype.bundlePreferred = function (bundles, tolerance) {
@@ -4684,6 +4743,25 @@ var EconGraphs;
         return TwoGoodUtility;
     })(EconGraphs.Utility);
     EconGraphs.TwoGoodUtility = TwoGoodUtility;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../../../eg.ts"/>
+'use strict';
+var EconGraphs;
+(function (EconGraphs) {
+    var CobbDouglasUtility = (function (_super) {
+        __extends(CobbDouglasUtility, _super);
+        function CobbDouglasUtility(definition, modelPath) {
+            definition.type = 'CobbDouglas';
+            definition.def = {
+                coefficient: definition.coefficient || 1,
+                xPower: definition.xPower,
+                yPower: definition.yPower
+            };
+            _super.call(this, definition, modelPath);
+        }
+        return CobbDouglasUtility;
+    })(EconGraphs.TwoGoodUtility);
+    EconGraphs.CobbDouglasUtility = CobbDouglasUtility;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
 var EconGraphs;
@@ -5489,6 +5567,7 @@ var EconGraphs;
 /// <reference path="micro/consumer_theory/utility/riskAversion.ts"/>
 /// <reference path="micro/consumer_theory/utility/utilityRedistribution.ts"/>
 /// <reference path="micro/consumer_theory/utility/twoGoodUtility.ts"/>
+/// <reference path="micro/consumer_theory/utility/cobbDouglasUtility.ts"/>
 /// <reference path="micro/consumer_theory/demand/demand.ts"/>
 /* Producer Theory */
 /// <reference path="micro/producer_theory/costs/productionCost.ts"/>

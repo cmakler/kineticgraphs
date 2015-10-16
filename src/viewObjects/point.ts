@@ -66,6 +66,14 @@ module KG
                     }
                 }
 
+                if(p.hasOwnProperty('xDragParam')) {
+                    definition.xDrag = 'params.' + p.xDragParam;
+                }
+
+                if(p.hasOwnProperty('yDragParam')) {
+                    definition.yDrag = 'params.' + p.yDragParam;
+                }
+
             }
 
             var defaultSize = 100;

@@ -28,6 +28,7 @@
 /// <reference path="micro/consumer_theory/utility/riskAversion.ts"/>
 /// <reference path="micro/consumer_theory/utility/utilityRedistribution.ts"/>
 /// <reference path="micro/consumer_theory/utility/twoGoodUtility.ts"/>
+/// <reference path="micro/consumer_theory/utility/cobbDouglasUtility.ts"/>
 
 /// <reference path="micro/consumer_theory/demand/demand.ts"/>
 

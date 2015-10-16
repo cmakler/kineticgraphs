@@ -1,5 +1,7 @@
 /// <reference path="../../../eg.ts"/>
 
+'use strict';
+
 module EconGraphs {
 
     export interface TwoGoodBundle extends KG.ICoordinates {
@@ -19,13 +21,15 @@ module EconGraphs {
         muy:(bundle?:TwoGoodBundle) => number;
         mrs:(bundle?:TwoGoodBundle) => number;
 
+        bundlePoint: (bundle: TwoGoodBundle, params?: KG.PointParamsDefinition) => KG.Point;
         optimalBundle:(budget:Budget) => KG.ICoordinates;
+        optimalBundlePoint: (budget: Budget, params?: KG.PointParamsDefinition) => KG.Point;
 
         indifferenceCurveAtUtility: (utility:number) => KG.FunctionPlot;
         indifferenceCurveThroughBundle: (bundle:TwoGoodBundle) => KG.FunctionPlot;
         indifferenceCurveFamily: (levels: number[]) => KG.FunctionMap;
 
-        mrsLine: (bundle:TwoGoodBundle) => KG.Line;
+        mrsLine: (bundle:TwoGoodBundle, params?: KG.LineParamsDefinition) => KG.Line;
 
         //preferredToBundleArea: (bundle:TwoGoodBundle) => KG.Area;
         //dispreferredToBundleArea: (bundle:TwoGoodBundle) => KG.Area;
@@ -38,7 +42,7 @@ module EconGraphs {
 
         public indifferenceCurveLabel;
 
-        constructor(definition:OneGoodUtilityDefinition, modelPath?:string) {
+        constructor(definition:TwoGoodUtilityDefinition, modelPath?:string) {
 
             definition = _.defaults(definition, {
                 indifferenceCurveLabel: 'U'
@@ -69,18 +73,37 @@ module EconGraphs {
             return this.mux(bundle) / this.muy(bundle);
         }
 
-        mrsLine(bundle:TwoGoodBundle) {
+        mrsLine(bundle, params) {
             var u = this;
             return new KG.Line({
+                name: 'mrsLine',
                 point: bundle,
-                slope: -1 * u.mrs(bundle)
+                slope: -1 * u.mrs(bundle),
+                params: params
             })
+        }
+
+        bundlePoint(bundle, params) {
+            return new KG.Point({
+                coordinates: {x: bundle.x, y: bundle.y},
+                name: 'bundlePoint',
+                className: 'utility',
+                params: params
+            })
+        }
+
+        optimalBundlePoint(budget, params) {
+            var optimalBundle = this.optimalBundle(budget);
+            return this.bundlePoint(optimalBundle,params)
         }
 
         indifferenceCurveAtUtility(utility:number) {
             var u = this;
+            u.utilityFunction.setLevel(utility);
             return new KG.FunctionPlot({
-                fn: u.modelProperty('utilityFunction.setLevel('+ utility +')')
+                name: 'indifferenceCurve',
+                fn: u.modelProperty('utilityFunction'),
+                className: 'utility'
             })
         }
 
@@ -93,6 +116,8 @@ module EconGraphs {
         indifferenceCurveFamily(levels:number[]) {
             var u = this;
             return new KG.FunctionMap({
+                name: 'indifferenceCurveMap',
+                levels: levels,
                 fn: u.modelProperty('utilityFunction')
             })
         }
@@ -106,8 +131,12 @@ module EconGraphs {
             return u.utility(u.optimalBundle(budget));
         }
 
+        lowestCostBundle(utility, px, py) {
+            return {x: null, y: null}; // overridden by subclass
+        }
+
         // Given two bundles, evaluates whether agent prefers first or second, or is indifferent
-        bundlePreferred(bundles:KG.ICoordinates[], tolerance?:number) {
+        bundlePreferred(bundles:TwoGoodBundle[], tolerance?:number) {
 
             var u = this;
 
@@ -129,13 +158,6 @@ module EconGraphs {
             return 0; //indifferent between two bundles
 
         }
-
-
-
-
-
-
-
 
     }
 }

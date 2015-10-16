@@ -102,7 +102,7 @@ module KG
                     definition.xDrag = p.xDrag;
                 }
 
-                if(p.hasOwnProperty('xDragParam')) {
+                if(p.hasOwnProperty('yDrag')) {
                     definition.yDrag = p.yDrag;
                 }
 

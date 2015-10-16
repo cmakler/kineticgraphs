@@ -12,8 +12,8 @@
 module KGMath.Functions {
 
     export interface MonomialDefinition extends BaseDefinition {
-        coefficient: any;
-        powers: any[];
+        coefficient?: any;
+        powers?: any[];
     }
 
     export interface IMonomial extends IBase {

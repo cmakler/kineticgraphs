@@ -4,8 +4,8 @@ module EconGraphs {
 
     export interface UtilityDefinition extends KG.ModelDefinition
     {
-        type: string;
-        def: KGMath.Functions.BaseDefinition;
+        type?: string;
+        def?: KGMath.Functions.BaseDefinition;
         className?: string;
         curveLabel?: string;
     }

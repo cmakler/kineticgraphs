@@ -143,7 +143,7 @@ module KG {
 
             var curve = this;
 
-curve.updateDataForView(view);
+            curve.updateDataForView(view);
 
             var dataCoordinates:ICoordinates[] = view.dataCoordinates(curve.data);
 
