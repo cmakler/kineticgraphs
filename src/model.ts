@@ -40,7 +40,7 @@ module KG
                 if(definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];
                     if(value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
-                        model[key] = createInstance(value, modelPath + '.' + key)
+                        model[key] = createInstance(value, model.modelPath + '.' + key)
                     } else {
                         model[key] = value;
                     }

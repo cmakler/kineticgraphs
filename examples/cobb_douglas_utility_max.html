@@ -59,7 +59,7 @@
         graphParams: [],
         restrictions: [],
         model: {
-            type: 'EconGraphs.CobbDouglasUtility',
+            type: 'EconGraphs.MarshallianDemand',
             definition: {
                 budget: {
                     type: 'EconGraphs.SimpleBudgetConstraint',
@@ -75,7 +75,7 @@
                 utility: {
                     type: 'EconGraphs.CobbDouglasUtility',
                     definition: {
-                        xPower: 'params.x'
+                        xPower: 'params.alpha'
                     }
                 }
             }
@@ -88,9 +88,9 @@
                     xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
                     yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
                     objects: [
-                        "model.bundlePoint(model.optimalBundle({}))",
-                        "model.indifferenceCurveThroughBundle({x: params.x, y: params.y},{label: ['u(x,y) = u(',params.x,',',params.y,') =',model.utility({x: params.x, y: params.y}).toFixed(2)]})",
-                        "model.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45])"
+                        "model.utility.optimalBundlePoint(model.budget,{})",
+                        "model.utility.optimalIndifferenceCurve(model.budget,{})",
+                            "model.budget.budgetLine"
                     ]
                 }
             },
@@ -101,6 +101,33 @@
                     param: 'alpha',
                     precision: '0.01',
                     axisDef: {min: 0, max: 1, tickValues: [0,0.5,1]}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'incomeSlider',
+                    param: 'income',
+                    precision: '1',
+                    axisDef: {min: 0, max: 200}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'pxSlider',
+                    param: 'px',
+                    precision: '0.25',
+                    axisDef: {min: 0, max: 10}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'pySlider',
+                    param: 'py',
+                    precision: '0.25',
+                    axisDef: {min: 0, max: 10}
                 }
             }
 

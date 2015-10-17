@@ -2,7 +2,7 @@
 
 module EconGraphs {
 
-    export interface EndowmentBudgetConstraintDefinition extends BudgetDefinition {
+    export interface EndowmentBudgetConstraintDefinition extends BudgetConstraintDefinition {
         endowment: any;
         px?: any;
         py?: any;
@@ -14,7 +14,7 @@ module EconGraphs {
         yLabel?: string;
     }
 
-    export interface IEndowmentBudgetConstraint extends IBudget {
+    export interface IEndowmentBudgetConstraint extends IBudgetConstraint {
         endowment: number;
         px: number;
         py: number;
@@ -28,7 +28,7 @@ module EconGraphs {
         endowmentPoint: KG.Point;
     }
 
-    export class EndowmentBudgetConstraint extends Budget implements IEndowmentBudgetConstraint {
+    export class EndowmentBudgetConstraint extends BudgetConstraint implements IEndowmentBudgetConstraint {
 
         public endowment;
         public px;

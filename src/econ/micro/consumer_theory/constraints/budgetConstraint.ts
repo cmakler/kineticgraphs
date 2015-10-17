@@ -2,7 +2,7 @@
 
 module EconGraphs {
 
-    export interface BudgetDefinition extends KG.ModelDefinition {
+    export interface BudgetConstraintDefinition extends KG.ModelDefinition {
         budgetSegmentDefinitions: BudgetSegmentDefinition[];
         budgetConstraintLabel: string;
         budgetSetLabel: string;
@@ -10,7 +10,7 @@ module EconGraphs {
         yInterceptLabel: string;
     }
 
-    export interface IBudget extends KG.IModel {
+    export interface IBudgetConstraint extends KG.IModel {
 
         budgetSegments: BudgetSegment[];
         isAffordable: (bundle:KG.ICoordinates) => boolean;
@@ -18,9 +18,11 @@ module EconGraphs {
         budgetSetLabel: string;
         xInterceptLabel: string;
         yInterceptLabel: string;
+        xValue: (y:number) => number;
+        yValue: (x:number) => number;
     }
 
-    export class Budget extends KG.Model implements IBudget {
+    export class BudgetConstraint extends KG.Model implements IBudgetConstraint {
 
         public budgetSegments;
         public budgetConstraintLabel;
@@ -28,7 +30,7 @@ module EconGraphs {
         public xInterceptLabel;
         public yInterceptLabel;
 
-        constructor(definition:BudgetDefinition, modelPath?:string) {
+        constructor(definition:BudgetConstraintDefinition, modelPath?:string) {
             super(definition, modelPath);
         }
 
@@ -47,6 +49,26 @@ module EconGraphs {
                 }
             }
             return false;
+        }
+
+        xValue(y) {
+            var x = 0;
+            this.budgetSegments.forEach(function(segment){
+                if(segment.yDomain.contains(y)) {
+                    x = segment.linear.xValue(y);
+                }
+            });
+            return x;
+        }
+
+        yValue(x) {
+            var y = 0;
+            this.budgetSegments.forEach(function(segment){
+                if(segment.xDomain.contains(x)) {
+                    y = segment.linear.yValue(x);
+                }
+            });
+            return y;
         }
     }
 }

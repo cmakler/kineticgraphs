@@ -59,6 +59,17 @@ module EconGraphs {
             return {x: constrainedX, y: budgetSegment.linear.yValue(constrainedX)};
         }
 
+        lowestCostBundle(utilityConstraint:UtilityConstraint) {
+            var u = this;
+
+            var theta = (u.xShare/u.yShare)*utilityConstraint.py/utilityConstraint.px;
+
+            return {
+                x: Math.pow(theta,u.yShare)*utilityConstraint.u,
+                y: Math.pow(1/theta,u.xShare)*utilityConstraint.u
+            };
+        }
+
     }
 }
 

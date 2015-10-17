@@ -17,10 +17,11 @@
 
 /* Consumer Theory */
 
-/// <reference path="micro/consumer_theory/budget/budget.ts"/>
-/// <reference path="micro/consumer_theory/budget/budgetSegment.ts"/>
-/// <reference path="micro/consumer_theory/budget/simpleBudgetConstraint.ts"/>
-/// <reference path="micro/consumer_theory/budget/endowmentBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/budgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/budgetSegment.ts"/>
+/// <reference path="micro/consumer_theory/constraints/simpleBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/endowmentBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/utilityConstraint.ts"/>
 
 /// <reference path="micro/consumer_theory/utility/utility.ts"/>
 /// <reference path="micro/consumer_theory/utility/oneGoodUtility.ts"/>
@@ -30,7 +31,9 @@
 /// <reference path="micro/consumer_theory/utility/twoGoodUtility.ts"/>
 /// <reference path="micro/consumer_theory/utility/cobbDouglasUtility.ts"/>
 
-/// <reference path="micro/consumer_theory/demand/demand.ts"/>
+/// <reference path="micro/consumer_theory/demand/utilityDemand.ts"/>
+/// <reference path="micro/consumer_theory/demand/marshallianDemand.ts"/>
+/// <reference path="micro/consumer_theory/demand/hicksianDemand.ts"/>
 
 /* Producer Theory */
 

@@ -80,59 +80,6 @@ var KG;
         return colorArray;
     }
     KG.allColors = allColors;
-    var Domain = (function () {
-        function Domain(min, max) {
-            this.min = min;
-            this.max = max;
-            this.min = this.min || 0;
-            this.max = this.max || 10;
-        }
-        Domain.prototype.toArray = function () {
-            return [this.min, this.max];
-        };
-        Domain.prototype.contains = function (x, strict) {
-            strict = strict || false;
-            if (x == undefined || x == null || isNaN(x)) {
-                return false;
-            }
-            var lowEnough = strict ? (this.max > x) : (this.max - x >= -0.0001);
-            var highEnough = strict ? (this.min < x) : (this.min - x <= 0.0001);
-            return lowEnough && highEnough;
-        };
-        Domain.prototype.closestValueTo = function (x) {
-            if (x < this.min) {
-                return this.min;
-            }
-            else if (x > this.max) {
-                return this.max;
-            }
-            else {
-                return x;
-            }
-        };
-        Domain.prototype.samplePoints = function (numSamples) {
-            var min = this.min, max = this.max, sp = [];
-            for (var i = 0; i < numSamples; i++) {
-                sp.push(min + (i / (numSamples - 1)) * (max - min));
-            }
-            return sp;
-        };
-        Domain.prototype.intersection = function (otherDomain) {
-            var thisDomain = this;
-            if (!otherDomain || otherDomain == undefined) {
-                return thisDomain;
-            }
-            var min = Math.max(thisDomain.min, otherDomain.min), max = Math.min(thisDomain.max, otherDomain.max);
-            if (max < min) {
-                return null;
-            }
-            else {
-                return new Domain(min, max);
-            }
-        };
-        return Domain;
-    })();
-    KG.Domain = Domain;
     function isAlmostTo(a, b, t, basis) {
         t = t || 0.01;
         var diff = Math.abs(a - b), avg = basis || 0.5 * (a + b);
@@ -276,6 +223,69 @@ var KG;
 'use strict';
 var KG;
 (function (KG) {
+    var Domain = (function () {
+        function Domain(min, max) {
+            this.min = min;
+            this.max = max;
+            this.min = this.min || 0;
+            this.max = this.max || 10;
+        }
+        Domain.prototype.toArray = function () {
+            return [this.min, this.max];
+        };
+        Domain.prototype.contains = function (x, strict) {
+            strict = strict || false;
+            if (x == undefined || x == null || isNaN(x)) {
+                return false;
+            }
+            var lowEnough = strict ? (this.max > x) : (this.max - x >= -0.0001);
+            var highEnough = strict ? (this.min < x) : (this.min - x <= 0.0001);
+            return lowEnough && highEnough;
+        };
+        Domain.prototype.closestValueTo = function (x) {
+            if (x < this.min) {
+                return this.min;
+            }
+            else if (x > this.max) {
+                return this.max;
+            }
+            else {
+                return x;
+            }
+        };
+        Domain.prototype.samplePoints = function (numSamples) {
+            var min = this.min, max = this.max, sp = [];
+            for (var i = 0; i < numSamples; i++) {
+                sp.push(min + (i / (numSamples - 1)) * (max - min));
+            }
+            return sp;
+        };
+        Domain.prototype.intersection = function (otherDomain) {
+            var thisDomain = this;
+            if (!otherDomain || otherDomain == undefined) {
+                return thisDomain;
+            }
+            var min = Math.max(thisDomain.min, otherDomain.min), max = Math.min(thisDomain.max, otherDomain.max);
+            if (max < min) {
+                return null;
+            }
+            else {
+                return new Domain(min, max);
+            }
+        };
+        return Domain;
+    })();
+    KG.Domain = Domain;
+    function samplePointsForDomain(def) {
+        var domain = new Domain(def.min, def.max), sampleAdjustment = isNaN(def.min) ? 0 : def.min % 10, numSamplePoints = def.numSamplePoints || 101 - sampleAdjustment;
+        return domain.samplePoints(numSamplePoints);
+    }
+    KG.samplePointsForDomain = samplePointsForDomain;
+})(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
     function getDefinitionProperty(def) {
         if (typeof def == 'string') {
             if (def.match(/[\*/+-]/)) {
@@ -382,7 +392,7 @@ var KG;
                 if (definition.hasOwnProperty(key) && definition[key] != undefined) {
                     var value = definition[key];
                     if (value.hasOwnProperty('type') && value.hasOwnProperty('definition')) {
-                        model[key] = KG.createInstance(value, modelPath + '.' + key);
+                        model[key] = KG.createInstance(value, model.modelPath + '.' + key);
                     }
                     else {
                         model[key] = value;
@@ -4138,19 +4148,19 @@ var EconGraphs;
 /// <reference path="../../../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
-    var Budget = (function (_super) {
-        __extends(Budget, _super);
-        function Budget(definition, modelPath) {
+    var BudgetConstraint = (function (_super) {
+        __extends(BudgetConstraint, _super);
+        function BudgetConstraint(definition, modelPath) {
             _super.call(this, definition, modelPath);
         }
-        Budget.prototype._update = function (scope) {
+        BudgetConstraint.prototype._update = function (scope) {
             var b = this;
             b.budgetSegments.forEach(function (bs) {
                 bs.update(scope);
             });
             return b;
         };
-        Budget.prototype.isAffordable = function (bundle) {
+        BudgetConstraint.prototype.isAffordable = function (bundle) {
             var b = this;
             for (var i = 0; i < b.budgetSegments.length; i++) {
                 var bs = b.budgetSegments[i];
@@ -4160,9 +4170,27 @@ var EconGraphs;
             }
             return false;
         };
-        return Budget;
+        BudgetConstraint.prototype.xValue = function (y) {
+            var x = 0;
+            this.budgetSegments.forEach(function (segment) {
+                if (segment.yDomain.contains(y)) {
+                    x = segment.linear.xValue(y);
+                }
+            });
+            return x;
+        };
+        BudgetConstraint.prototype.yValue = function (x) {
+            var y = 0;
+            this.budgetSegments.forEach(function (segment) {
+                if (segment.xDomain.contains(x)) {
+                    y = segment.linear.yValue(x);
+                }
+            });
+            return y;
+        };
+        return BudgetConstraint;
     })(KG.Model);
-    EconGraphs.Budget = Budget;
+    EconGraphs.BudgetConstraint = BudgetConstraint;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
 var EconGraphs;
@@ -4258,7 +4286,7 @@ var EconGraphs;
             }, b.modelProperty('budgetLine'));
         }
         return SimpleBudgetConstraint;
-    })(EconGraphs.Budget);
+    })(EconGraphs.BudgetConstraint);
     EconGraphs.SimpleBudgetConstraint = SimpleBudgetConstraint;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
@@ -4329,8 +4357,20 @@ var EconGraphs;
             b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
         }
         return EndowmentBudgetConstraint;
-    })(EconGraphs.Budget);
+    })(EconGraphs.BudgetConstraint);
     EconGraphs.EndowmentBudgetConstraint = EndowmentBudgetConstraint;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../../../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var UtilityConstraint = (function (_super) {
+        __extends(UtilityConstraint, _super);
+        function UtilityConstraint(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+        }
+        return UtilityConstraint;
+    })(KG.Model);
+    EconGraphs.UtilityConstraint = UtilityConstraint;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
 var EconGraphs;
@@ -4698,6 +4738,21 @@ var EconGraphs;
             u.utilityFunction.update(scope);
             return u;
         };
+        /* Pure preferences */
+        // Given two bundles, evaluates whether agent prefers first or second, or is indifferent
+        TwoGoodUtility.prototype.bundlePreferred = function (bundles, tolerance) {
+            var u = this;
+            tolerance = tolerance || 0.01; // percent difference within which one is thought to be indifferent
+            var u1 = u.utility(bundles[0]), u2 = u.utility(bundles[1]), percentUilityDifference = (u2 - u1) / (0.5 * (u1 + u2));
+            if (percentUilityDifference > tolerance) {
+                return 2; //second bundle preferred
+            }
+            if (percentUilityDifference < -tolerance) {
+                return 1; //first bundle preferred
+            }
+            return 0; //indifferent between two bundles
+        };
+        /* Utility measures */
         TwoGoodUtility.prototype.utility = function (bundle) {
             return this.utilityFunction.value(KG.getBases(bundle));
         };
@@ -4727,10 +4782,7 @@ var EconGraphs;
                 params: params
             });
         };
-        TwoGoodUtility.prototype.optimalBundlePoint = function (budget, params) {
-            var optimalBundle = this.optimalBundle(budget);
-            return this.bundlePoint(optimalBundle, params);
-        };
+        /* Indifference curves */
         TwoGoodUtility.prototype.indifferenceCurveAtUtility = function (utility, params) {
             var u = this;
             u.utilityFunction.setLevel(utility);
@@ -4753,9 +4805,12 @@ var EconGraphs;
                 fn: u.modelProperty('utilityFunction')
             });
         };
+        /* Utility maximization subject to a budget constraint */
         TwoGoodUtility.prototype.optimalBundle = function (budget) {
             var u = this;
-            var candidateBundles = budget.budgetSegments.map(u.optimalBundleAlongSegment);
+            var candidateBundles = budget.budgetSegments.map(function (segment) {
+                return u.optimalBundleAlongSegment(segment);
+            });
             var maxUtilityBundle = candidateBundles[0];
             candidateBundles.forEach(function (bundle) {
                 if (u.utility(bundle) > u.utility(maxUtilityBundle)) {
@@ -4765,27 +4820,31 @@ var EconGraphs;
             return maxUtilityBundle;
         };
         TwoGoodUtility.prototype.optimalBundleAlongSegment = function (budgetSegment) {
-            return { x: 1, y: 1 };
+            return { x: 1, y: 1 }; // based on specific utility function; overridden by subclass
+        };
+        TwoGoodUtility.prototype.optimalBundlePoint = function (budget, params) {
+            var optimalBundle = this.optimalBundle(budget);
+            return this.bundlePoint(optimalBundle, params);
+        };
+        TwoGoodUtility.prototype.optimalIndifferenceCurve = function (budget, params) {
+            var optimalBundle = this.optimalBundle(budget);
+            return this.indifferenceCurveThroughBundle(optimalBundle, params);
         };
         TwoGoodUtility.prototype.indirectUtility = function (budget) {
             var u = this;
             return u.utility(u.optimalBundle(budget));
         };
-        TwoGoodUtility.prototype.lowestCostBundle = function (utility, px, py) {
-            return { x: null, y: null }; // overridden by subclass
+        /* Cost minimization */
+        TwoGoodUtility.prototype.lowestCostBundle = function (utility) {
+            return { x: null, y: null }; // based on specific utility function; overridden by subclass
         };
-        // Given two bundles, evaluates whether agent prefers first or second, or is indifferent
-        TwoGoodUtility.prototype.bundlePreferred = function (bundles, tolerance) {
-            var u = this;
-            tolerance = tolerance || 0.01; // percent difference within which one is thought to be indifferent
-            var u1 = u.utility(bundles[0]), u2 = u.utility(bundles[1]), percentUilityDifference = (u2 - u1) / (0.5 * (u1 + u2));
-            if (percentUilityDifference > tolerance) {
-                return 2; //second bundle preferred
-            }
-            if (percentUilityDifference < -tolerance) {
-                return 1; //first bundle preferred
-            }
-            return 0; //indifferent between two bundles
+        TwoGoodUtility.prototype.lowestCostBundlePoint = function (utility, params) {
+            var lowestCostBundle = this.lowestCostBundle(utility);
+            return this.bundlePoint(lowestCostBundle, params);
+        };
+        TwoGoodUtility.prototype.expenditure = function (utility) {
+            var lowestCostBundle = this.lowestCostBundle(utility);
+            return utility.px * lowestCostBundle.x + utility.py * lowestCostBundle.y;
         };
         return TwoGoodUtility;
     })(EconGraphs.Utility);
@@ -4823,6 +4882,14 @@ var EconGraphs;
             constrainedX = budgetSegment.xDomain.closestValueTo(unconstrainedX);
             return { x: constrainedX, y: budgetSegment.linear.yValue(constrainedX) };
         };
+        CobbDouglasUtility.prototype.lowestCostBundle = function (utilityConstraint) {
+            var u = this;
+            var theta = (u.xShare / u.yShare) * utilityConstraint.py / utilityConstraint.px;
+            return {
+                x: Math.pow(theta, u.yShare) * utilityConstraint.u,
+                y: Math.pow(1 / theta, u.xShare) * utilityConstraint.u
+            };
+        };
         return CobbDouglasUtility;
     })(EconGraphs.TwoGoodUtility);
     EconGraphs.CobbDouglasUtility = CobbDouglasUtility;
@@ -4834,34 +4901,165 @@ var EconGraphs;
         __extends(UtilityDemand, _super);
         function UtilityDemand(definition, modelPath) {
             _super.call(this, definition, modelPath);
-            var d = this;
-            d.utilityFunction = new EconGraphs[definition.utilityFnDef.utilityType](definition.utilityFnDef.utilityDef, d.modelProperty('utilityFn'));
-            d.demandCurve = new KG.FunctionPlot({
-                fn: d.modelProperty('demandFunction'),
-                yIsIndependent: true
-            });
         }
-        UtilityDemand.prototype._update = function (scope) {
-            var m = this;
-            m.utilityFunction.update(scope);
-            return m;
+        UtilityDemand.prototype.quantityAtPrice = function (price, good) {
+            return 0; // overridden by subclass
         };
-        UtilityDemand.prototype.quantityAtPrice = function (price) {
-            return 0; // TODO implement
-        };
-        UtilityDemand.prototype.quantityAtPricePoint = function (price) {
+        UtilityDemand.prototype.quantityAtPricePoint = function (price, priceParams, pointParams) {
             var d = this;
+            priceParams = _.defaults(priceParams, {
+                good: 'x'
+            });
+            var quantityProperty = 'quantityAtPrice(' + price + ',' + priceParams.good + ')';
             return new KG.Point({
+                name: 'q' + priceParams.good + 'd',
                 className: 'demand',
                 coordinates: {
-                    x: d.modelProperty('quantityAtPrice(' + price + ')'),
+                    x: d.modelProperty(quantityProperty),
                     y: price
                 }
+            });
+        };
+        UtilityDemand.prototype.demandCurve = function (demandParams, curveParams) {
+            demandParams = _.defaults(demandParams, {
+                good: 'x',
+                min: 1,
+                max: 50,
+                numSamplePoints: 51
+            });
+            var d = this, samplePoints = KG.samplePointsForDomain(demandParams), curveData = [];
+            samplePoints.forEach(function (price) {
+                curveData.push({ x: d.quantityAtPrice(price, demandParams.good), y: price });
+            });
+            return new KG.Curve({
+                name: 'demand' + demandParams.good,
+                data: curveData,
+                params: curveParams,
+                className: 'demand'
             });
         };
         return UtilityDemand;
     })(KG.Model);
     EconGraphs.UtilityDemand = UtilityDemand;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../../../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var MarshallianDemand = (function (_super) {
+        __extends(MarshallianDemand, _super);
+        function MarshallianDemand(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+        }
+        MarshallianDemand.prototype._update = function (scope) {
+            var d = this;
+            d.utility.update(scope);
+            d.budget.update(scope);
+            return d;
+        };
+        MarshallianDemand.prototype.quantityAtPrice = function (price, good) {
+            var d = this;
+            good = good || 'x';
+            // store original price in budget constraint
+            var originalPrice = d.budget['p' + good];
+            // evaluate quantity demanded of this good at the given price
+            d.budget['p' + good] = price;
+            var quantity = d.utility.optimalBundle(d.budget)[good];
+            // reset budget constraint to original price
+            d.budget['p' + good] = originalPrice;
+            return quantity;
+        };
+        MarshallianDemand.prototype.priceConsumptionCurve = function (pccParams, curveParams) {
+            pccParams = _.defaults(pccParams, {
+                good: 'x',
+                min: 1,
+                max: 100,
+                numSamplePoints: 100
+            });
+            var d = this, budget = d.budget, samplePoints = KG.samplePointsForDomain(pccParams), curveData = [];
+            var initialPrice = budget['p' + pccParams.good];
+            samplePoints.forEach(function (price) {
+                budget['p' + pccParams.good] = price;
+                curveData.push(d.utility.optimalBundle(budget));
+            });
+            // reset budget price
+            budget['p' + pccParams.good] = initialPrice;
+            return new KG.Curve({
+                name: 'PCC' + pccParams.good,
+                data: curveData,
+                params: curveParams,
+                className: 'pcc'
+            });
+        };
+        MarshallianDemand.prototype.incomeConsumptionCurve = function (iccParams, curveParams) {
+            iccParams = _.defaults(iccParams, {
+                min: 1,
+                max: 200,
+                numSamplePoints: 200
+            });
+            var d = this, budget = d.budget, samplePoints = KG.samplePointsForDomain(iccParams), curveData = [];
+            var initialIncome = budget.income;
+            samplePoints.forEach(function (income) {
+                budget.income = income;
+                curveData.push(d.utility.optimalBundle(budget));
+            });
+            // reset budget price
+            budget.income = initialIncome;
+            return new KG.Curve({
+                name: 'ICC',
+                data: curveData,
+                params: curveParams,
+                className: 'icc'
+            });
+        };
+        MarshallianDemand.prototype.engelCurve = function (engelParams, curveParams) {
+            engelParams = _.defaults(engelParams, {
+                good: 'x',
+                min: 1,
+                max: 200,
+                numSamplePoints: 201
+            });
+            var d = this, budget = d.budget, samplePoints = KG.samplePointsForDomain(engelParams), curveData = [];
+            var initialIncome = budget.income;
+            samplePoints.forEach(function (income) {
+                budget.income = income;
+                curveData.push({ x: d.utility.optimalBundle(budget)[engelParams.good], y: income });
+            });
+            // reset budget price
+            budget.income = initialIncome;
+            return new KG.Curve({
+                name: 'Engel' + engelParams.good,
+                data: curveData,
+                params: curveParams,
+                className: 'engel'
+            });
+        };
+        return MarshallianDemand;
+    })(EconGraphs.UtilityDemand);
+    EconGraphs.MarshallianDemand = MarshallianDemand;
+})(EconGraphs || (EconGraphs = {}));
+/// <reference path="../../../eg.ts"/>
+var EconGraphs;
+(function (EconGraphs) {
+    var HicksianDemand = (function (_super) {
+        __extends(HicksianDemand, _super);
+        function HicksianDemand(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+        }
+        HicksianDemand.prototype.quantityAtPrice = function (price, good) {
+            var d = this;
+            good = good || 'x';
+            // store original price in budget constraint
+            var originalPrice = d['p' + good];
+            // evaluate quantity demanded of this good at the given price
+            d['p' + good] = price;
+            var quantity = d.utility.lowestCostBundle(d.u, d.px, d.py)[good];
+            // reset budget constraint to original price
+            d['p' + good] = originalPrice;
+            return quantity;
+        };
+        return HicksianDemand;
+    })(EconGraphs.UtilityDemand);
+    EconGraphs.HicksianDemand = HicksianDemand;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
 'use strict';
@@ -5621,10 +5819,11 @@ var EconGraphs;
 /// <reference path="micro/supply_and_demand/market_demand/linearDemand.ts"/>
 /// <reference path="micro/supply_and_demand/market_demand/constantElasticityDemand.ts"/>
 /* Consumer Theory */
-/// <reference path="micro/consumer_theory/budget/budget.ts"/>
-/// <reference path="micro/consumer_theory/budget/budgetSegment.ts"/>
-/// <reference path="micro/consumer_theory/budget/simpleBudgetConstraint.ts"/>
-/// <reference path="micro/consumer_theory/budget/endowmentBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/budgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/budgetSegment.ts"/>
+/// <reference path="micro/consumer_theory/constraints/simpleBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/endowmentBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/utilityConstraint.ts"/>
 /// <reference path="micro/consumer_theory/utility/utility.ts"/>
 /// <reference path="micro/consumer_theory/utility/oneGoodUtility.ts"/>
 /// <reference path="micro/consumer_theory/utility/crra.ts"/>
@@ -5632,7 +5831,9 @@ var EconGraphs;
 /// <reference path="micro/consumer_theory/utility/utilityRedistribution.ts"/>
 /// <reference path="micro/consumer_theory/utility/twoGoodUtility.ts"/>
 /// <reference path="micro/consumer_theory/utility/cobbDouglasUtility.ts"/>
-/// <reference path="micro/consumer_theory/demand/demand.ts"/>
+/// <reference path="micro/consumer_theory/demand/utilityDemand.ts"/>
+/// <reference path="micro/consumer_theory/demand/marshallianDemand.ts"/>
+/// <reference path="micro/consumer_theory/demand/hicksianDemand.ts"/>
 /* Producer Theory */
 /// <reference path="micro/producer_theory/costs/productionCost.ts"/>
 /// <reference path="micro/producer_theory/costs/linearMarginalCost.ts"/>
@@ -5729,6 +5930,7 @@ var PhysicsGraphs;
 /// <reference path="../bower_components/dt-d3/d3.d.ts"/>
 /// <reference path="constants.ts" />
 /// <reference path="helpers/helpers.ts" />
+/// <reference path="helpers/domain.ts" />
 /// <reference path="helpers/definitions.ts" />
 /// <reference path="model.ts" />
 /// <reference path="restriction.ts" />

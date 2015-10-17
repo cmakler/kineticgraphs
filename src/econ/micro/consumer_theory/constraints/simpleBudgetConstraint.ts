@@ -2,21 +2,21 @@
 
 module EconGraphs {
 
-    export interface SimpleBudgetConstraintDefinition extends BudgetDefinition {
+    export interface SimpleBudgetConstraintDefinition extends BudgetConstraintDefinition {
         income?: any;
         endowment?: any;
         px: any;
         py: any;
     }
 
-    export interface ISimpleBudgetConstraint extends IBudget {
+    export interface ISimpleBudgetConstraint extends IBudgetConstraint {
         income: number;
         px: number;
         py: number;
         budgetLine: KG.Line;
     }
 
-    export class SimpleBudgetConstraint extends Budget implements ISimpleBudgetConstraint {
+    export class SimpleBudgetConstraint extends BudgetConstraint implements ISimpleBudgetConstraint {
 
         public income;
         public px;
