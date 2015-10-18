@@ -196,7 +196,7 @@ module KG
 
         drawObjects(scope) {
             var view = this;
-            view.objects.forEach(function(object) {object.createSubObjects(view)});
+            view.objects.forEach(function(object) {object.update(scope).createSubObjects(view)});
             view.objects.forEach(function(object) {object.update(scope).render(view)});
             return view;
         }

@@ -226,7 +226,11 @@ module KGMath.Functions {
                 return m.coefficient * Math.pow(x,m.powers[0]);
             } else {
                 this.setBase(1,x);
-                return this.levelCurve(2).value();
+                if(this.levelCurve(2)) {
+                    return this.levelCurve(2).value();
+                } else {
+                    return null;
+                }
             }
 
         }
@@ -238,7 +242,12 @@ module KGMath.Functions {
                 return Math.pow(y/m.coefficient,1/m.powers[0]);
             } else {
                 this.setBase(2,y);
-                return this.levelCurve(1).value();
+                if(this.levelCurve(1)) {
+                    return this.levelCurve(1).value();
+                } else {
+                    return null;
+                }
+
             }
         }
 

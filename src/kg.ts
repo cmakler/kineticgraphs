@@ -3,6 +3,7 @@
 
 /// <reference path="constants.ts" />
 /// <reference path="helpers/helpers.ts" />
+/// <reference path="helpers/domain.ts" />
 /// <reference path="helpers/definitions.ts" />
 
 /// <reference path="model.ts" />
@@ -18,6 +19,7 @@
 /// <reference path="viewObjects/segment.ts"/>
 /// <reference path="viewObjects/arrow.ts"/>
 /// <reference path="viewObjects/line.ts"/>
+/// <reference path="viewObjects/piecewiseLinear.ts"/>
 /// <reference path="viewObjects/graphDiv.ts"/>
 /// <reference path="viewObjects/linePlot.ts"/>
 /// <reference path="viewObjects/pathFamily.ts"/>

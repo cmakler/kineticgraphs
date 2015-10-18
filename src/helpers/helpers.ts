@@ -24,65 +24,6 @@ module KG
         return colorArray;
     }
 
-    export interface DomainDef {
-        min: any;
-        max: any;
-    }
-
-    export interface IDomain
-    {
-        min: number;
-        max: number;
-        samplePoints: (numSamples:number) => number[];
-        toArray: () => number[];
-        contains: (x:number, strict?:boolean) => boolean;
-        intersection: (otherDomain:Domain) => Domain;
-    }
-
-    export class Domain implements IDomain
-    {
-
-        constructor(public min: number, public max: number) {
-            this.min = this.min || 0;
-            this.max = this.max || 10;
-        }
-
-        toArray() {
-            return [this.min, this.max]
-        }
-
-        contains(x, strict?) {
-            strict = strict || false;
-            if(x == undefined || x == null || isNaN(x)) { return false }
-            var lowEnough:boolean = strict ? (this.max > x) : (this.max >= x);
-            var highEnough:boolean = strict ? (this.min < x) : (this.min <= x);
-            return lowEnough && highEnough;
-        }
-
-        samplePoints(numSamples) {
-            var min = this.min, max = this.max, sp = [];
-            for(var i=0;i<numSamples;i++) {
-                sp.push(min + (i/(numSamples-1))*(max - min));
-            }
-            return sp;
-        }
-
-        intersection(otherDomain:Domain) {
-            var thisDomain = this;
-            if(!otherDomain || otherDomain == undefined) {
-                return thisDomain;
-            }
-            var min = Math.max(thisDomain.min, otherDomain.min),
-                max = Math.min(thisDomain.max, otherDomain.max);
-            if(max < min) {
-                return null;
-            } else {
-                return new Domain(min,max);
-            }
-        }
-
-    }
-
     export interface IDimensions
     {
         height: number;
@@ -107,15 +48,30 @@ module KG
         t = t || 0.01;
         var diff = Math.abs(a - b),
             avg = basis || 0.5*(a + b);
-        return (diff/avg < t);
+        if(avg > t*10) {
+            return (diff/avg < t);
+        } else {
+            return diff < t;
+        }
+
     }
 
     export function areTheSamePoint(a:ICoordinates, b:ICoordinates) {
-        return (a.x === b.x && a.y === b.y);
+        return isAlmostTo(a.x, b.x) && isAlmostTo(a.y,b.y);
     }
 
     export function areNotTheSamePoint(a:ICoordinates, b:ICoordinates) {
         return !areTheSamePoint(a,b);
+    }
+
+    export function arrayDoesNotHavePoint(a:ICoordinates[], b:ICoordinates){
+        var foundIt = true;
+        a.forEach(function(p){
+            if(areTheSamePoint(b,p)) {
+                foundIt = false;
+            }
+        });
+        return foundIt;
     }
 
     export function arrayAverage(o: any[]) {

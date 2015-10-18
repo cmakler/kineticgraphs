@@ -1,29 +1,52 @@
 /// <reference path="../kg.ts"/>
-/// <reference path="elasticity/elasticity.ts"/>
-/// <reference path="elasticity/midpoint.ts"/>
-/// <reference path="elasticity/point.ts"/>
-/// <reference path="elasticity/constant.ts"/>
-/// <reference path="market/demand.ts"/>
-/// <reference path="market/linearDemand.ts"/>
-/// <reference path="market/constantElasticityDemand.ts"/>
-/// <reference path="growth/ramseyCassKoopmans.ts"/>
-/// <reference path="production/productionCost.ts"/>
-/// <reference path="production/linearMarginalCost.ts"/>
-/// <reference path="production/constantMarginalCost.ts"/>
-/// <reference path="production/quadraticMarginalCost.ts"/>
 
-/// <reference path="budget/budget.ts"/>
-/// <reference path="budget/budgetSegment.ts"/>
+/* Basic concepts */
 
-/// <reference path="utility/utility.ts"/>
+/// <reference path="basic_concepts/elasticity/elasticity.ts"/>
+/// <reference path="basic_concepts/elasticity/midpoint.ts"/>
+/// <reference path="basic_concepts/elasticity/point.ts"/>
+/// <reference path="basic_concepts/elasticity/constant.ts"/>
 
-/// <reference path="utility/oneGoodUtility.ts"/>
-/// <reference path="utility/crra.ts"/>
-/// <reference path="utility/riskAversion.ts"/>
-/// <reference path="utility/utilityRedistribution.ts"/>
+/* MICRO */
 
-/// <reference path="utility/twoGoodUtility.ts"/>
-/// <reference path="utility/utilityDemand.ts"/>
+/* Supply and Demand */
 
-/// <reference path="monopoly/monopoly.ts"/>
-/// <reference path="oligopoly/cournotDuopoly.ts"/>
+/// <reference path="micro/supply_and_demand/market_demand/demand.ts"/>
+/// <reference path="micro/supply_and_demand/market_demand/linearDemand.ts"/>
+/// <reference path="micro/supply_and_demand/market_demand/constantElasticityDemand.ts"/>
+
+/* Consumer Theory */
+
+/// <reference path="micro/consumer_theory/constraints/budgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/budgetSegment.ts"/>
+/// <reference path="micro/consumer_theory/constraints/simpleBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/endowmentBudgetConstraint.ts"/>
+/// <reference path="micro/consumer_theory/constraints/utilityConstraint.ts"/>
+
+/// <reference path="micro/consumer_theory/utility/utility.ts"/>
+/// <reference path="micro/consumer_theory/utility/oneGoodUtility.ts"/>
+/// <reference path="micro/consumer_theory/utility/crra.ts"/>
+/// <reference path="micro/consumer_theory/utility/riskAversion.ts"/>
+/// <reference path="micro/consumer_theory/utility/utilityRedistribution.ts"/>
+/// <reference path="micro/consumer_theory/utility/twoGoodUtility.ts"/>
+/// <reference path="micro/consumer_theory/utility/cobbDouglasUtility.ts"/>
+
+/// <reference path="micro/consumer_theory/demand/utilityDemand.ts"/>
+/// <reference path="micro/consumer_theory/demand/marshallianDemand.ts"/>
+/// <reference path="micro/consumer_theory/demand/hicksianDemand.ts"/>
+
+/* Producer Theory */
+
+/// <reference path="micro/producer_theory/costs/productionCost.ts"/>
+/// <reference path="micro/producer_theory/costs/linearMarginalCost.ts"/>
+/// <reference path="micro/producer_theory/costs/constantMarginalCost.ts"/>
+/// <reference path="micro/producer_theory/costs/quadraticMarginalCost.ts"/>
+
+/* Market Structures */
+
+/// <reference path="micro/market_structures/monopoly/monopoly.ts"/>
+/// <reference path="micro/market_structures/oligopoly/cournotDuopoly.ts"/>
+
+/* Macro */
+
+/// <reference path="macro/growth/ramseyCassKoopmans.ts"/>

@@ -9,6 +9,7 @@ module KG
 
     export interface GraphDivDefinition extends ViewObjectDefinition {
         dimensions?: IDimensions;
+        textArray?: any[];
         text?: any;
         math?: boolean;
         align?: any;
@@ -61,6 +62,10 @@ module KG
         render(view) {
 
             var divObj = this;
+
+            if(divObj.text instanceof Array) {
+                divObj.text = divObj.text.join('')
+            }
 
             if(!divObj.hasOwnProperty('coordinates')) {
                 return view;

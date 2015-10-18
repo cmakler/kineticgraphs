@@ -36,6 +36,8 @@ module KG {
 
             var pathFamily = this;
 
+            pathFamily.updateDataForView(view);
+
             var group:D3.Selection = view.objectGroup(pathFamily.name, pathFamily.initGroupFn(), false);
 
             var dataLine = d3.svg.line()

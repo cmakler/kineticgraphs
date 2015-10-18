@@ -190,3 +190,8 @@ a {
 .curve {
   fill: none;
 }
+.budget {
+  color: #d62728;
+  stroke: #d62728;
+  fill: #d62728;
+}

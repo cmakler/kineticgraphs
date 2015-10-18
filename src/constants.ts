@@ -13,7 +13,8 @@ module KG
         capital: 'orange',
         consumption: 'blue',
         asset: 'blue',
-        'risk-free': 'green'
+        'risk-free': 'green',
+        budget: 'red'
     };
 
     export var COLORS = {

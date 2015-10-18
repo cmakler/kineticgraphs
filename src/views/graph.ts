@@ -22,16 +22,40 @@ module KG
         pixelCoordinates: (coordinates:ICoordinates) => ICoordinates;
         modelCoordinates: (coordinates:ICoordinates) => ICoordinates;
         dataCoordinates: (coordinateArray:ICoordinates[]) => ICoordinates[];
+
+        // convenience methods for corner coordinates of graph;
+        corners: {
+            bottom: {left: ICoordinates; right: ICoordinates; };
+            top: {left: ICoordinates; right: ICoordinates; };
+        };
     }
 
     export class Graph extends View implements IGraph
     {
+
+        public corners;
+
         constructor(definition:GraphDefinition, modelPath?: string) {
 
             // ensure dimensions and margins are set; set any missing elements to defaults
             definition.maxDimensions = _.defaults(definition.maxDimensions || {}, { width: 800, height: 800 });
             definition.margins = _.defaults(definition.margins || {}, {top: 20, left: 100, bottom: 70, right: 20});
             super(definition, modelPath);
+        }
+
+        _update(scope) {
+            var g = this;
+            g.corners = {
+                bottom: {
+                    left: {x: g.xAxis.min, y: g.yAxis.min},
+                    right: {x: g.xAxis.max, y: g.yAxis.min}
+                },
+                top: {
+                    left: {x: g.xAxis.min, y: g.yAxis.max},
+                    right: {x: g.xAxis.max, y: g.yAxis.max}
+                }
+            };
+            return g;
         }
 
         // Check to see if a point is on the graph

@@ -29,7 +29,7 @@ module KGMath.Functions {
         public yDomain;
 
         constructor(definition,modelPath?) {
-            definition.level = definition.level || 0;
+
             super(definition,modelPath);
 
             var fn = this;

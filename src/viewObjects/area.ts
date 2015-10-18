@@ -4,11 +4,16 @@
 
 module KG {
 
+    export interface AreaParamsDefinition extends ViewObjectParamsDefinition {
+        label?: string;
+    }
+
     export interface AreaDefinition extends ViewObjectDefinition {
         data?: any;
         interpolation?: string;
         label?: GraphDivDefinition;
         labelPosition?: string;
+        params?: AreaParamsDefinition;
     }
 
     export interface IArea extends IViewObject {
@@ -33,7 +38,19 @@ module KG {
 
         constructor(definition:AreaDefinition, modelPath?: string) {
 
-            definition = _.defaults(definition, {data: [], interpolation: 'linear'});
+            if(definition.hasOwnProperty('params')) {
+
+                var p = definition.params;
+
+                if(p.hasOwnProperty('label')) {
+                    definition.label = {
+                        text: p.label
+                    }
+                }
+
+            }
+
+            definition = _.defaults(definition, {interpolation: 'linear'});
 
             super(definition, modelPath);
 
@@ -95,7 +112,7 @@ module KG {
                     'd': dataLine(dataCoordinates)
                 })
                 .style('fill',KG.colorForClassName(area.className, 'light'))
-                .style('opacity',0.5)
+                .style('opacity',0.5);
 
             return view;
         }

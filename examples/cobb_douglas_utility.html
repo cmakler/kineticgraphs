@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html ng-app="KineticGraphs">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Cobb-Douglas Utility</title>
+    <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="../dist/econ-graphs.css">
+    <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
+    <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="../bower_components/d3/d3.min.js"></script>
+    <script type="text/javascript" src="../bower_components/numericjs/src/numeric.js"></script>
+    <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
+    <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
+</head>
+<body ng-cloak>
+<div ng-controller="KineticGraphCtrl">
+    <h1>Cobb-Douglas Utility</h1>
+    <hr/>
+    <div class="row">
+        <div class="col-md-8">
+            <div id="utility"></div>
+        </div>
+        <div class="col-md-4">
+            <div class="well">
+                <div class="row">
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}} :
+                    </div>
+                    <div class="col-xs-9" id="alphaSlider"></div>
+                </div>
+            </div>
+            <equation>u(x,y) = x^\alpha y^{1 - \alpha} || u({{params.x}},{{params.y}}) = {{params.x}}^{ {{params.alpha | number: 2}} } \times {{params.y}}^{ {{1-params.alpha | number: 2}} } || = {{ model.utility({x: params.x, y: params.y}) | number:2 }}</equation>
+        </div>
+    </div>
+</div>
+<script>
+    var scopeDefinition = {
+        params: {
+            alpha: 0.5,
+            x: 20,
+            y: 20
+        },
+        graphParams: [],
+        restrictions: [
+            {
+                expression: 'params.x',
+                restrictionType: 'range',
+                min: 1,
+                max: 49,
+                precision: 1
+            },
+            {
+                expression: 'params.y',
+                restrictionType: 'range',
+                min: 1,
+                max: 49,
+                precision: 1
+            }
+        ],
+        model: {
+            type: 'EconGraphs.CobbDouglasUtility',
+            definition: {
+                xPower: 'params.alpha',
+            }
+        },
+        views: [
+            {
+                type: 'KG.Graph',
+                definition: {
+                    element_id: 'utility',
+                    xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
+                    yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
+                    objects: [
+                        "model.bundlePoint({x: 'params.x', y: 'params.y'},{xDragParam: 'x', yDragParam: 'y', xAxisLabel: 'params.x', yAxisLabel: 'params.y'})",
+                        "model.indifferenceCurveThroughBundle({x: params.x, y: params.y},{label: ['u(x,y) = u(',params.x,',',params.y,') =',model.utility({x: params.x, y: params.y}).toFixed(2)]})",
+                        "model.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45])"
+                    ]
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'alphaSlider',
+                    param: 'alpha',
+                    precision: '0.01',
+                    axisDef: {min: 0, max: 1, tickValues: [0,0.5,1]}
+                }
+            }
+
+        ]
+    }
+</script>
+<script src="../dist/kinetic-graphs.js"></script>
+</body>
+</html>
