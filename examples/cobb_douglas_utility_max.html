@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Cobb-Douglas Utility</title>
+    <title>Cobb-Douglas Utility Maximization</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -15,36 +15,38 @@
 </head>
 <body ng-cloak>
 <div ng-controller="KineticGraphCtrl">
-    <h1>Cobb-Douglas Utility</h1>
-    <hr/>
     <div class="row">
         <div class="col-md-8">
+            <h1>Cobb-Douglas Utility Maximization</h1>
+            <hr/>
             <div id="utility"></div>
         </div>
         <div class="col-md-4">
             <div class="well">
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}} :
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3" style="text-align:right;font-size:12pt;padding-top:10px">Income:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">I = {{params.income | number: 0}}:
                     </div>
                     <div class="col-xs-9" id="incomeSlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x = {{params.px | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="pxSlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y = {{params.py | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="pySlider"></div>
                 </div>
             </div>
-            <equation>u(x,y) = x^\alpha y^{1 - \alpha} || u({{params.x}},{{params.y}}) = {{params.x}}^{ {{params.alpha | number: 2}} } \times {{params.y}}^{ {{1-params.alpha | number: 2}} } || = {{ model.utility({x: params.x, y: params.y}) | number:2 }}</equation>
+            <equation>x^* = \alpha \frac{I}{P_x} || = {{ params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.px | number: 2}} } = {{ model.utility.optimalBundle(model.budget).x | number:2 }}</equation>
+            <hr/>
+            <equation>y^* = (1 - \alpha) \frac{I}{P_y} || = {{ 1 - params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.py | number: 2}} } = {{ model.utility.optimalBundle(model.budget).y | number:2 }}</equation>
         </div>
     </div>
 </div>
@@ -57,7 +59,21 @@
             py: 3
         },
         graphParams: [],
-        restrictions: [],
+        restrictions: [
+            {
+            expression: 'model.utility.optimalBundle(model.budget).y',
+            restrictionType: 'range',
+            min: 1,
+            max: 40,
+            precision: 1
+        },
+            {
+                expression: 'model.utility.optimalBundle(model.budget).x',
+                restrictionType: 'range',
+                min: 1,
+                max: 40,
+                precision: 1
+            }],
         model: {
             type: 'EconGraphs.MarshallianDemand',
             definition: {
@@ -88,9 +104,9 @@
                     xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
                     yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
                     objects: [
-                        "model.utility.optimalBundlePoint(model.budget,{})",
-                        "model.utility.optimalIndifferenceCurve(model.budget,{})",
-                            "model.budget.budgetLine"
+                        "model.budget.budgetLine",
+                        'model.utility.optimalBundlePoint(model.budget,{xAxisLabel:"x^*", yAxisLabel: "y^*"})',
+                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})'
                     ]
                 }
             },
