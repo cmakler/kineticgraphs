@@ -3,10 +3,10 @@
 
 /// <reference path="constants.ts" />
 /// <reference path="helpers/helpers.ts" />
-/// <reference path="helpers/domain.ts" />
 /// <reference path="helpers/definitions.ts" />
 
 /// <reference path="model.ts" />
+/// <reference path="helpers/domain.ts" />
 /// <reference path="restriction.ts" />
 
 /// <reference path="math/math.ts" />

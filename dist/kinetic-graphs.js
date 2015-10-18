@@ -223,69 +223,6 @@ var KG;
 'use strict';
 var KG;
 (function (KG) {
-    var Domain = (function () {
-        function Domain(min, max) {
-            this.min = min;
-            this.max = max;
-            this.min = this.min || 0;
-            this.max = this.max || 10;
-        }
-        Domain.prototype.toArray = function () {
-            return [this.min, this.max];
-        };
-        Domain.prototype.contains = function (x, strict) {
-            strict = strict || false;
-            if (x == undefined || x == null || isNaN(x)) {
-                return false;
-            }
-            var lowEnough = strict ? (this.max > x) : (this.max - x >= -0.0001);
-            var highEnough = strict ? (this.min < x) : (this.min - x <= 0.0001);
-            return lowEnough && highEnough;
-        };
-        Domain.prototype.closestValueTo = function (x) {
-            if (x < this.min) {
-                return this.min;
-            }
-            else if (x > this.max) {
-                return this.max;
-            }
-            else {
-                return x;
-            }
-        };
-        Domain.prototype.samplePoints = function (numSamples) {
-            var min = this.min, max = this.max, sp = [];
-            for (var i = 0; i < numSamples; i++) {
-                sp.push(min + (i / (numSamples - 1)) * (max - min));
-            }
-            return sp;
-        };
-        Domain.prototype.intersection = function (otherDomain) {
-            var thisDomain = this;
-            if (!otherDomain || otherDomain == undefined) {
-                return thisDomain;
-            }
-            var min = Math.max(thisDomain.min, otherDomain.min), max = Math.min(thisDomain.max, otherDomain.max);
-            if (max < min) {
-                return null;
-            }
-            else {
-                return new Domain(min, max);
-            }
-        };
-        return Domain;
-    })();
-    KG.Domain = Domain;
-    function samplePointsForDomain(def) {
-        var domain = new Domain(def.min, def.max), sampleAdjustment = isNaN(def.min) ? 0 : def.min % 10, numSamplePoints = def.numSamplePoints || 101 - sampleAdjustment;
-        return domain.samplePoints(numSamplePoints);
-    }
-    KG.samplePointsForDomain = samplePointsForDomain;
-})(KG || (KG = {}));
-/// <reference path="../kg.ts"/>
-'use strict';
-var KG;
-(function (KG) {
     function getDefinitionProperty(def) {
         if (typeof def == 'string') {
             if (def.match(/[\*/+-]/)) {
@@ -489,6 +426,7 @@ var KG;
     })();
     KG.Model = Model;
 })(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
 'use strict';
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -496,6 +434,69 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+var KG;
+(function (KG) {
+    var Domain = (function (_super) {
+        __extends(Domain, _super);
+        function Domain(min, max) {
+            _super.call(this, {
+                min: min || 0,
+                max: max || 10
+            });
+        }
+        Domain.prototype.toArray = function () {
+            return [this.min, this.max];
+        };
+        Domain.prototype.contains = function (x, strict) {
+            strict = strict || false;
+            if (x == undefined || x == null || isNaN(x)) {
+                return false;
+            }
+            var lowEnough = strict ? (this.max > x) : (this.max - x >= -0.0001);
+            var highEnough = strict ? (this.min < x) : (this.min - x <= 0.0001);
+            return lowEnough && highEnough;
+        };
+        Domain.prototype.closestValueTo = function (x) {
+            if (x < this.min) {
+                return this.min;
+            }
+            else if (x > this.max) {
+                return this.max;
+            }
+            else {
+                return x;
+            }
+        };
+        Domain.prototype.samplePoints = function (numSamples) {
+            var min = this.min, max = this.max, sp = [];
+            for (var i = 0; i < numSamples; i++) {
+                sp.push(min + (i / (numSamples - 1)) * (max - min));
+            }
+            return sp;
+        };
+        Domain.prototype.intersection = function (otherDomain) {
+            var thisDomain = this;
+            if (!otherDomain || otherDomain == undefined) {
+                return thisDomain;
+            }
+            var min = Math.max(thisDomain.min, otherDomain.min), max = Math.min(thisDomain.max, otherDomain.max);
+            if (max < min) {
+                return null;
+            }
+            else {
+                return new Domain(min, max);
+            }
+        };
+        return Domain;
+    })(KG.Model);
+    KG.Domain = Domain;
+    function samplePointsForDomain(def) {
+        var domain = new Domain(def.min, def.max), sampleAdjustment = isNaN(def.min) ? 0 : def.min % 10, numSamplePoints = def.numSamplePoints || 101 - sampleAdjustment;
+        return domain.samplePoints(numSamplePoints);
+    }
+    KG.samplePointsForDomain = samplePointsForDomain;
+})(KG || (KG = {}));
+'use strict';
 var KG;
 (function (KG) {
     var Restriction = (function (_super) {
@@ -5930,9 +5931,9 @@ var PhysicsGraphs;
 /// <reference path="../bower_components/dt-d3/d3.d.ts"/>
 /// <reference path="constants.ts" />
 /// <reference path="helpers/helpers.ts" />
-/// <reference path="helpers/domain.ts" />
 /// <reference path="helpers/definitions.ts" />
 /// <reference path="model.ts" />
+/// <reference path="helpers/domain.ts" />
 /// <reference path="restriction.ts" />
 /// <reference path="math/math.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>

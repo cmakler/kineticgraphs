@@ -20,11 +20,16 @@ module KG
         intersection: (otherDomain:Domain) => Domain;
     }
 
-    export class Domain implements IDomain {
+    export class Domain extends Model implements IDomain {
 
-        constructor(public min: number, public max: number) {
-            this.min = this.min || 0;
-            this.max = this.max || 10;
+        public min;
+        public max;
+
+        constructor(min: number, max: number) {
+            super({
+                min: min || 0,
+                max: max || 10
+            });
         }
 
         toArray() {
