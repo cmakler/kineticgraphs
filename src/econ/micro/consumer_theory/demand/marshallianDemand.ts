@@ -26,7 +26,11 @@ module EconGraphs {
 
         _update(scope) {
             var d = this;
-            d.utility.update(scope);
+            if(d.hasOwnProperty('utilitySelector')) {
+                d.utility = d.utilitySelector.update(scope).selectedUtility;
+            } else {
+                d.utility.update(scope);
+            }
             d.budget.update(scope);
             return d;
         }
@@ -39,11 +43,11 @@ module EconGraphs {
             var originalPrice = d.budget['p' + good];
 
             // evaluate quantity demanded of this good at the given price
-            d.budget['p' + good] = price;
+            d.budget.setPrice(price,good);
             var quantity = d.utility.optimalBundle(d.budget)[good];
 
             // reset budget constraint to original price
-            d.budget['p' + good] = originalPrice;
+            d.budget.setPrice(originalPrice,good);
 
             return quantity;
 

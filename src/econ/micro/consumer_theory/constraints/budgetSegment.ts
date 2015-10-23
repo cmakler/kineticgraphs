@@ -21,6 +21,7 @@ module EconGraphs {
         priceRatio: number;
         isAffordable: (bundle:KG.ICoordinates) => boolean;
         linear: KGMath.Functions.Linear;
+        setPrice: (price:number, good?: string) => void;
     }
 
     export class BudgetSegment extends KG.Model {
@@ -100,6 +101,13 @@ module EconGraphs {
 
             // return true if the bundle's cost is less than or equal to constraint's income
             return (bundleCost <= b.income);
+        }
+
+        setPrice(price,good,max?) {
+            var b = this;
+            max = max || b.income / price;
+            b['p'+good] = price;
+            b.linear[good + 'Domain'].max = max;
         }
 
     }

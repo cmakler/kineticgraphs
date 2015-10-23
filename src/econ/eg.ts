@@ -28,8 +28,10 @@
 /// <reference path="micro/consumer_theory/utility/crra.ts"/>
 /// <reference path="micro/consumer_theory/utility/riskAversion.ts"/>
 /// <reference path="micro/consumer_theory/utility/utilityRedistribution.ts"/>
-/// <reference path="micro/consumer_theory/utility/twoGoodUtility.ts"/>
-/// <reference path="micro/consumer_theory/utility/cobbDouglasUtility.ts"/>
+/// <reference path="micro/consumer_theory/two_good_utility/twoGoodUtility.ts"/>
+/// <reference path="micro/consumer_theory/two_good_utility/cobbDouglasUtility.ts"/>
+/// <reference path="micro/consumer_theory/two_good_utility/complementsUtility.ts"/>
+/// <reference path="micro/consumer_theory/two_good_utility/utilitySelector.ts"/>
 
 /// <reference path="micro/consumer_theory/demand/utilityDemand.ts"/>
 /// <reference path="micro/consumer_theory/demand/marshallianDemand.ts"/>

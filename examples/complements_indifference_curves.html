@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Cobb-Douglas Utility</title>
+    <title>Leontief Utility</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -15,7 +15,7 @@
 </head>
 <body ng-cloak>
 <div ng-controller="KineticGraphCtrl">
-    <h1>Cobb-Douglas Utility</h1>
+    <h1>Leontief (Perfect Complements) Utility</h1>
     <hr/>
     <div class="row">
         <div class="col-md-8">
@@ -29,7 +29,7 @@
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
             </div>
-            <equation>u(x,y) = x^\alpha y^{1 - \alpha} || u({{params.x}},{{params.y}}) = {{params.x}}^{ {{params.alpha | number: 2}} } \times {{params.y}}^{ {{1-params.alpha | number: 2}} } || = {{ model.utility({x: params.x, y: params.y}) | number:2 }}</equation>
+            <equation>u(x,y) = \min \left\{ \frac{x}{\alpha},\frac{y}{1 - \alpha} \right\} || u({{params.x}},{{params.y}}) = \min\{ {{params.x/params.alpha | extendedReal: 2}},{{params.y/(1-params.alpha) | extendedReal: 2}} \} || = {{ model.utility({x: params.x, y: params.y}) | number:2 }}</equation>
         </div>
     </div>
 </div>
@@ -58,9 +58,9 @@
             }
         ],
         model: {
-            type: 'EconGraphs.CobbDouglasUtility',
+            type: 'EconGraphs.ComplementsUtility',
             definition: {
-                xPower: 'params.alpha',
+                bundle: {x: 'params.alpha', y: '1-params.alpha'}
             }
         },
         views: [
@@ -71,9 +71,10 @@
                     xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
                     yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
                     objects: [
+                        "model.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95])",
                         "model.bundlePoint({x: 'params.x', y: 'params.y'},{xDragParam: 'x', yDragParam: 'y', xAxisLabel: 'params.x', yAxisLabel: 'params.y'})",
-                        "model.indifferenceCurveThroughBundle({x: params.x, y: params.y},{label: ['u(x,y) = u(',params.x,',',params.y,') =',model.utility({x: params.x, y: params.y}).toFixed(2)]})",
-                        "model.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45])"
+                        "model.indifferenceCurveThroughBundle({x: params.x, y: params.y},{label: ['u(x,y) = u(',params.x,',',params.y,') =',model.utility({x: params.x, y: params.y}).toFixed(2)]})"
+
                     ]
                 }
             },

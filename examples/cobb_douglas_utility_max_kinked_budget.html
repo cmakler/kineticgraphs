@@ -28,6 +28,8 @@
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
+                <hr/>
+                <div>Prices to buy</div>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x^B = {{ params.pxBuy | number: 2 }}:
                     </div>
@@ -51,9 +53,6 @@
                     <div class="col-xs-9" id="pySellSlider"></div>
                 </div>
             </div>
-            <equation>x^* = \alpha \frac{I}{P_x} || = {{ params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.px | number: 2}} } = {{ model.utility.optimalBundle(model.budget).x | number:2 }}</equation>
-            <hr/>
-            <equation>y^* = (1 - \alpha) \frac{I}{P_y} || = {{ 1 - params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.py | number: 2}} } = {{ model.utility.optimalBundle(model.budget).y | number:2 }}</equation>
         </div>
     </div>
 </div>
@@ -65,11 +64,26 @@
             y: 10,
             pxBuy: 3,
             pyBuy: 4,
-            pxSell: 5,
-            pySell: 4
+            pxSell: 2,
+            pySell: 3
         },
         graphParams: [],
-        restrictions: [],
+        restrictions: [
+            {
+                expression: 'params.x',
+                restrictionType: 'range',
+                max: 50,
+                min: 0,
+                precision: 1
+            },
+            {
+                expression: 'params.y',
+                restrictionType: 'range',
+                max: 50,
+                min: 0,
+                precision: 1
+            }
+        ],
         model: {
             type: 'EconGraphs.MarshallianDemand',
             definition: {
@@ -83,10 +97,8 @@
                         pySell: 'params.pySell',
                         budgetConstraintLabel: 'BL',
                         budgetSetLabel: "\\text{Budget Set}",
-                        xInterceptLabel: 'model.budget.maxX',
-                        yInterceptLabel: 'model.budget.maxY',
-                        xLabel: 'params.x | number: 0',
-                        yLabel: 'params.y | number: 0'
+                        xLabel: 'x_E',
+                        yLabel: 'y_E'
                     }
                 },
                 utility: {

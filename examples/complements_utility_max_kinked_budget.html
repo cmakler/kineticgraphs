@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Cobb-Douglas Utility Maximization</title>
+    <title>Perfect Complements Utility Maximization</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -17,7 +17,7 @@
 <div ng-controller="KineticGraphCtrl">
     <div class="row">
         <div class="col-md-8">
-            <h1>Cobb-Douglas Utility Maximization</h1>
+            <h1>Perfect Complements Utility Maximization with a Kinked Budget Constraint</h1>
             <hr/>
             <div id="utility"></div>
         </div>
@@ -28,26 +28,31 @@
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
+                <hr/>
+                <div>Prices to buy</div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">I = {{params.income | number: 0}}:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x^B = {{ params.pxBuy | number: 2 }}:
                     </div>
-                    <div class="col-xs-9" id="incomeSlider"></div>
+                    <div class="col-xs-9" id="pxBuySlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x = {{params.px | number: 2}}:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y^B = {{ params.pyBuy | number: 2 }}:
                     </div>
-                    <div class="col-xs-9" id="pxSlider"></div>
+                    <div class="col-xs-9" id="pyBuySlider"></div>
+                </div>
+                <hr/>
+                <div>Prices to sell</div>
+                <div class="row">
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_x^{S} = {{ params.pxSell | number: 2}}:
+                    </div>
+                    <div class="col-xs-9" id="pxSellSlider"></div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y = {{params.py | number: 2}}:
+                    <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">P_y^{S} = {{ params.pySell | number: 2}}:
                     </div>
-                    <div class="col-xs-9" id="pySlider"></div>
+                    <div class="col-xs-9" id="pySellSlider"></div>
                 </div>
             </div>
-            <equation>x^* = \alpha \frac{I}{P_x} || = {{ params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.px | number: 2}} } = {{ model.utility.optimalBundle(model.budget).x | number:2 }}</equation>
-            <hr/>
-            <equation>y^* = (1 - \alpha) \frac{I}{P_y} || = {{ 1 - params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.py | number: 2}} } = {{ model.utility.optimalBundle(model.budget).y | number:2 }}</equation>
-            <hr/>
             <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
 
         </div>
@@ -57,43 +62,52 @@
     var scopeDefinition = {
         params: {
             alpha: 0.5,
-            income: 120,
-            px: 4,
-            py: 3,
+            x: 5,
+            y: 15,
+            pxBuy: 3,
+            pyBuy: 4,
+            pxSell: 2,
+            pySell: 3,
             showMap: false
         },
         graphParams: [],
         restrictions: [
             {
-            expression: 'model.utility.optimalBundle(model.budget).y',
-            restrictionType: 'range',
-            min: 0,
-            max: 50
-        },
-            {
-                expression: 'model.utility.optimalBundle(model.budget).x',
+                expression: 'params.x',
                 restrictionType: 'range',
+                max: 50,
                 min: 0,
-                max: 50
-            }],
+                precision: 1
+            },
+            {
+                expression: 'params.y',
+                restrictionType: 'range',
+                max: 50,
+                min: 0,
+                precision: 1
+            }
+        ],
         model: {
             type: 'EconGraphs.MarshallianDemand',
             definition: {
                 budget: {
-                    type: 'EconGraphs.SimpleBudgetConstraint',
+                    type: 'EconGraphs.EndowmentBudgetConstraint',
                     definition: {
-                        income: 'params.income',
-                        px: 'params.px',
-                        py: 'params.py',
+                        endowment: {x: 'params.x', y: 'params.y'},
+                        pxBuy: 'params.pxBuy',
+                        pxSell: 'params.pxSell',
+                        pyBuy: 'params.pyBuy',
+                        pySell: 'params.pySell',
                         budgetConstraintLabel: 'BL',
-                        xInterceptLabel: "\\frac{I}{P_x}",
-                        yInterceptLabel: "\\frac{I}{P_y}"
+                        budgetSetLabel: "\\text{Budget Set}",
+                        xLabel: 'x_E',
+                        yLabel: 'y_E'
                     }
                 },
                 utility: {
-                    type: 'EconGraphs.CobbDouglasUtility',
+                    type: 'EconGraphs.ComplementsUtility',
                     definition: {
-                        xPower: 'params.alpha'
+                        bundle: {x: 'params.alpha', y: '1-params.alpha'}
                     }
                 }
             }
@@ -109,8 +123,8 @@
                         "model.utility.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45],{show: params.showMap})",
                         "model.budget.budgetLine",
                         'model.utility.optimalBundlePoint(model.budget,{xAxisLabel:"x^*", yAxisLabel: "y^*"})',
-                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})'
-
+                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})',
+                        "model.budget.endowmentPoint"
                     ]
                 }
             },
@@ -126,17 +140,8 @@
             {
                 type: 'KG.Slider',
                 definition: {
-                    element_id: 'incomeSlider',
-                    param: 'income',
-                    precision: '1',
-                    axisDef: {min: 0, max: 200}
-                }
-            },
-            {
-                type: 'KG.Slider',
-                definition: {
-                    element_id: 'pxSlider',
-                    param: 'px',
+                    element_id: 'pxBuySlider',
+                    param: 'pxBuy',
                     precision: '0.25',
                     axisDef: {min: 0, max: 10}
                 }
@@ -144,8 +149,26 @@
             {
                 type: 'KG.Slider',
                 definition: {
-                    element_id: 'pySlider',
-                    param: 'py',
+                    element_id: 'pyBuySlider',
+                    param: 'pyBuy',
+                    precision: '0.25',
+                    axisDef: {min: 0, max: 10}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'pxSellSlider',
+                    param: 'pxSell',
+                    precision: '0.25',
+                    axisDef: {min: 0, max: 10}
+                }
+            },
+            {
+                type: 'KG.Slider',
+                definition: {
+                    element_id: 'pySellSlider',
+                    param: 'pySell',
                     precision: '0.25',
                     axisDef: {min: 0, max: 10}
                 }

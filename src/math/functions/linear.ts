@@ -166,6 +166,18 @@ module KGMath.Functions {
             },name)
         }
 
+        value(bases) {
+
+            var l = this;
+
+            if(bases) {
+                l.setBases(bases);
+            }
+
+            return l.coefficients.a * l.bases[0] + l.coefficients.b * l.bases[1] + l.coefficients.c;
+
+        }
+
         yValue(x) {
             var l = this.updateLine();
             var y = l.isVertical ? undefined : l.yIntercept + l.slope * x;

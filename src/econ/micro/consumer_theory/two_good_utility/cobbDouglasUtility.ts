@@ -51,12 +51,8 @@ module EconGraphs {
 
         }
 
-        optimalBundleAlongSegment(budgetSegment:BudgetSegment) {
-            var u = this;
-            var constrainedX, unconstrainedX;
-            unconstrainedX = u.xShare * budgetSegment.income/budgetSegment.px;
-            constrainedX = budgetSegment.xDomain.closestValueTo(unconstrainedX);
-            return {x: constrainedX, y: budgetSegment.linear.yValue(constrainedX)};
+        _unconstrainedOptimalX(budgetSegment:BudgetSegment) {
+            return this.xShare * budgetSegment.income/budgetSegment.px;
         }
 
         lowestCostBundle(utilityConstraint:UtilityConstraint) {

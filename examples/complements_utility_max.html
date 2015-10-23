@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Cobb-Douglas Utility Maximization</title>
+    <title>Perfect Complements Utility Maximization</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -17,7 +17,7 @@
 <div ng-controller="KineticGraphCtrl">
     <div class="row">
         <div class="col-md-8">
-            <h1>Cobb-Douglas Utility Maximization</h1>
+            <h1>Perfect Complements Utility Maximization</h1>
             <hr/>
             <div id="utility"></div>
         </div>
@@ -91,9 +91,9 @@
                     }
                 },
                 utility: {
-                    type: 'EconGraphs.CobbDouglasUtility',
+                    type: 'EconGraphs.ComplementsUtility',
                     definition: {
-                        xPower: 'params.alpha'
+                        bundle: {x: 'params.alpha', y: '1-params.alpha'}
                     }
                 }
             }

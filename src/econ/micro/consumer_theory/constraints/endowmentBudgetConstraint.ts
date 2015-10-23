@@ -22,9 +22,7 @@ module EconGraphs {
         pyBuy: number;
         pxSell: number;
         pySell: number;
-        maxX: number;
-        maxY: number;
-        budgetLine: KG.Line;
+        budgetLine: KG.PiecewiseLinear;
         endowmentPoint: KG.Point;
     }
 
@@ -37,8 +35,6 @@ module EconGraphs {
         public pyBuy;
         public pxSell;
         public pySell;
-        public maxX;
-        public maxY;
         public budgetLine;
         public endowmentPoint;
 
@@ -110,10 +106,6 @@ module EconGraphs {
                 yInterceptLabel: definition.yInterceptLabel,
                 params: lineParams
             }, b.modelProperty('budgetLine'));
-
-            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(2)');
-            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
-
         }
 
     }

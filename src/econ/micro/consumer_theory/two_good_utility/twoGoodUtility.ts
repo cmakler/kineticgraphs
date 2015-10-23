@@ -23,7 +23,7 @@ module EconGraphs {
 
         indifferenceCurveAtUtility: (utility:number, params?: KG.CurveParamsDefinition) => KG.ViewObject;
         indifferenceCurveThroughBundle: (bundle:TwoGoodBundle, params?: KG.CurveParamsDefinition) => KG.ViewObject;
-        indifferenceCurveFamily: (levels: number[]) => KG.FunctionMap;
+        indifferenceCurveFamily: (levels: number[], params?: KG.CurveParamsDefinition) => KG.ViewObjectGroup;
 
         mrsLine: (bundle:TwoGoodBundle, params?: KG.LineParamsDefinition) => KG.Line;
 
@@ -32,6 +32,7 @@ module EconGraphs {
         //higherUtilityArea: (utility:number) => KG.Area;
         //lowerUtilityArea: (utility:number) => KG.Area;
 
+        _unconstrainedOptimalX:(budgetSegment:BudgetSegment) => number;
         optimalBundle:(budget:BudgetConstraint) => KG.ICoordinates;
         optimalBundleAlongSegment:(budgetSegment:BudgetSegment) => KG.ICoordinates;
         optimalBundlePoint: (budget: BudgetConstraint, params?: KG.PointParamsDefinition) => KG.Point;
@@ -126,13 +127,12 @@ module EconGraphs {
 
         /* Indifference curves */
 
-        indifferenceCurveAtUtility(utility:number, params: KG.CurveParamsDefinition) {
+        indifferenceCurveAtUtility(utility:number, params: KG.CurveParamsDefinition, map?:boolean) {
             var u = this;
-            u.utilityFunction.setLevel(utility);
             return new KG.FunctionPlot({
                 name: 'indifferenceCurve',
-                fn: u.modelProperty('utilityFunction'),
-                className: 'utility',
+                fn: u.modelProperty('utilityFunction.setLevel('+utility+')'),
+                className: map ? 'dataPathFamily' : 'utility',
                 params: params
             })
         }
@@ -143,16 +143,30 @@ module EconGraphs {
             return u.indifferenceCurveAtUtility(utility,params);
         }
 
-        indifferenceCurveFamily(levels:number[]) {
+        indifferenceCurveFamily(levels:number[], params: KG.CurveParamsDefinition) {
             var u = this;
-            return new KG.FunctionMap({
-                name: 'indifferenceCurveMap',
-                levels: levels,
-                fn: u.modelProperty('utilityFunction')
-            })
+
+            var indifferenceCurves = [];
+
+            params = _.defaults(params,{
+                name: 'map'
+            });
+
+            levels.forEach(function(level) {
+                params.objectName = "U" + level;
+                params.label = "U_{" + level + "}";
+                indifferenceCurves.push(u.modelProperty("indifferenceCurveAtUtility("+level+","+JSON.stringify(params)+",true)"));
+            });
+
+            return new KG.ViewObjectGroup({name: 'indifferenceCurve_'+params.name, viewObjects: indifferenceCurves});
+
         }
 
         /* Utility maximization subject to a budget constraint */
+
+        _unconstrainedOptimalX(budgetSegment:BudgetSegment) {
+            return 0; // based on specific utility function; overridden by subclass
+        }
 
         optimalBundle(budget:BudgetConstraint) {
             var u = this;
@@ -167,7 +181,11 @@ module EconGraphs {
         }
 
         optimalBundleAlongSegment(budgetSegment:BudgetSegment) {
-            return {x: 1, y: 1}; // based on specific utility function; overridden by subclass
+            var u = this;
+            var constrainedX, unconstrainedX;
+            unconstrainedX = u._unconstrainedOptimalX(budgetSegment);
+            constrainedX = budgetSegment.xDomain.closestValueTo(unconstrainedX);
+            return {x: constrainedX, y: budgetSegment.linear.yValue(constrainedX)};
         }
 
         optimalBundlePoint(budget:BudgetConstraint, params:KG.PointParamsDefinition) {

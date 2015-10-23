@@ -67,7 +67,7 @@ module KG
                 divObj.text = divObj.text.join('')
             }
 
-            if(!divObj.hasOwnProperty('coordinates')) {
+            if(!divObj.hasOwnProperty('coordinates') || divObj.text.length == 0) {
                 return view;
             }
 
@@ -100,7 +100,7 @@ module KG
                 text = divObj.text,
                 draggable = (divObj.xDrag || divObj.yDrag);
 
-            var div:D3.Selection = view.getDiv(this.name);
+            var div:D3.Selection = view.getDiv(this.objectName || this.name);
 
             div
                 .style('cursor','default')

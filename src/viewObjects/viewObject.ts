@@ -7,15 +7,18 @@ module KG
 
     export interface ViewObjectParamsDefinition {
         name?: string;
+        objectName?: string;
         className?: string;
         xDrag?: any;
         yDrag?: any;
+        show?: any;
     }
 
     export interface ViewObjectDefinition extends ModelDefinition
     {
         name?: string;
         show?: any;
+        objectName?: string;
         className?: string;
         xDrag?: any;
         yDrag?: any;
@@ -30,6 +33,7 @@ module KG
     {
         // identifiers
         name: string;
+        objectName?: string;
         className?: string;
         color: string;
 
@@ -66,6 +70,7 @@ module KG
         public className;
         public color;
         public name;
+        public objectName;
         public coordinates;
         public xDrag;
         public yDrag;
@@ -98,12 +103,20 @@ module KG
                     }
                 }
 
+                if(p.hasOwnProperty('objectName')) {
+                    definition.objectName = p.objectName;
+                }
+
                 if(p.hasOwnProperty('xDrag')) {
                     definition.xDrag = p.xDrag;
                 }
 
                 if(p.hasOwnProperty('yDrag')) {
                     definition.yDrag = p.yDrag;
+                }
+
+                if(p.hasOwnProperty('show')) {
+                    definition.show = p.show;
                 }
 
             }
@@ -152,6 +165,9 @@ module KG
                 classString += ' visible';
             } else {
                 classString += ' invisible';
+            }
+            if(this.hasOwnProperty('objectName')) {
+                classString += ' ' + this.objectName
             }
             return classString;
         }

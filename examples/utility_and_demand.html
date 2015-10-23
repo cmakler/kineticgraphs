@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Cobb-Douglas Utility Maximization</title>
+    <title>Utility and Demand</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -13,21 +13,26 @@
     <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
     <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
 </head>
-<body ng-cloak>
+<body>
 <div ng-controller="KineticGraphCtrl">
+
     <div class="row">
         <div class="col-md-8">
-            <h1>Cobb-Douglas Utility Maximization</h1>
-            <hr/>
-            <div id="utility"></div>
+            <h1>Cobb-Douglas Utility and Demand</h1>
+            <hr/><div id="utility"></div>
         </div>
         <div class="col-md-4">
             <div class="well">
+                <div class="subtitle">utility parameters</div>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
+                <div class="math">\text{Utility function}: u(x,y) = x ^ { {{params.alpha | number: 2}} } y ^ { {{1 - params.alpha | number: 2}} } </div>
+            </div>
+            <div class="well">
+                <div class="subtitle">budget parameters</div>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">I = {{params.income | number: 0}}:
                     </div>
@@ -43,13 +48,10 @@
                     </div>
                     <div class="col-xs-9" id="pySlider"></div>
                 </div>
-            </div>
-            <equation>x^* = \alpha \frac{I}{P_x} || = {{ params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.px | number: 2}} } = {{ model.utility.optimalBundle(model.budget).x | number:2 }}</equation>
-            <hr/>
-            <equation>y^* = (1 - \alpha) \frac{I}{P_y} || = {{ 1 - params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.py | number: 2}} } = {{ model.utility.optimalBundle(model.budget).y | number:2 }}</equation>
-            <hr/>
-            <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
+                <div class="math">\text{Budget line}: {{params.px | number: 2}}x + {{params.py | number: 2}}y = {{params.income | number: 0}} </div>
 
+            </div>
+            <equation>q^D(P_x | P_y, I) = x^*(P_x, P_y, I) || = \alpha \frac{I}{P_x} || = {{ params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.px | number: 2}} } || = {{ model.utility.optimalBundle(model.budget).x | number:2 }}</equation>
         </div>
     </div>
 </div>
@@ -59,17 +61,16 @@
             alpha: 0.5,
             income: 120,
             px: 4,
-            py: 3,
-            showMap: false
+            py: 3
         },
         graphParams: [],
         restrictions: [
             {
-            expression: 'model.utility.optimalBundle(model.budget).y',
-            restrictionType: 'range',
-            min: 0,
-            max: 50
-        },
+                expression: 'model.utility.optimalBundle(model.budget).y',
+                restrictionType: 'range',
+                min: 0,
+                max: 50
+            },
             {
                 expression: 'model.utility.optimalBundle(model.budget).x',
                 restrictionType: 'range',
@@ -85,9 +86,7 @@
                         income: 'params.income',
                         px: 'params.px',
                         py: 'params.py',
-                        budgetConstraintLabel: 'BL',
-                        xInterceptLabel: "\\frac{I}{P_x}",
-                        yInterceptLabel: "\\frac{I}{P_y}"
+                        budgetConstraintLabel: 'BL'
                     }
                 },
                 utility: {
@@ -100,16 +99,27 @@
         },
         views: [
             {
-                type: 'KG.Graph',
+                type: 'KG.TwoVerticalGraphs',
                 definition: {
                     element_id: 'utility',
-                    xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
-                    yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
+                    xAxisDef: {min: 0, max: 50, title: '\\text{Quantity of Good X}'},
+                    topGraph: {
+                        yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
+                        objects: [
+                            "model.budget.budgetLine",
+                            'model.utility.optimalIndifferenceCurve(model.budget,{label: "U^*"})'
+
+                        ]
+                    },
+                    bottomGraph: {
+                        yAxisDef: {min: 0, max: 10, title: '\\text{Price of Good X}'},
+                        objects: [
+                            'model.demandCurve({min: 0.01, max: 10},{label:"D"})',
+                            'model.quantityAtPricePoint(params.px, {},{yDrag: "params.px", yAxisLabel: "P_x"})'
+                        ]
+                    },
                     objects: [
-                        "model.utility.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45],{show: params.showMap})",
-                        "model.budget.budgetLine",
                         'model.utility.optimalBundlePoint(model.budget,{xAxisLabel:"x^*", yAxisLabel: "y^*"})',
-                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})'
 
                     ]
                 }

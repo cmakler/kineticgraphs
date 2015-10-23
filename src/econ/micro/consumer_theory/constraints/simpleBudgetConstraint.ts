@@ -14,6 +14,7 @@ module EconGraphs {
         px: number;
         py: number;
         budgetLine: KG.Line;
+        setPrice: (price:number, good?:string) => void;
     }
 
     export class SimpleBudgetConstraint extends BudgetConstraint implements ISimpleBudgetConstraint {
@@ -53,6 +54,12 @@ module EconGraphs {
                 params: params
             }, b.modelProperty('budgetLine'));
 
+        }
+
+        setPrice(price,good) {
+            var b = this;
+            good = good || 'x';
+            b.budgetSegments[0].setPrice(price,good);
         }
 
     }

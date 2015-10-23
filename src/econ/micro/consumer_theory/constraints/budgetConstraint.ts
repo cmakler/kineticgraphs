@@ -18,6 +18,8 @@ module EconGraphs {
         budgetSetLabel: string;
         xInterceptLabel: string;
         yInterceptLabel: string;
+        maxX: number;
+        maxY: number;
         xValue: (y:number) => number;
         yValue: (x:number) => number;
     }
@@ -29,9 +31,17 @@ module EconGraphs {
         public budgetSetLabel;
         public xInterceptLabel;
         public yInterceptLabel;
+        public maxX;
+        public maxY;
 
         constructor(definition:BudgetConstraintDefinition, modelPath?:string) {
             super(definition, modelPath);
+
+            var b = this;
+
+            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(2)');
+            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
+
         }
 
         _update(scope) {
