@@ -17,18 +17,30 @@
 <div ng-controller="KineticGraphCtrl">
     <div class="row">
         <div class="col-md-8">
-            <h1>Utility Maximization</h1>
+            <h1>Utility Maximization: {{ model.utility.title }}</h1>
             <hr/>
             <div id="utility"></div>
         </div>
         <div class="col-md-4">
             <div class="well">
+                <div class="subtitle">utility parameters</div>
+                <hr/>
+                <label><input type="radio" ng-model="params.selected" value="CobbDouglas"> <span class="math">\text{Cobb-Douglas}</span></label><br/>
+                <label><input type="radio" ng-model="params.selected" value="Complements"> <span class="math">\text{Perfect Complements}</span></label><br/>
+                <hr/>
+                <div class="math displayMath big">u(x,y) = {{ model.utility.formula(false) }}</div>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
-                <div class="row">
+                <hr/>
+                <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
+
+            </div>
+            <div class="well">
+                <div class="subtitle">budget parameters</div>
+                                <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">I = {{params.income | number: 0}}:
                     </div>
                     <div class="col-xs-9" id="incomeSlider"></div>
@@ -44,12 +56,9 @@
                     <div class="col-xs-9" id="pySlider"></div>
                 </div>
             </div>
-            <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
+
             <hr/>
-            <div class="btn-group" role="group" aria-label="...">
-                <button type="button" class="btn btn-default utility" ng-click="params.selected = 'CobbDouglas'">Cobb-Douglas</button>
-                <button type="button" class="btn btn-default utility" ng-click="params.selected = 'Complements'">Complements</button>
-            </div>
+
         </div>
     </div>
 </div>
@@ -90,6 +99,10 @@
                         xInterceptLabel: "\\frac{I}{P_x}",
                         yInterceptLabel: "\\frac{I}{P_y}"
                     }
+                },
+                utilitySelector: {
+                    alpha: 'params.alpha',
+                    selected: 'params.selected'
                 }
             }
         },
@@ -147,20 +160,6 @@
             }
 
         ]
-    }
-</script>
-<script>
-    scopeDefinition.model.definition.utility = {
-        type: 'EconGraphs.CobbDouglasUtility',
-                definition: {
-            xPower: 'params.alpha'
-        }
-    }
-</script>
-<script>
-    scopeDefinition.model.definition.utilitySelector = {
-        alpha: 'params.alpha',
-        selected: 'params.selected'
     }
 </script>
 <script src="../dist/kinetic-graphs.js"></script>

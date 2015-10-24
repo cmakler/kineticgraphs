@@ -29,6 +29,8 @@ module EconGraphs {
         public xCoefficient;
         public yCoefficient;
 
+        public static title = 'Perfect Complements';
+
         constructor(definition:ComplementsUtilityDefinition, modelPath?:string) {
 
             definition = _.defaults(definition,{
@@ -49,6 +51,8 @@ module EconGraphs {
             };
 
             super(definition, modelPath);
+
+            this.title = ComplementsUtility.title;
 
         }
 
@@ -72,6 +76,15 @@ module EconGraphs {
                 x: utilityConstraint.u / u.xCoefficient,
                 y: utilityConstraint.u / u.yCoefficient
             };
+        }
+
+        formula(values) {
+
+            if(values) {
+                return "foo";
+            } else {
+                return "\\min \\left\\{ \\frac\{x}\{\\alpha} , \\frac\{y}\{1 - \\alpha} \\right\\}"
+            }
         }
 
     }

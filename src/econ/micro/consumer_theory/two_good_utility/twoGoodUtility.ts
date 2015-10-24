@@ -14,6 +14,9 @@ module EconGraphs {
 
     export interface ITwoGoodUtility extends IUtility {
 
+        title: string;
+        formula: (values:boolean) => string;
+
         utility:(bundle?:TwoGoodBundle) => number;
         mux:(bundle?:TwoGoodBundle) => number;
         muy:(bundle?:TwoGoodBundle) => number;
@@ -46,6 +49,8 @@ module EconGraphs {
     }
 
     export class TwoGoodUtility extends Utility implements ITwoGoodUtility {
+
+        public title;
 
         constructor(definition:TwoGoodUtilityDefinition, modelPath?:string) {
 
@@ -217,6 +222,10 @@ module EconGraphs {
         expenditure(utility:UtilityConstraint) {
             var lowestCostBundle = this.lowestCostBundle(utility);
             return utility.px*lowestCostBundle.x + utility.py*lowestCostBundle.y
+        }
+
+        formula(values) {
+            return ''; // overridden by subclass
         }
 
 

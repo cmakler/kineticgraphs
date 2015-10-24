@@ -5041,6 +5041,9 @@ var EconGraphs;
             var lowestCostBundle = this.lowestCostBundle(utility);
             return utility.px * lowestCostBundle.x + utility.py * lowestCostBundle.y;
         };
+        TwoGoodUtility.prototype.formula = function (values) {
+            return ''; // overridden by subclass
+        };
         return TwoGoodUtility;
     })(EconGraphs.Utility);
     EconGraphs.TwoGoodUtility = TwoGoodUtility;
@@ -5069,6 +5072,7 @@ var EconGraphs;
                 yPower: definition.yPower
             };
             _super.call(this, definition, modelPath);
+            this.title = CobbDouglasUtility.title;
         }
         CobbDouglasUtility.prototype._unconstrainedOptimalX = function (budgetSegment) {
             return this.xShare * budgetSegment.income / budgetSegment.px;
@@ -5081,6 +5085,15 @@ var EconGraphs;
                 y: Math.pow(1 / theta, u.xShare) * utilityConstraint.u
             };
         };
+        CobbDouglasUtility.prototype.formula = function (values) {
+            if (values) {
+                return "x^{" + this.xPower + "}y^{" + this.yPower + "}";
+            }
+            else {
+                return "x^\\alpha y^{1 - \\alpha}";
+            }
+        };
+        CobbDouglasUtility.title = 'Cobb-Douglas';
         return CobbDouglasUtility;
     })(EconGraphs.TwoGoodUtility);
     EconGraphs.CobbDouglasUtility = CobbDouglasUtility;
@@ -5107,6 +5120,7 @@ var EconGraphs;
                 yCoefficient: definition.yCoefficient
             };
             _super.call(this, definition, modelPath);
+            this.title = ComplementsUtility.title;
         }
         ComplementsUtility.prototype._unconstrainedOptimalX = function (budgetSegment) {
             var u = this;
@@ -5123,6 +5137,15 @@ var EconGraphs;
                 y: utilityConstraint.u / u.yCoefficient
             };
         };
+        ComplementsUtility.prototype.formula = function (values) {
+            if (values) {
+                return "foo";
+            }
+            else {
+                return "\\min \\left\\{ \\frac\{x}\{\\alpha} , \\frac\{y}\{1 - \\alpha} \\right\\}";
+            }
+        };
+        ComplementsUtility.title = 'Perfect Complements';
         return ComplementsUtility;
     })(EconGraphs.TwoGoodUtility);
     EconGraphs.ComplementsUtility = ComplementsUtility;
