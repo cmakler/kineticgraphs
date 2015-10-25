@@ -72,7 +72,7 @@ module EconGraphs {
 
         formula(values) {
             if(values) {
-                return "x^{" + this.xPower +"}y^{" + this.yPower +"}";
+                return "x^{" + this.xPower.toFixed(2) +"}y^{" + this.yPower.toFixed(2) +"}";
             } else {
                 return "x^\\alpha y^{1 - \\alpha}";
             }

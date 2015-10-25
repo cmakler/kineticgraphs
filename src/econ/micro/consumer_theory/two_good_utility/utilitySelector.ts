@@ -8,6 +8,8 @@ module EconGraphs {
         coefficient: any;
         alpha: any;
         selected: string;
+
+        // added to definition programmatically, not by caller
         type: string;
         def: any;
     }
@@ -16,8 +18,9 @@ module EconGraphs {
         coefficient: number;
         alpha: number;
         selected: string;
-        cobbDouglas: CobbDouglasUtility;
-        complements: ComplementsUtility;
+
+        utilityFunctions: any;
+
         selectedUtility: TwoGoodUtility;
     }
 
@@ -26,8 +29,7 @@ module EconGraphs {
         public coefficient;
         public alpha;
         public selected;
-        public cobbDouglas;
-        public complements;
+        public utilityFunctions;
         public selectedUtility;
 
         constructor(definition:UtilitySelectorDefinition, modelPath?:string) {
@@ -50,16 +52,16 @@ module EconGraphs {
 
             var u = this;
 
-            u.cobbDouglas = new CobbDouglasUtility(utilityDefinitions.CobbDouglas,u.modelProperty('utility'));
-
-            u.complements = new ComplementsUtility(utilityDefinitions.Complements,u.modelProperty('utility'));
+            u.utilityFunctions = {
+                'CobbDouglas' : new CobbDouglasUtility(utilityDefinitions.CobbDouglas,u.modelProperty('utility')),
+                'Complements' : new ComplementsUtility(utilityDefinitions.Complements,u.modelProperty('utility'))
+            }
 
         }
 
         _update(scope) {
             var u = this;
-            var selectedUtility = (u.selected == 'CobbDouglas') ? u.cobbDouglas : u.complements;
-            u.selectedUtility = selectedUtility.update(scope);
+            u.selectedUtility = u.utilityFunctions[u.selected].update(scope);
             return u;
         }
 

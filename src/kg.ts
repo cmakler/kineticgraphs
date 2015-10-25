@@ -8,6 +8,7 @@
 /// <reference path="model.ts" />
 /// <reference path="helpers/domain.ts" />
 /// <reference path="restriction.ts" />
+/// <reference path="helpers/selector.ts" />
 
 /// <reference path="math/math.ts" />
 

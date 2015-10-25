@@ -108,6 +108,25 @@ module EconGraphs {
             }, b.modelProperty('budgetLine'));
         }
 
+        formula(values) {
+
+            var b = this;
+
+            if(b.hasOwnProperty('px') && b.hasOwnProperty('py')) {
+                if(values) {
+                    return b.px.toFixed(2) + "x + " + b.py.toFixed(2) + "y = "
+                        + b.px.toFixed(2) + " \\times " + b.endowment.x + " + " + b.py.toFixed(2) + " \\times " + b.endowment.y;
+                } else  {
+                    return "P_xx + P_yy = P_xx_E + P_yy_E";
+                }
+            } else {
+                return '';
+            }
+
+
+
+        }
+
     }
 
 }

@@ -8,14 +8,14 @@ module EconGraphs {
 
     export interface UtilityDemandDefinition extends KG.ModelDefinition
     {
-        utility?: {type: string; definition: TwoGoodUtilityDefinition}
-        utilitySelector?: UtilitySelectorDefinition
+        utility?: {type: string; definition: TwoGoodUtilityDefinition};
+        utilitySelector?: KG.SelectorDefinition;
     }
 
     export interface IUtilityDemand extends KG.IModel
     {
         utility: TwoGoodUtility;
-        utilitySelector: UtilitySelector;
+        utilitySelector: KG.Selector;
 
         quantityAtPrice: (price:number, good?: string) => number;
         quantityAtPricePoint: (price:number, priceParams?: any, pointParams?: KG.PointParamsDefinition) => KG.Point;
@@ -31,12 +31,6 @@ module EconGraphs {
         constructor(definition:UtilityDemandDefinition,modelPath?:string) {
 
             super(definition,modelPath);
-
-            var d = this;
-
-            if(definition.hasOwnProperty('utilitySelector')) {
-                d.utilitySelector = new UtilitySelector(definition.utilitySelector);
-            }
         }
 
         quantityAtPrice(price:number, good?:string) {

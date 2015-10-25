@@ -80,10 +80,12 @@ module EconGraphs {
 
         formula(values) {
 
+            var u = this;
+
             if(values) {
-                return "foo";
+                return "\\min \\left\\{ \\frac\{x}\{ "+ (1/u.xCoefficient).toFixed(2) + " } , \\frac\{y}\{"+ (1/u.yCoefficient).toFixed(2) + "} \\right\\}";
             } else {
-                return "\\min \\left\\{ \\frac\{x}\{\\alpha} , \\frac\{y}\{1 - \\alpha} \\right\\}"
+                return "\\min \\left\\{ \\frac\{x}\{\\alpha} , \\frac\{y}\{1 - \\alpha} \\right\\}";
             }
         }
 

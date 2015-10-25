@@ -3,16 +3,20 @@
 module EconGraphs {
 
     export interface BudgetConstraintDefinition extends KG.ModelDefinition {
-        budgetSegmentDefinitions: BudgetSegmentDefinition[];
-        budgetConstraintLabel: string;
-        budgetSetLabel: string;
-        xInterceptLabel: string;
-        yInterceptLabel: string;
+        budgetSegmentDefinitions?: BudgetSegmentDefinition[];
+        budgetConstraintLabel?: string;
+        budgetSetLabel?: string;
+        xInterceptLabel?: string;
+        yInterceptLabel?: string;
     }
 
     export interface IBudgetConstraint extends KG.IModel {
 
+        title: string;
+        formula: (values:boolean) => string;
+
         budgetSegments: BudgetSegment[];
+
         isAffordable: (bundle:KG.ICoordinates) => boolean;
         budgetConstraintLabel: string;
         budgetSetLabel: string;
@@ -26,6 +30,7 @@ module EconGraphs {
 
     export class BudgetConstraint extends KG.Model implements IBudgetConstraint {
 
+        public title;
         public budgetSegments;
         public budgetConstraintLabel;
         public budgetSetLabel;
@@ -79,6 +84,10 @@ module EconGraphs {
                 }
             });
             return y;
+        }
+
+        formula(values) {
+            return ''; // overridden by subclass
         }
     }
 }

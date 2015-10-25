@@ -24,6 +24,8 @@ module EconGraphs {
         public py;
         public budgetLine;
 
+        public static title = 'Simple Budget Constraint';
+
         constructor(definition: SimpleBudgetConstraintDefinition, modelPath: string) {
             super(definition,modelPath);
 
@@ -60,6 +62,17 @@ module EconGraphs {
             var b = this;
             good = good || 'x';
             b.budgetSegments[0].setPrice(price,good);
+        }
+
+        formula(values) {
+
+            var b = this;
+
+            if(values) {
+                return b.px.toFixed(2) + "x + " + b.py.toFixed(2) + "y = " +b.income;
+            } else {
+                return "Px_x + P_yy = I";
+            }
         }
 
     }

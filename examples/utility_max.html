@@ -28,7 +28,7 @@
                 <label><input type="radio" ng-model="params.selected" value="CobbDouglas"> <span class="math">\text{Cobb-Douglas}</span></label><br/>
                 <label><input type="radio" ng-model="params.selected" value="Complements"> <span class="math">\text{Perfect Complements}</span></label><br/>
                 <hr/>
-                <div class="math displayMath big">u(x,y) = {{ model.utility.formula(false) }}</div>
+                <div class="math displayMath">u(x,y) = {{ model.utility.formula(false) }} = {{ model.utility.formula(true)}}</div>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}}:
                     </div>
@@ -67,10 +67,15 @@
         params: {
             alpha: 0.5,
             income: 120,
+            xE: 20,
+            yE: 20,
             px: 4,
             py: 3,
+            pxSell: 2,
+            pySell: 1,
             showMap: false,
-            selected: 'CobbDouglas'
+            selectedUtility: 'CobbDouglas',
+            selectedBudget: 'simple'
         },
         graphParams: [],
         restrictions: [
@@ -89,19 +94,58 @@
         model: {
             type: 'EconGraphs.MarshallianDemand',
             definition: {
-                budget: {
-                    type: 'EconGraphs.SimpleBudgetConstraint',
+                budgetSelector:{
+                    type: 'KG.Selector',
                     definition: {
-                        income: 'params.income',
-                        px: 'params.px',
-                        py: 'params.py',
-                        budgetConstraintLabel: 'BL',
-                        xInterceptLabel: "\\frac{I}{P_x}",
-                        yInterceptLabel: "\\frac{I}{P_y}"
+                        property: 'budget',
+                        selected: 'simple',
+                        options: {
+                            simple: {
+                                label: 'Simple budget constraint',
+                                selection: {
+                                    type: 'SimpleBudgetConstraint',
+                                    definition: {
+                                        income: 'params.income',
+                                        px: 'params.px',
+                                        py: 'params.py'
+                                    }
+                                }
+                            },
+                            endowment: {
+                                label: 'Endowment budget constraint',
+                                selection: {
+                                    type: 'EndowmentBudgetConstraint',
+                                    definition: {
+                                        endowment: {
+                                            x: 'params.xE',
+                                            y: 'params.yE'
+                                        },
+                                        px: 'params.px',
+                                        py: 'params.py'
+                                    }
+                                }
+                            },
+                            endowmentKinked: {
+                                label: 'Endowment with different buy/sell prices',
+                                selection: {
+                                    type: 'EndowmentBudgetConstraint',
+                                    def: {
+                                        endowment: {
+                                            x: 'params.xE',
+                                            y: 'params.yE'
+                                        },
+                                        pxBuy: 'params.px',
+                                        pyBuy: 'params.py',
+                                        pxSell: 'params.pxSell',
+                                        pySell: 'params.pySell'
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
                 utilitySelector: {
-                    alpha: 'params.alpha',
+                    property: 'utility',
                     selected: 'params.selected'
                 }
             }

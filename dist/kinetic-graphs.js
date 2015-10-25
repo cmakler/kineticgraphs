@@ -592,6 +592,27 @@ var KG;
     })(KG.Model);
     KG.Restriction = Restriction;
 })(KG || (KG = {}));
+/// <reference path="../kg.ts"/>
+'use strict';
+var KG;
+(function (KG) {
+    var Selector = (function (_super) {
+        __extends(Selector, _super);
+        function Selector(definition, modelPath) {
+            _super.call(this, definition, modelPath);
+        }
+        Selector.prototype._update = function (scope) {
+            var s = this;
+            if (s.options.hasOwnProperty(s.selected)) {
+                var selectedOption = s.options[s.selected];
+                s.selectedObject = KG.createInstance(selectedOption.type, selectedOption.def, s.modelProperty(s.property)).update(scope);
+            }
+            return s;
+        };
+        return Selector;
+    })(KG.Model);
+    KG.Selector = Selector;
+})(KG || (KG = {}));
 var KGMath;
 (function (KGMath) {
     var Functions;
@@ -4363,6 +4384,9 @@ var EconGraphs;
             });
             return y;
         };
+        BudgetConstraint.prototype.formula = function (values) {
+            return ''; // overridden by subclass
+        };
         return BudgetConstraint;
     })(KG.Model);
     EconGraphs.BudgetConstraint = BudgetConstraint;
@@ -4471,6 +4495,16 @@ var EconGraphs;
             good = good || 'x';
             b.budgetSegments[0].setPrice(price, good);
         };
+        SimpleBudgetConstraint.prototype.formula = function (values) {
+            var b = this;
+            if (values) {
+                return b.px.toFixed(2) + "x + " + b.py.toFixed(2) + "y = " + b.income;
+            }
+            else {
+                return "Px_x + P_yy = I";
+            }
+        };
+        SimpleBudgetConstraint.title = 'Simple Budget Constraint';
         return SimpleBudgetConstraint;
     })(EconGraphs.BudgetConstraint);
     EconGraphs.SimpleBudgetConstraint = SimpleBudgetConstraint;
@@ -4540,6 +4574,20 @@ var EconGraphs;
                 params: lineParams
             }, b.modelProperty('budgetLine'));
         }
+        EndowmentBudgetConstraint.prototype.formula = function (values) {
+            var b = this;
+            if (b.hasOwnProperty('px') && b.hasOwnProperty('py')) {
+                if (values) {
+                    return b.px.toFixed(2) + "x + " + b.py.toFixed(2) + "y = " + b.px.toFixed(2) + " \\times " + b.endowment.x + " + " + b.py.toFixed(2) + " \\times " + b.endowment.y;
+                }
+                else {
+                    return "P_xx + P_yy = P_xx_E + P_yy_E";
+                }
+            }
+            else {
+                return '';
+            }
+        };
         return EndowmentBudgetConstraint;
     })(EconGraphs.BudgetConstraint);
     EconGraphs.EndowmentBudgetConstraint = EndowmentBudgetConstraint;
@@ -5087,7 +5135,7 @@ var EconGraphs;
         };
         CobbDouglasUtility.prototype.formula = function (values) {
             if (values) {
-                return "x^{" + this.xPower + "}y^{" + this.yPower + "}";
+                return "x^{" + this.xPower.toFixed(2) + "}y^{" + this.yPower.toFixed(2) + "}";
             }
             else {
                 return "x^\\alpha y^{1 - \\alpha}";
@@ -5138,8 +5186,9 @@ var EconGraphs;
             };
         };
         ComplementsUtility.prototype.formula = function (values) {
+            var u = this;
             if (values) {
-                return "foo";
+                return "\\min \\left\\{ \\frac\{x}\{ " + (1 / u.xCoefficient).toFixed(2) + " } , \\frac\{y}\{" + (1 / u.yCoefficient).toFixed(2) + "} \\right\\}";
             }
             else {
                 return "\\min \\left\\{ \\frac\{x}\{\\alpha} , \\frac\{y}\{1 - \\alpha} \\right\\}";
@@ -5151,49 +5200,12 @@ var EconGraphs;
     EconGraphs.ComplementsUtility = ComplementsUtility;
 })(EconGraphs || (EconGraphs = {}));
 /// <reference path="../../../eg.ts"/>
-'use strict';
-var EconGraphs;
-(function (EconGraphs) {
-    var UtilitySelector = (function (_super) {
-        __extends(UtilitySelector, _super);
-        function UtilitySelector(definition, modelPath) {
-            definition = _.defaults(definition, {
-                coefficient: 1,
-                alpha: 0.5,
-                selected: 'CobbDouglas'
-            });
-            var utilityDefinitions = {
-                'CobbDouglas': { coefficient: definition.coefficient, xPower: definition.alpha },
-                'Complements': { bundle: { x: definition.alpha, y: KG.subtractDefs(1, definition.alpha) } }
-            };
-            definition.type = definition.selected;
-            definition.def = utilityDefinitions[definition.selected];
-            _super.call(this, definition, modelPath);
-            var u = this;
-            u.cobbDouglas = new EconGraphs.CobbDouglasUtility(utilityDefinitions.CobbDouglas, u.modelProperty('utility'));
-            u.complements = new EconGraphs.ComplementsUtility(utilityDefinitions.Complements, u.modelProperty('utility'));
-        }
-        UtilitySelector.prototype._update = function (scope) {
-            var u = this;
-            var selectedUtility = (u.selected == 'CobbDouglas') ? u.cobbDouglas : u.complements;
-            u.selectedUtility = selectedUtility.update(scope);
-            return u;
-        };
-        return UtilitySelector;
-    })(KG.Model);
-    EconGraphs.UtilitySelector = UtilitySelector;
-})(EconGraphs || (EconGraphs = {}));
-/// <reference path="../../../eg.ts"/>
 var EconGraphs;
 (function (EconGraphs) {
     var UtilityDemand = (function (_super) {
         __extends(UtilityDemand, _super);
         function UtilityDemand(definition, modelPath) {
             _super.call(this, definition, modelPath);
-            var d = this;
-            if (definition.hasOwnProperty('utilitySelector')) {
-                d.utilitySelector = new EconGraphs.UtilitySelector(definition.utilitySelector);
-            }
         }
         UtilityDemand.prototype.quantityAtPrice = function (price, good) {
             return 0; // overridden by subclass
@@ -5268,16 +5280,22 @@ var EconGraphs;
         __extends(MarshallianDemand, _super);
         function MarshallianDemand(definition, modelPath) {
             _super.call(this, definition, modelPath);
+            var d = this;
         }
         MarshallianDemand.prototype._update = function (scope) {
             var d = this;
             if (d.hasOwnProperty('utilitySelector')) {
-                d.utility = d.utilitySelector.update(scope).selectedUtility;
+                d.utility = d.utilitySelector.update(scope).selectedObject;
             }
             else {
                 d.utility.update(scope);
             }
-            d.budget.update(scope);
+            if (d.hasOwnProperty('budgetSelector')) {
+                d.budget = d.budgetSelector.update(scope).selectedObject;
+            }
+            else {
+                d.budget.update(scope);
+            }
             return d;
         };
         MarshallianDemand.prototype.quantityAtPrice = function (price, good) {
@@ -6156,7 +6174,6 @@ var EconGraphs;
 /// <reference path="micro/consumer_theory/two_good_utility/twoGoodUtility.ts"/>
 /// <reference path="micro/consumer_theory/two_good_utility/cobbDouglasUtility.ts"/>
 /// <reference path="micro/consumer_theory/two_good_utility/complementsUtility.ts"/>
-/// <reference path="micro/consumer_theory/two_good_utility/utilitySelector.ts"/>
 /// <reference path="micro/consumer_theory/demand/utilityDemand.ts"/>
 /// <reference path="micro/consumer_theory/demand/marshallianDemand.ts"/>
 /// <reference path="micro/consumer_theory/demand/hicksianDemand.ts"/>
@@ -6260,6 +6277,7 @@ var PhysicsGraphs;
 /// <reference path="model.ts" />
 /// <reference path="helpers/domain.ts" />
 /// <reference path="restriction.ts" />
+/// <reference path="helpers/selector.ts" />
 /// <reference path="math/math.ts" />
 /// <reference path="viewObjects/viewObject.ts"/>
 /// <reference path="viewObjects/viewObjectGroup.ts"/>
