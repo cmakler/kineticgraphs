@@ -18,17 +18,14 @@ module KG {
         public viewObjects;
 
         constructor(definition:ViewObjectGroupDefinition, modelPath?: string) {
-
             super(definition, modelPath);
-
             this.viewObjects = definition.viewObjects;
-
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
             this.viewObjects.forEach(function(viewObject){
-                view.addObject(viewObject);
-                viewObject.createSubObjects(view);
+                view.addObject(viewObject.update(scope));
+                viewObject.createSubObjects(view,scope);
             });
             return view;
         }

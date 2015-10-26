@@ -79,33 +79,55 @@ module EconGraphs {
                 lineParams.areaUnderLabel = definition.budgetSetLabel;
             }
 
-            b.budgetSegments = [
-                new BudgetSegment({
-                    endowment: definition.endowment,
-                    px: definition.pxSell,
-                    py: definition.pyBuy,
-                    xMin: 0,
-                    xMax: definition.endowment.x,
-                    yMin: definition.endowment.y
-                }, b.modelProperty('budgetSegments[0]')),
-                new BudgetSegment({
-                    endowment: definition.endowment,
-                    px: definition.pxBuy,
-                    py: definition.pySell,
-                    yMin: 0,
-                    yMax: definition.endowment.y,
-                    xMin: definition.endowment.x
-                }, b.modelProperty('budgetSegments[1]'))
-            ];
+            if(definition.hasOwnProperty('px') && definition.hasOwnProperty('py')) {
+                b.budgetSegments = [
+                    new BudgetSegment({
+                        endowment: definition.endowment,
+                        px: definition.px,
+                        py: definition.py
+                    }, b.modelProperty('budgetSegments[0]'))
+                ];
+                b.budgetLine = new KG.Line({
+                    name: 'BL',
+                    className: 'budget',
+                    linear: b.modelProperty('budgetSegments[0].linear'),
+                    xInterceptLabel: definition.xInterceptLabel,
+                    yInterceptLabel: definition.yInterceptLabel,
+                    params: lineParams
+                }, b.modelProperty('budgetLine'));
+            } else {
 
-            b.budgetLine = new KG.PiecewiseLinear({
-                name: 'BL',
-                className: 'budget',
-                sections: b.modelProperty('budgetSegments'),
-                xInterceptLabel: definition.xInterceptLabel,
-                yInterceptLabel: definition.yInterceptLabel,
-                params: lineParams
-            }, b.modelProperty('budgetLine'));
+                b.budgetSegments = [
+                    new BudgetSegment({
+                        endowment: definition.endowment,
+                        px: definition.pxSell,
+                        py: definition.pyBuy,
+                        xMin: 0,
+                        xMax: definition.endowment.x,
+                        yMin: definition.endowment.y
+                    }, b.modelProperty('budgetSegments[0]')),
+                    new BudgetSegment({
+                        endowment: definition.endowment,
+                        px: definition.pxBuy,
+                        py: definition.pySell,
+                        yMin: 0,
+                        yMax: definition.endowment.y,
+                        xMin: definition.endowment.x
+                    }, b.modelProperty('budgetSegments[1]'))
+                ];
+
+                b.budgetLine = new KG.PiecewiseLinear({
+                    name: 'BL',
+                    className: 'budget',
+                    sections: b.modelProperty('budgetSegments'),
+                    xInterceptLabel: definition.xInterceptLabel,
+                    yInterceptLabel: definition.yInterceptLabel,
+                    params: lineParams
+                }, b.modelProperty('budgetLine'));
+
+            }
+
+
         }
 
         formula(values) {

@@ -66,6 +66,10 @@ module KG
 
             var group:D3.Selection = view.objectGroup(control.name, control.initGroupFn(), true);
 
+            if(!group) {
+                return view;
+            }
+
             var controlGroup:D3.Selection = group.select('.'+ control.viewObjectClass);
 
             var controlSquare = controlGroup.selectAll('rect').data([0])

@@ -71,10 +71,10 @@ module KG {
             this.viewObjectClass = 'area';
         }
 
-        createSubObjects(view) {
+        createSubObjects(view, scope) {
             var labelDiv = this.labelDiv;
             if(labelDiv) {
-                return view.addObject(labelDiv);
+                return view.addObject(labelDiv.update(scope));
             } else {
                 return view;
             }

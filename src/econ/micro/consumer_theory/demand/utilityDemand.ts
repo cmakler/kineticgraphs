@@ -8,8 +8,7 @@ module EconGraphs {
 
     export interface UtilityDemandDefinition extends KG.ModelDefinition
     {
-        utility?: {type: string; definition: TwoGoodUtilityDefinition};
-        utilitySelector?: KG.SelectorDefinition;
+        utility: {type: string; definition: TwoGoodUtilityDefinition};
     }
 
     export interface IUtilityDemand extends KG.IModel

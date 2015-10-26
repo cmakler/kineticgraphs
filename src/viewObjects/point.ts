@@ -135,7 +135,7 @@ module KG
             this.viewObjectClass = 'pointSymbol';
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
             var p = this;
             if(view instanceof KG.TwoVerticalGraphs) {
                 if(p.labelDiv) {
@@ -150,26 +150,26 @@ module KG
                         axisLabel: p.verticalDropline.axisLabel
                     });
                     p.verticalDropline.labelDiv = null;
-                    view.topGraph.addObject(p.verticalDropline);
-                    view.bottomGraph.addObject(continuationDropLine);
-                    p.verticalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
-                    continuationDropLine.createSubObjects(view.bottomGraph);
+                    view.topGraph.addObject(p.verticalDropline.update(scope));
+                    view.bottomGraph.addObject(continuationDropLine.update(scope));
+                    p.verticalDropline.createSubObjects(view.topGraph,scope); // TODO should probably make this more recursive by default
+                    continuationDropLine.createSubObjects(view.bottomGraph,scope);
                 }
                 if(p.horizontalDropline) {
-                    view.topGraph.addObject(p.horizontalDropline);
-                    p.horizontalDropline.createSubObjects(view.topGraph); // TODO should probably make this more recursive by default
+                    view.topGraph.addObject(p.horizontalDropline.update(scope));
+                    p.horizontalDropline.createSubObjects(view.topGraph,scope); // TODO should probably make this more recursive by default
                 }
             } else {
                 if(p.labelDiv) {
-                    view.addObject(p.labelDiv);
+                    view.addObject(p.labelDiv.update(scope));
                 }
                 if(p.verticalDropline) {
-                    view.addObject(p.verticalDropline);
-                    p.verticalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                    view.addObject(p.verticalDropline.update(scope));
+                    p.verticalDropline.createSubObjects(view,scope); // TODO should probably make this more recursive by default
                 }
                 if(p.horizontalDropline) {
-                    view.addObject(p.horizontalDropline);
-                    p.horizontalDropline.createSubObjects(view); // TODO should probably make this more recursive by default
+                    view.addObject(p.horizontalDropline.update(scope));
+                    p.horizontalDropline.createSubObjects(view,scope); // TODO should probably make this more recursive by default
                 }
             }
 

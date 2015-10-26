@@ -156,25 +156,25 @@ module KG {
             return this;
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
 
             var line = this;
 
             if(line.xInterceptLabelDiv) {
-                view.addObject(line.xInterceptLabelDiv)
+                view.addObject(line.xInterceptLabelDiv.update(scope))
             }
 
             if(line.yInterceptLabelDiv) {
-                view.addObject(line.yInterceptLabelDiv)
+                view.addObject(line.yInterceptLabelDiv.update(scope))
             }
 
             if(line.labelDiv) {
-                view.addObject(line.labelDiv)
+                view.addObject(line.labelDiv.update(scope))
             }
 
             if(line.areaUnder) {
-                view.addObject(line.areaUnder);
-                view.addObject(line.areaUnder.labelDiv);
+                view.addObject(line.areaUnder.update(scope));
+                view.addObject(line.areaUnder.labelDiv.update(scope));
             }
 
             return view;

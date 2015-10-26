@@ -122,8 +122,11 @@ module KG
             // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
             function render(redraw) {
                 $scope.model.update($scope, function(){
-                    $scope.views.forEach(function(view) {view.render($scope, redraw)});
+                    setTimeout(function(){
+                        $scope.views.forEach(function(view) {view.render($scope, redraw)});
+                    }, 0);
                     $scope.renderMath();
+
                 });
 
             }
@@ -135,7 +138,17 @@ module KG
 
             // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
             function redrawObjects() { render(false) }
-            $scope.$watchCollection('params',redrawObjects);
+            $scope.$watchCollection('params',function(newValue,oldValue){
+                var redraw = false;
+                for(var key in newValue) {
+                    if(newValue[key] != oldValue[key]) {
+                        if($scope.graphParams.hasOwnProperty(key)) {
+                            redraw = true;
+                        }
+                    }
+                }
+                render(redraw);
+            });
 
             $scope.updateParams = function(params) {
                 var oldParams = _.clone($scope.params);

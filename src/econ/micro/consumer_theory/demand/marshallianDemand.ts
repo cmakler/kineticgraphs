@@ -3,14 +3,12 @@
 module EconGraphs {
 
     export interface MarshallianDemandDefinition extends UtilityDemandDefinition{
-        budget?: {type: string; definition: BudgetConstraintDefinition};
-        budgetSelector?: KG.SelectorDefinition
+        budget: {type: string; definition: BudgetConstraintDefinition}
     }
 
     export interface IMarshallianDemand extends IUtilityDemand {
 
-        budget: BudgetConstraint;
-        budgetSelector: KG.Selector;
+        budget: BudgetConstraint | KG.Selector;
 
         priceConsumptionCurve: (pccParams: UtilityDemandCurveParams, curveParams: KG.CurveParamsDefinition) => KG.Curve;
         incomeConsumptionCurve: (iccParams: UtilityDemandCurveParams, curveParams: KG.CurveParamsDefinition) => KG.Curve;
@@ -21,28 +19,16 @@ module EconGraphs {
     export class MarshallianDemand extends UtilityDemand implements IMarshallianDemand {
 
         public budget;
-        public budgetSelector;
 
         constructor(definition:MarshallianDemandDefinition, modelPath?:string) {
             super(definition, modelPath);
-
-            var d = this;
-
         }
 
         _update(scope) {
             var d = this;
-            if(d.hasOwnProperty('utilitySelector')) {
-                d.utility = d.utilitySelector.update(scope).selectedObject;
-            } else {
-                d.utility.update(scope);
-            }
-            if(d.hasOwnProperty('budgetSelector')) {
-                d.budget = d.budgetSelector.update(scope).selectedObject;
-            } else {
-                d.budget.update(scope);
-            }
-
+            d.utility = d.utility.update(scope);
+            d.budget = d.budget.update(scope);
+            d.budget.budgetSegments.forEach(function(bs) {bs.update(scope)});
             return d;
         }
 

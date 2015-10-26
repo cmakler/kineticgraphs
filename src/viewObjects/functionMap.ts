@@ -39,7 +39,7 @@ module KG {
             return fmap;
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
             var fmap = this;
 
             fmap.levels.forEach(function(level,index) {
@@ -47,8 +47,9 @@ module KG {
                     name: fmap.name + '_' + index,
                     fn: fmap.fn.setLevel(level)
                 });
-                view.addObject(curve)
-            })
+                var updatedCurve = curve.update(scope);
+                view.addObject(updatedCurve)
+            });
 
             return view;
         }

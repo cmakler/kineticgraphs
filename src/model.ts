@@ -16,8 +16,10 @@ module KG
 
     export interface IModel
     {
+        definition;
         modelPath: string;
         modelProperty: (name:string) => string;
+        selector?: Selector;
         setNumericProperty: (propertySetter:IPropertySetter) => Model;
         setArrayProperty: (propertySetter:IPropertySetter) => Model;
         update: (scope:IScope, callback?: (any)=>any) => void;
@@ -27,8 +29,10 @@ module KG
 
 
 
-    export class Model
+    export class Model implements IModel
     {
+
+        public selector: Selector;
 
         constructor(public definition:ModelDefinition, public modelPath?: string) {
 
@@ -79,12 +83,18 @@ module KG
 
             var model = this;
 
+            if(model.hasOwnProperty('selector')) {
+                return model.selector.update(scope,callback);
+            }
+
             // Iterates over an object's definition, getting the current value of each property
             function parseObject(def, obj?) {
                 obj = obj || {};
                 for(var key in def) {
                     if(def.hasOwnProperty(key)) {
-                        if(obj[key] instanceof KG.Model) {
+                        if(obj[key] instanceof KG.Selector) {
+                            obj[key] = obj[key].update(scope);
+                        } else if(obj[key] instanceof KG.Model) {
                             // if the property is itself a model, update the model
                             obj[key].update(scope);
                         } else if(def[key] !== undefined) {

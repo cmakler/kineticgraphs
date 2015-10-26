@@ -177,4 +177,20 @@ module KG
         }
     }
 
+    export function getArrayObjectByProperty(arr: any[], match: string, prop?: string) {
+        arr = arr || [];
+        prop = prop || 'name';
+
+        if(arr && match && arr != undefined) {
+            for(var i = 0; i< arr.length; i++) {
+                if(arr[i][prop] == match) {
+                    return arr[i];
+                }
+            }
+        } else {
+            return null;
+        }
+
+    }
+
 }

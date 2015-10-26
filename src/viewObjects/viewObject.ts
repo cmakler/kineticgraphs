@@ -47,7 +47,7 @@ module KG
         render: (view: View) => View;
         addArrow: (group:D3.Selection, startOrEnd: string) => void;
         removeArrow: (group:D3.Selection, startOrEnd: string) => void;
-        createSubObjects: (view: View) => View;
+        createSubObjects: (view: View, scope: IScope) => View;
 
         // Updating
         updateDataForView: (view: View) => ViewObject
@@ -188,7 +188,7 @@ module KG
             return view; // overridden by child class
         }
 
-        createSubObjects(view) {
+        createSubObjects(view, scope) {
             return view; // overridden by child class
         }
 

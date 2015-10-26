@@ -133,13 +133,17 @@ module EconGraphs {
         /* Indifference curves */
 
         indifferenceCurveAtUtility(utility:number, params: KG.CurveParamsDefinition, map?:boolean) {
-            var u = this;
-            return new KG.FunctionPlot({
+            var u = this,
+                originalLevel = u.utilityFunction.level;
+            var clone = _.clone(u.utilityFunction);
+            var indifferenceCurve = new KG.FunctionPlot({
                 name: 'indifferenceCurve',
-                fn: u.modelProperty('utilityFunction.setLevel('+utility+')'),
+                fn: clone.setLevel(utility),
                 className: map ? 'dataPathFamily' : 'utility',
                 params: params
-            })
+            });
+            u.utilityFunction.setLevel(originalLevel);
+            return indifferenceCurve;
         }
 
         indifferenceCurveThroughBundle(bundle:TwoGoodBundle, params: KG.CurveParamsDefinition) {

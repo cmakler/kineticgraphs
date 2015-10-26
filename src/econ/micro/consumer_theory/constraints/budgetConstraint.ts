@@ -89,5 +89,9 @@ module EconGraphs {
         formula(values) {
             return ''; // overridden by subclass
         }
+
+
+
+
     }
 }

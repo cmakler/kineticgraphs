@@ -118,10 +118,10 @@ module KG {
             this.viewObjectClass = 'curve';
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
             var labelDiv = this.labelDiv;
             if(labelDiv) {
-                return view.addObject(labelDiv);
+                return view.addObject(labelDiv.update(scope));
             } else {
                 return view;
             }
@@ -133,7 +133,7 @@ module KG {
                 if(!curve.startPoint) {
                     curve.labelDiv.show = false;
                 } else {
-                    curve.labelDiv.show = true;
+                    curve.labelDiv.show = curve.show;
                     var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
                     var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
                     if(labelCoordinates.y > view.yAxis.domain.max) {
