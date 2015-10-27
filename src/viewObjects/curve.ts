@@ -128,7 +128,9 @@ module KG {
         }
 
         positionLabel(view) {
-            var curve = this;
+            var curve = this,
+                autoAlign = 'center',
+                autoVAlign = 'middle';
             if(curve.labelDiv) {
                 if(!curve.startPoint) {
                     curve.labelDiv.show = false;
@@ -138,17 +140,21 @@ module KG {
                     var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
                     if(labelCoordinates.y > view.yAxis.domain.max) {
                         labelCoordinates.y = view.yAxis.domain.max;
-                        curve.labelDiv.align = 'center';
-                        curve.labelDiv.valign = 'bottom';
+                        autoVAlign = 'bottom';
                     } else if(labelCoordinates.x >= view.xAxis.domain.max) {
                         labelCoordinates.x = view.xAxis.domain.max;
-                        curve.labelDiv.align = 'left';
-                        curve.labelDiv.valign = 'middle'
+                        autoAlign = 'left';
                     } else {
-                        curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
-                        curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                        autoAlign = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
+                        autoVAlign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
                     }
                     curve.labelDiv.coordinates = labelCoordinates;
+                    if(!curve.labelDiv.definition.hasOwnProperty('align')) {
+                        curve.labelDiv.align = autoAlign;
+                    }
+                    if(!curve.labelDiv.definition.hasOwnProperty('valign')) {
+                        curve.labelDiv.valign = autoVAlign;
+                    }
                 }
             }
         }

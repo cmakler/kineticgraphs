@@ -1709,6 +1709,55 @@ var KGMath;
         Functions.MinAxBy = MinAxBy;
     })(Functions = KGMath.Functions || (KGMath.Functions = {}));
 })(KGMath || (KGMath = {}));
+var KGMath;
+(function (KGMath) {
+    var Functions;
+    (function (Functions) {
+        var CRRA = (function (_super) {
+            __extends(CRRA, _super);
+            function CRRA(definition, modelPath) {
+                _super.call(this, definition, modelPath);
+            }
+            CRRA.prototype.value = function (bases) {
+                var u = this;
+                if (bases) {
+                    u.setBases(bases);
+                }
+                if (u.rho == 1) {
+                    return Math.log(u.bases[0]);
+                }
+                else {
+                    return (Math.pow(u.bases[0], 1 - u.rho) - 1) / (1 - u.rho);
+                }
+            };
+            CRRA.prototype.yValue = function (x) {
+                return this.value([x]);
+            };
+            // Returns x value for given y, for a two-dimensional function
+            CRRA.prototype.xValue = function (y) {
+                var u = this;
+                if (u.rho == 1) {
+                    return Math.exp(y);
+                }
+                else {
+                    return Math.pow(y * (1 - u.rho) + 1, 1 / (1 - u.rho));
+                }
+            };
+            CRRA.prototype.derivative = function (n) {
+                var u = this;
+                return new Functions.Monomial({
+                    // the new coefficient is the old coefficient times
+                    //the power of the variable whose derivative we're taking
+                    coefficient: 1,
+                    powers: [KG.subtractDefs(0, u.definition.rho)],
+                    bases: u.bases
+                });
+            };
+            return CRRA;
+        })(Functions.Base);
+        Functions.CRRA = CRRA;
+    })(Functions = KGMath.Functions || (KGMath.Functions = {}));
+})(KGMath || (KGMath = {}));
 /// <reference path="../kg.ts"/>
 /// <reference path="functions/base.ts"/>
 /// <reference path="functions/implicit.ts"/>
@@ -1720,6 +1769,7 @@ var KGMath;
 /// <reference path="functions/quadratic.ts"/>
 /// <reference path="functions/min.ts"/>
 /// <reference path="functions/minAxBy.ts"/>
+/// <reference path="functions/crra.ts"/>
 /// <reference path="../kg.ts"/>
 'use strict';
 var KG;
@@ -1961,7 +2011,7 @@ var KG;
             var p = this;
             if (view instanceof KG.TwoVerticalGraphs) {
                 if (p.labelDiv) {
-                    view.topGraph.addObject(p.labelDiv);
+                    view.topGraph.addObject(p.labelDiv.update(scope));
                 }
                 if (p.verticalDropline) {
                     var continuationDropLine = new KG.VerticalDropline({
@@ -2180,7 +2230,7 @@ var KG;
             }
         };
         Curve.prototype.positionLabel = function (view) {
-            var curve = this;
+            var curve = this, autoAlign = 'center', autoVAlign = 'middle';
             if (curve.labelDiv) {
                 if (!curve.startPoint) {
                     curve.labelDiv.show = false;
@@ -2191,19 +2241,23 @@ var KG;
                     var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
                     if (labelCoordinates.y > view.yAxis.domain.max) {
                         labelCoordinates.y = view.yAxis.domain.max;
-                        curve.labelDiv.align = 'center';
-                        curve.labelDiv.valign = 'bottom';
+                        autoVAlign = 'bottom';
                     }
                     else if (labelCoordinates.x >= view.xAxis.domain.max) {
                         labelCoordinates.x = view.xAxis.domain.max;
-                        curve.labelDiv.align = 'left';
-                        curve.labelDiv.valign = 'middle';
+                        autoAlign = 'left';
                     }
                     else {
-                        curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
-                        curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                        autoAlign = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
+                        autoVAlign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
                     }
                     curve.labelDiv.coordinates = labelCoordinates;
+                    if (!curve.labelDiv.definition.hasOwnProperty('align')) {
+                        curve.labelDiv.align = autoAlign;
+                    }
+                    if (!curve.labelDiv.definition.hasOwnProperty('valign')) {
+                        curve.labelDiv.valign = autoVAlign;
+                    }
                 }
             }
         };
@@ -2704,7 +2758,7 @@ var KG;
         __extends(GraphDiv, _super);
         function GraphDiv(definition, modelPath) {
             definition = _.defaults(definition, {
-                dimensions: { width: 100, height: 20 },
+                dimensions: { width: 50, height: 20 },
                 text: '',
                 color: KG.colorForClassName(definition.className)
             });
@@ -2752,7 +2806,7 @@ var KG;
             }
             else if (this.align == 'right') {
                 // move left by half the width of the div if right aligned
-                alignDelta = width;
+                alignDelta = width + 2;
                 div.style('text-align', 'right');
             }
             div.style('left', (x - alignDelta) + 'px');
@@ -4021,7 +4075,8 @@ var EconGraphs;
                 },
                 label: {
                     text: 'model.xPercentDiff | percentage:0',
-                    valign: 'top'
+                    valign: 'top',
+                    align: 'center'
                 }
             });
             this.yDiffSegment = new KG.Arrow({
@@ -4737,7 +4792,7 @@ var EconGraphs;
             _super.call(this, definition, modelPath);
             this.utilityFunctionView = new KG.FunctionPlot({
                 name: 'utilityFunction',
-                className: this.className,
+                className: 'utility',
                 fn: this.modelProperty('utilityFunction'),
                 arrows: 'NONE',
                 label: {
@@ -4749,7 +4804,7 @@ var EconGraphs;
                 this.marginalUtilityFunction = this.utilityFunction.derivative();
                 this.marginalUtilityFunctionView = new KG.FunctionPlot({
                     name: 'marginalUtilityFunction',
-                    className: this.className,
+                    className: 'demand',
                     fn: this.modelProperty('marginalUtilityFunction'),
                     arrows: 'NONE',
                     label: {
@@ -4796,7 +4851,7 @@ var EconGraphs;
             return new KG.Point({
                 name: 'marginalUtilityAtQ',
                 coordinates: { x: q, y: this.marginalUtilityFunction.yValue(q) },
-                className: 'utility',
+                className: 'demand',
                 params: params
             });
         };
@@ -4813,35 +4868,10 @@ var EconGraphs;
     var ConstantRRA = (function (_super) {
         __extends(ConstantRRA, _super);
         function ConstantRRA(definition, modelPath) {
-            definition.type = 'Polynomial';
-            if (typeof definition.rra == 'number') {
-                definition.def = {
-                    termDefs: [
-                        {
-                            coefficient: 1 / (1 - definition.rra),
-                            powers: [1 - definition.rra]
-                        },
-                        {
-                            coefficient: -1 / (1 - definition.rra),
-                            powers: [0]
-                        }
-                    ]
-                };
-            }
-            else if (typeof definition.rra == 'string') {
-                definition.def = {
-                    termDefs: [
-                        {
-                            coefficient: "1/(1-" + definition.rra + ")",
-                            powers: ["1 - " + definition.rra]
-                        },
-                        {
-                            coefficient: "-1/(1-" + definition.rra + ")",
-                            powers: [0]
-                        }
-                    ]
-                };
-            }
+            definition.type = 'CRRA';
+            definition.def = {
+                rho: definition.rra
+            };
             _super.call(this, definition, modelPath);
         }
         ConstantRRA.prototype.utilityFormula = function (c) {
@@ -4868,10 +4898,6 @@ var EconGraphs;
                     return "\\frac{c^{" + (1 - rra).toFixed(2) + "} - 1}{ " + (1 - rra).toFixed(2) + " } ";
                 }
             }
-        };
-        ConstantRRA.prototype.consumptionYieldingUtility = function (u) {
-            var oneMinusRho = 1 - this.rra;
-            return Math.pow(1 + oneMinusRho * u, 1 / oneMinusRho);
         };
         return ConstantRRA;
     })(EconGraphs.OneGoodUtility);
@@ -4963,7 +4989,7 @@ var EconGraphs;
             ra.expectedC = ra.pLow * ra.ca + (1 - ra.pLow) * ra.cb;
             ra.expectedU = ra.pLow * ra.ua + (1 - ra.pLow) * ra.ub;
             ra.utilityOfExpectedC = ra.utility.utilityFunction.yValue(ra.expectedC);
-            ra.certaintyEquivalent = ra.utility.consumptionYieldingUtility(ra.expectedU);
+            ra.certaintyEquivalent = ra.utility.utilityFunction.xValue(ra.expectedU);
             return ra;
         };
         return RiskAversion;

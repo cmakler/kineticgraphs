@@ -139,7 +139,7 @@ module KG
             var p = this;
             if(view instanceof KG.TwoVerticalGraphs) {
                 if(p.labelDiv) {
-                    view.topGraph.addObject(p.labelDiv);
+                    view.topGraph.addObject(p.labelDiv.update(scope));
                 }
                 if(p.verticalDropline) {
                     var continuationDropLine = new VerticalDropline({

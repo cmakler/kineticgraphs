@@ -44,7 +44,7 @@ module EconGraphs {
 
             this.utilityFunctionView = new KG.FunctionPlot({
                 name: 'utilityFunction',
-                className: this.className,
+                className: 'utility',
                 fn: this.modelProperty('utilityFunction'),
                 arrows: 'NONE',
                 label: {
@@ -57,7 +57,7 @@ module EconGraphs {
                 this.marginalUtilityFunction = this.utilityFunction.derivative();
                 this.marginalUtilityFunctionView = new KG.FunctionPlot({
                     name: 'marginalUtilityFunction',
-                    className: this.className,
+                    className: 'demand',
                     fn: this.modelProperty('marginalUtilityFunction'),
                     arrows: 'NONE',
                     label: {
@@ -112,7 +112,7 @@ module EconGraphs {
             return new KG.Point({
                 name: 'marginalUtilityAtQ',
                 coordinates: {x: q, y: this.marginalUtilityFunction.yValue(q)},
-                className: 'utility',
+                className: 'demand',
                 params: params
             })
         }

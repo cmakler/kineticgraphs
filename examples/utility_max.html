@@ -87,57 +87,14 @@
             type: 'EconGraphs.MarshallianDemand',
             definition: {
                 budget:{
-                    type: 'KG.Selector',
+                    type: 'EconGraphs.SimpleBudgetConstraint',
                     definition: {
-                        selected: 'params.selectedBudget',
-                        options: [
-                            {
-                                name: 'simple',
-                                label: 'Simple budget constraint',
-                                selection: {
-                                    type: 'EconGraphs.SimpleBudgetConstraint',
-                                    definition: {
-                                        income: 'params.income',
-                                        px: 'params.px',
-                                        py: 'params.py'
-                                    }
-                                }
-                            },
-                            {
-                                name: 'endowment',
-                                label: 'Endowment budget constraint',
-                                selection: {
-                                    type: 'EconGraphs.EndowmentBudgetConstraint',
-                                    definition: {
-                                        endowment: {
-                                            x: 'params.xE',
-                                            y: 'params.yE'
-                                        },
-                                        px: 'params.px',
-                                        py: 'params.py',
-                                        xLabel: 'x_E',
-                                        yLabel: 'y_E'
-                                    }
-                                }
-                            },
-                            {
-                                name: 'endowmentKinked',
-                                label: 'Endowment with different buy/sell prices',
-                                selection: {
-                                    type: 'EconGraphs.EndowmentBudgetConstraint',
-                                    definition: {
-                                        endowment: {
-                                            x: 'params.xE',
-                                            y: 'params.yE'
-                                        },
-                                        pxBuy: 'params.px',
-                                        pyBuy: 'params.py',
-                                        pxSell: 'params.pxSell',
-                                        pySell: 'params.pySell'
-                                    }
-                                }
-                            }
-                        ]
+                        income: 'params.income',
+                        px: 'params.px',
+                        py: 'params.py',
+                        budgetConstraintLabel: 'BL',
+                        xInterceptLabel: "\\frac{I}{P_x}",
+                        yInterceptLabel: "\\frac{I}{P_y}"
                     }
                 },
                 utility: {
