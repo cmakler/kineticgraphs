@@ -36,6 +36,7 @@ module KG
 
         _update(scope) {
             this.xAxis.update(scope);
+            super._update(scope);
             return this;
         }
 

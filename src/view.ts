@@ -81,9 +81,21 @@ module KG
             }
         }
 
+        _update(scope) {
+            var view = this;
+            view.objects.forEach(function(object) {
+                if(object instanceof Model) {
+                    object.update(scope).createSubObjects(view,scope)
+                }
+            });
+            return view;
+        }
+
         render(scope, redraw) {
             var view = this;
+            console.log('calling update');
             view.update(scope, function(){
+                console.log('starting update');
                 view.updateParams = function(params){
                     scope.updateParams(params)
                 };
@@ -92,6 +104,7 @@ module KG
                 } else {
                     view.drawObjects(scope);
                 }
+                console.log('finished update')
             });
         }
 
@@ -215,11 +228,6 @@ module KG
 
         drawObjects(scope) {
             var view = this;
-            view.objects.forEach(function(object) {
-                if(object instanceof Model) {
-                    object.update(scope).createSubObjects(view,scope)
-                }
-            });
             view.objects.forEach(function(object) {
                 if(object instanceof ViewObject) {
                     object.render(view)

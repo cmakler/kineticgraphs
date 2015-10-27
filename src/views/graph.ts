@@ -55,6 +55,7 @@ module KG
                     right: {x: g.xAxis.max, y: g.yAxis.max}
                 }
             };
+            super._update(scope);
             return g;
         }
 

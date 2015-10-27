@@ -2981,9 +2981,20 @@ var KG;
                 this.yAxis = new KG.YAxis(definition.yAxisDef);
             }
         }
+        View.prototype._update = function (scope) {
+            var view = this;
+            view.objects.forEach(function (object) {
+                if (object instanceof KG.Model) {
+                    object.update(scope).createSubObjects(view, scope);
+                }
+            });
+            return view;
+        };
         View.prototype.render = function (scope, redraw) {
             var view = this;
+            console.log('calling update');
             view.update(scope, function () {
+                console.log('starting update');
                 view.updateParams = function (params) {
                     scope.updateParams(params);
                 };
@@ -2993,6 +3004,7 @@ var KG;
                 else {
                     view.drawObjects(scope);
                 }
+                console.log('finished update');
             });
         };
         View.prototype.redraw = function (scope) {
@@ -3074,11 +3086,6 @@ var KG;
         };
         View.prototype.drawObjects = function (scope) {
             var view = this;
-            view.objects.forEach(function (object) {
-                if (object instanceof KG.Model) {
-                    object.update(scope).createSubObjects(view, scope);
-                }
-            });
             view.objects.forEach(function (object) {
                 if (object instanceof KG.ViewObject) {
                     object.render(view);
@@ -3264,6 +3271,7 @@ var KG;
                     right: { x: g.xAxis.max, y: g.yAxis.max }
                 }
             };
+            _super.prototype._update.call(this, scope);
             return g;
         };
         // Check to see if a point is on the graph
@@ -3403,6 +3411,7 @@ var KG;
         }
         Slider.prototype._update = function (scope) {
             this.xAxis.update(scope);
+            _super.prototype._update.call(this, scope);
             return this;
         };
         Slider.prototype.onGraph = function (coordinates) {
@@ -3544,11 +3553,9 @@ var KG;
             // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
             function render(redraw) {
                 $scope.model.update($scope, function () {
-                    setTimeout(function () {
-                        $scope.views.forEach(function (view) {
-                            view.render($scope, redraw);
-                        });
-                    }, 0);
+                    $scope.views.forEach(function (view) {
+                        view.render($scope, redraw);
+                    });
                     $scope.renderMath();
                 });
             }

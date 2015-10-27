@@ -122,11 +122,8 @@ module KG
             // Updates and redraws interactive objects (graphs and sliders) when a parameter changes
             function render(redraw) {
                 $scope.model.update($scope, function(){
-                    setTimeout(function(){
-                        $scope.views.forEach(function(view) {view.render($scope, redraw)});
-                    }, 0);
+                    $scope.views.forEach(function(view) {view.render($scope, redraw)});
                     $scope.renderMath();
-
                 });
 
             }
