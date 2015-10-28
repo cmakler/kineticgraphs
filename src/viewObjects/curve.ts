@@ -86,6 +86,10 @@ module KG {
                     definition.label.text = p.labelPrefix + definition.label.text;
                 }
 
+                if (p.hasOwnProperty('areaUnderLabel')) {
+                    
+                }
+
             }
 
             definition = _.defaults(definition, {data: [], interpolation: 'linear'});
@@ -95,11 +99,13 @@ module KG {
             if(definition.label) {
                 var labelDef = _.defaults(definition.label, {
                     name: definition.name + '_label',
+                    objectName: definition.objectName,
                     className: definition.className,
                     xDrag: definition.xDrag,
                     yDrag: definition.yDrag,
                     color: definition.color,
-                    show: definition.show
+                    show: definition.show,
+                    backgroundColor: 'white'
                 });
                 //console.log(labelDef);
                 this.labelDiv = new GraphDiv(labelDef);
@@ -112,33 +118,44 @@ module KG {
             this.viewObjectClass = 'curve';
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
             var labelDiv = this.labelDiv;
             if(labelDiv) {
-                return view.addObject(labelDiv);
+                return view.addObject(labelDiv.update(scope));
             } else {
                 return view;
             }
         }
 
         positionLabel(view) {
-            var curve = this;
+            var curve = this,
+                autoAlign = 'center',
+                autoVAlign = 'middle';
             if(curve.labelDiv) {
-                var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
-                var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
-                if(labelCoordinates.y > view.yAxis.domain.max) {
-                    labelCoordinates.y = view.yAxis.domain.max;
-                    curve.labelDiv.align = 'center';
-                    curve.labelDiv.valign = 'bottom';
-                } else if(labelCoordinates.x >= view.xAxis.domain.max) {
-                    labelCoordinates.x = view.xAxis.domain.max;
-                    curve.labelDiv.align = 'left';
-                    curve.labelDiv.valign = 'middle'
+                if(!curve.startPoint) {
+                    curve.labelDiv.show = false;
                 } else {
-                    curve.labelDiv.align = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
-                    curve.labelDiv.valign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                    curve.labelDiv.show = curve.show;
+                    var labelViewCoordinates = (curve.labelPosition == Curve.LABEL_POSITION_START) ? curve.startPoint : (curve.labelPosition == Curve.LABEL_POSITION_MIDDLE) ? curve.midPoint : curve.endPoint;
+                    var labelCoordinates = view.modelCoordinates(_.clone(labelViewCoordinates));
+                    if(labelCoordinates.y > view.yAxis.domain.max) {
+                        labelCoordinates.y = view.yAxis.domain.max;
+                        autoVAlign = 'bottom';
+                    } else if(labelCoordinates.x >= view.xAxis.domain.max) {
+                        labelCoordinates.x = view.xAxis.domain.max;
+                        autoAlign = 'left';
+                    } else {
+                        autoAlign = (view.nearRight(labelCoordinates) || view.nearLeft(labelCoordinates)) || view.nearBottom(labelCoordinates) ? 'left' : 'center';
+                        autoVAlign = (view.nearTop(labelCoordinates) || view.nearBottom(labelCoordinates)) ? 'bottom' : 'middle';
+                    }
+                    curve.labelDiv.coordinates = labelCoordinates;
+                    if(!curve.labelDiv.definition.hasOwnProperty('align')) {
+                        curve.labelDiv.align = autoAlign;
+                    }
+                    if(!curve.labelDiv.definition.hasOwnProperty('valign')) {
+                        curve.labelDiv.valign = autoVAlign;
+                    }
                 }
-                curve.labelDiv.coordinates = labelCoordinates;
             }
         }
 
@@ -148,17 +165,21 @@ module KG {
 
             var length = KG.distanceBetweenCoordinates(curve.startPoint, curve.endPoint);
 
-            if(curve.endArrow && length > 0) {
-                curve.addArrow(group,'end');
-            } else {
-                curve.removeArrow(group,'end');
+            if(length) {
+                if(curve.endArrow && length > 0) {
+                    curve.addArrow(group,'end');
+                } else {
+                    curve.removeArrow(group,'end');
+                }
+
+                if(curve.startArrow && length > 0) {
+                    curve.addArrow(group,'start');
+                } else {
+                    curve.removeArrow(group,'start');
+                }
             }
 
-            if(curve.startArrow && length > 0) {
-                curve.addArrow(group,'start');
-            } else {
-                curve.removeArrow(group,'start');
-            }
+
         }
 
         render(view) {
@@ -185,7 +206,9 @@ module KG {
                 .x(function (d) { return d.x })
                 .y(function (d) { return d.y });
 
-            var dataPath:D3.Selection = group.select('.' + curve.viewObjectClass);
+            var selector = curve.hasOwnProperty('objectName') ? 'path.' + curve.objectName : 'path.' + curve.viewObjectClass;
+
+            var dataPath:D3.Selection = group.select(selector);
 
             dataPath
                 .attr({

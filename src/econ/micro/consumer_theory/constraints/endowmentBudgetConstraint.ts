@@ -22,9 +22,7 @@ module EconGraphs {
         pyBuy: number;
         pxSell: number;
         pySell: number;
-        maxX: number;
-        maxY: number;
-        budgetLine: KG.Line;
+        budgetLine: KG.PiecewiseLinear;
         endowmentPoint: KG.Point;
     }
 
@@ -37,8 +35,6 @@ module EconGraphs {
         public pyBuy;
         public pxSell;
         public pySell;
-        public maxX;
-        public maxY;
         public budgetLine;
         public endowmentPoint;
 
@@ -83,36 +79,73 @@ module EconGraphs {
                 lineParams.areaUnderLabel = definition.budgetSetLabel;
             }
 
-            b.budgetSegments = [
-                new BudgetSegment({
-                    endowment: definition.endowment,
-                    px: definition.pxSell,
-                    py: definition.pyBuy,
-                    xMin: 0,
-                    xMax: definition.endowment.x,
-                    yMin: definition.endowment.y
-                }, b.modelProperty('budgetSegments[0]')),
-                new BudgetSegment({
-                    endowment: definition.endowment,
-                    px: definition.pxBuy,
-                    py: definition.pySell,
-                    yMin: 0,
-                    yMax: definition.endowment.y,
-                    xMin: definition.endowment.x
-                }, b.modelProperty('budgetSegments[1]'))
-            ];
+            if(definition.hasOwnProperty('px') && definition.hasOwnProperty('py')) {
+                b.budgetSegments = [
+                    new BudgetSegment({
+                        endowment: definition.endowment,
+                        px: definition.px,
+                        py: definition.py
+                    }, b.modelProperty('budgetSegments[0]'))
+                ];
+                b.budgetLine = new KG.Line({
+                    name: 'BL',
+                    className: 'budget',
+                    linear: b.modelProperty('budgetSegments[0].linear'),
+                    xInterceptLabel: definition.xInterceptLabel,
+                    yInterceptLabel: definition.yInterceptLabel,
+                    params: lineParams
+                }, b.modelProperty('budgetLine'));
+            } else {
 
-            b.budgetLine = new KG.PiecewiseLinear({
-                name: 'BL',
-                className: 'budget',
-                sections: b.modelProperty('budgetSegments'),
-                xInterceptLabel: definition.xInterceptLabel,
-                yInterceptLabel: definition.yInterceptLabel,
-                params: lineParams
-            }, b.modelProperty('budgetLine'));
+                b.budgetSegments = [
+                    new BudgetSegment({
+                        endowment: definition.endowment,
+                        px: definition.pxSell,
+                        py: definition.pyBuy,
+                        xMin: 0,
+                        xMax: definition.endowment.x,
+                        yMin: definition.endowment.y
+                    }, b.modelProperty('budgetSegments[0]')),
+                    new BudgetSegment({
+                        endowment: definition.endowment,
+                        px: definition.pxBuy,
+                        py: definition.pySell,
+                        yMin: 0,
+                        yMax: definition.endowment.y,
+                        xMin: definition.endowment.x
+                    }, b.modelProperty('budgetSegments[1]'))
+                ];
 
-            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(2)');
-            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
+                b.budgetLine = new KG.PiecewiseLinear({
+                    name: 'BL',
+                    className: 'budget',
+                    sections: b.modelProperty('budgetSegments'),
+                    xInterceptLabel: definition.xInterceptLabel,
+                    yInterceptLabel: definition.yInterceptLabel,
+                    params: lineParams
+                }, b.modelProperty('budgetLine'));
+
+            }
+
+
+        }
+
+        formula(values) {
+
+            var b = this;
+
+            if(b.hasOwnProperty('px') && b.hasOwnProperty('py')) {
+                if(values) {
+                    return b.px.toFixed(2) + "x + " + b.py.toFixed(2) + "y = "
+                        + b.px.toFixed(2) + " \\times " + b.endowment.x + " + " + b.py.toFixed(2) + " \\times " + b.endowment.y;
+                } else  {
+                    return "P_xx + P_yy = P_xx_E + P_yy_E";
+                }
+            } else {
+                return '';
+            }
+
+
 
         }
 

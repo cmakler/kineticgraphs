@@ -140,6 +140,9 @@ module KG
     }
 
     export function distanceBetweenCoordinates(a:ICoordinates, b:ICoordinates){
+        if(a == undefined || b == undefined) {
+            return null;
+        }
         return Math.sqrt(Math.pow(a.x - b.x,2) + Math.pow(a.y - b.y,2))
     }
 
@@ -172,6 +175,22 @@ module KG
                 higher = descending ? b[key] : a[key];
             return lower > higher ? -1 : lower < higher ? 1 : lower <= higher ? 0 : NaN;
         }
+    }
+
+    export function getArrayObjectByProperty(arr: any[], match: string, prop?: string) {
+        arr = arr || [];
+        prop = prop || 'name';
+
+        if(arr && match && arr != undefined) {
+            for(var i = 0; i< arr.length; i++) {
+                if(arr[i][prop] == match) {
+                    return arr[i];
+                }
+            }
+        } else {
+            return null;
+        }
+
     }
 
 }

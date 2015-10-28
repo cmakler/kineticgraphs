@@ -118,7 +118,8 @@ module EconGraphs {
                 },
                 label: {
                     text: 'model.xPercentDiff | percentage:0',
-                    valign: 'top'
+                    valign: 'top',
+                    align: 'center'
                 }
             });
             this.yDiffSegment = new KG.Arrow({

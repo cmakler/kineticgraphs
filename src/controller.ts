@@ -135,7 +135,17 @@ module KG
 
             // Update objects on graphs (not the axes or graphs themselves); to this when model parameters change
             function redrawObjects() { render(false) }
-            $scope.$watchCollection('params',redrawObjects);
+            $scope.$watchCollection('params',function(newValue,oldValue){
+                var redraw = false;
+                for(var key in newValue) {
+                    if(newValue[key] != oldValue[key]) {
+                        if($scope.graphParams.hasOwnProperty(key)) {
+                            redraw = true;
+                        }
+                    }
+                }
+                render(redraw);
+            });
 
             $scope.updateParams = function(params) {
                 var oldParams = _.clone($scope.params);

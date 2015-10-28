@@ -7,6 +7,7 @@ module KG
     export interface ViewDefinition extends ModelDefinition
     {
         element_id?: string;
+        show?: any;
         maxDimensions?: IDimensions;
         margins?: IMargins;
         xAxisDef?: AxisDefinition;
@@ -18,6 +19,9 @@ module KG
 
     export interface IView extends IModel
     {
+
+        show: boolean;
+
         // layers into which objects or text may be rendered, and selectors for those objects once placed
         masked: D3.Selection;
         unmasked: D3.Selection;
@@ -48,6 +52,7 @@ module KG
 
     export class View extends Model implements IView
     {
+        public show;
         public element_id;
         public maxDimensions;
         public dimensions;
@@ -62,7 +67,11 @@ module KG
         private mask;
 
         constructor(definition:ViewDefinition, modelPath?:string) {
-            definition = _.defaults(definition,{background:'white',mask:true});
+            definition = _.defaults(definition,{
+                background: 'white',
+                mask: true,
+                show: true
+            });
             super(definition, modelPath);
             if(definition.hasOwnProperty('xAxisDef')){
                 this.xAxis = new XAxis(definition.xAxisDef);
@@ -72,9 +81,21 @@ module KG
             }
         }
 
+        _update(scope) {
+            var view = this;
+            view.objects.forEach(function(object) {
+                if(object instanceof Model) {
+                    object.update(scope).createSubObjects(view,scope)
+                }
+            });
+            return view;
+        }
+
         render(scope, redraw) {
             var view = this;
+            console.log('calling update');
             view.update(scope, function(){
+                console.log('starting update');
                 view.updateParams = function(params){
                     scope.updateParams(params)
                 };
@@ -83,14 +104,21 @@ module KG
                 } else {
                     view.drawObjects(scope);
                 }
+                console.log('finished update')
             });
         }
 
         redraw(scope) {
             var view = this;
 
+
             // Establish dimensions of the view
             var element = $('#' + view.element_id)[0];
+
+            if(element == undefined) {
+                return view;
+            }
+
             view.dimensions = {
                 width: Math.min(view.maxDimensions.width, element.clientWidth),
                 height: Math.min(view.maxDimensions.height, window.innerHeight - (10 + $('#' + view.element_id).offset().top - $(window).scrollTop()))};
@@ -98,6 +126,10 @@ module KG
             var visTranslation = KG.translateByPixelCoordinates({x:view.margins.left, y:view.margins.top});
 
             d3.select(element).select('div').remove();
+
+            if(!view.show) {
+                return view;
+            }
 
             // Create new div element to contain SVG
             var frame = d3.select(element).append('div').attr({style: frameTranslation});
@@ -196,8 +228,11 @@ module KG
 
         drawObjects(scope) {
             var view = this;
-            view.objects.forEach(function(object) {object.update(scope).createSubObjects(view)});
-            view.objects.forEach(function(object) {object.update(scope).render(view)});
+            view.objects.forEach(function(object) {
+                if(object instanceof ViewObject) {
+                    object.render(view)
+                }
+            });
             return view;
         }
 
@@ -211,6 +246,9 @@ module KG
 
         objectGroup(name, init, unmasked) {
             var layer = unmasked ? this.unmasked : this.masked;
+            if(layer == undefined) {
+                return null;
+            }
             var group = layer.select('#' + name);
             if(group.empty()) {
                 group = layer.append('g').attr('id',name);

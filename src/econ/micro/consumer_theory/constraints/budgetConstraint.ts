@@ -3,35 +3,50 @@
 module EconGraphs {
 
     export interface BudgetConstraintDefinition extends KG.ModelDefinition {
-        budgetSegmentDefinitions: BudgetSegmentDefinition[];
-        budgetConstraintLabel: string;
-        budgetSetLabel: string;
-        xInterceptLabel: string;
-        yInterceptLabel: string;
+        budgetSegmentDefinitions?: BudgetSegmentDefinition[];
+        budgetConstraintLabel?: string;
+        budgetSetLabel?: string;
+        xInterceptLabel?: string;
+        yInterceptLabel?: string;
     }
 
     export interface IBudgetConstraint extends KG.IModel {
 
+        title: string;
+        formula: (values:boolean) => string;
+
         budgetSegments: BudgetSegment[];
+
         isAffordable: (bundle:KG.ICoordinates) => boolean;
         budgetConstraintLabel: string;
         budgetSetLabel: string;
         xInterceptLabel: string;
         yInterceptLabel: string;
+        maxX: number;
+        maxY: number;
         xValue: (y:number) => number;
         yValue: (x:number) => number;
     }
 
     export class BudgetConstraint extends KG.Model implements IBudgetConstraint {
 
+        public title;
         public budgetSegments;
         public budgetConstraintLabel;
         public budgetSetLabel;
         public xInterceptLabel;
         public yInterceptLabel;
+        public maxX;
+        public maxY;
 
         constructor(definition:BudgetConstraintDefinition, modelPath?:string) {
             super(definition, modelPath);
+
+            var b = this;
+
+            b.maxX = b.modelProperty('budgetLine.xIntercept.toFixed(2)');
+            b.maxY = b.modelProperty('budgetLine.yIntercept.toFixed(2)');
+
         }
 
         _update(scope) {
@@ -70,5 +85,13 @@ module EconGraphs {
             });
             return y;
         }
+
+        formula(values) {
+            return ''; // overridden by subclass
+        }
+
+
+
+
     }
 }

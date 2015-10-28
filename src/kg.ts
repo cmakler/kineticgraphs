@@ -3,15 +3,17 @@
 
 /// <reference path="constants.ts" />
 /// <reference path="helpers/helpers.ts" />
-/// <reference path="helpers/domain.ts" />
 /// <reference path="helpers/definitions.ts" />
 
 /// <reference path="model.ts" />
+/// <reference path="helpers/domain.ts" />
 /// <reference path="restriction.ts" />
+/// <reference path="helpers/selector.ts" />
 
 /// <reference path="math/math.ts" />
 
 /// <reference path="viewObjects/viewObject.ts"/>
+/// <reference path="viewObjects/viewObjectGroup.ts"/>
 /// <reference path="viewObjects/point.ts"/>
 /// <reference path="viewObjects/dropline.ts"/>
 

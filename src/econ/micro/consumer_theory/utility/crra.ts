@@ -23,34 +23,10 @@ module EconGraphs {
 
         constructor(definition:ConstantRRADefinition, modelPath?:string) {
 
-            definition.type = 'Polynomial';
-            if(typeof definition.rra == 'number') {
-                definition.def = {
-                    termDefs: [
-                        {
-                            coefficient: 1/(1-definition.rra),
-                            powers: [1 - definition.rra]
-                        },
-                        {
-                            coefficient: -1/(1-definition.rra),
-                            powers:[0]
-                        }
-                    ]
-                }
-            } else if(typeof definition.rra == 'string') {
-                definition.def = {
-                    termDefs: [
-                        {
-                            coefficient: "1/(1-" + definition.rra + ")",
-                            powers: ["1 - " + definition.rra]
-                        },
-                        {
-                            coefficient: "-1/(1-" + definition.rra + ")",
-                            powers:[0]
-                        }
-                    ]
-                }
-            }
+            definition.type = 'CRRA';
+            definition.def = {
+                rho: definition.rra
+            };
             super(definition, modelPath);
 
         }
@@ -74,11 +50,6 @@ module EconGraphs {
                     return "\\frac{c^{" + (1 -rra).toFixed(2) + "} - 1}{ " + (1 -rra).toFixed(2) + " } "
                 }
             }
-        }
-
-        consumptionYieldingUtility(u) {
-            var oneMinusRho = 1 - this.rra;
-            return Math.pow(1 + oneMinusRho*u,1/oneMinusRho);
         }
 
     }

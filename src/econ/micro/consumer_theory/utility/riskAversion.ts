@@ -150,7 +150,7 @@ module EconGraphs {
             ra.expectedC = ra.pLow * ra.ca + (1 - ra.pLow) * ra.cb;
             ra.expectedU = ra.pLow * ra.ua + (1 - ra.pLow) * ra.ub;
             ra.utilityOfExpectedC = ra.utility.utilityFunction.yValue(ra.expectedC);
-            ra.certaintyEquivalent = ra.utility.consumptionYieldingUtility(ra.expectedU);
+            ra.certaintyEquivalent = ra.utility.utilityFunction.xValue(ra.expectedU);
             return ra;
         }
 

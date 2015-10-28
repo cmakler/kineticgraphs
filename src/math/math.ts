@@ -7,6 +7,10 @@
 /// <reference path="functions/polynomial.ts"/>
 /// <reference path="functions/linear.ts"/>
 /// <reference path="functions/quadratic.ts"/>
+/// <reference path="functions/min.ts"/>
+/// <reference path="functions/minAxBy.ts"/>
+/// <reference path="functions/crra.ts"/>
+
 
 module KGMath {
 

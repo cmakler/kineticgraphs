@@ -50,7 +50,7 @@ module KG
         constructor(definition:GraphDivDefinition, modelPath?: string) {
 
             definition = _.defaults(definition,{
-                dimensions: {width: 100, height: 20},
+                dimensions: {width: 50, height: 20},
                 text: '',
                 color: KG.colorForClassName(definition.className)
             });
@@ -67,7 +67,7 @@ module KG
                 divObj.text = divObj.text.join('')
             }
 
-            if(!divObj.hasOwnProperty('coordinates')) {
+            if(!divObj.hasOwnProperty('coordinates') || divObj.text.length == 0) {
                 return view;
             }
 
@@ -100,7 +100,7 @@ module KG
                 text = divObj.text,
                 draggable = (divObj.xDrag || divObj.yDrag);
 
-            var div:D3.Selection = view.getDiv(this.name);
+            var div:D3.Selection = view.getDiv(this.objectName || this.name);
 
             div
                 .style('cursor','default')
@@ -119,7 +119,7 @@ module KG
                 div.style('text-align','left');
             } else if (this.align == 'right') {
                 // move left by half the width of the div if right aligned
-                alignDelta = width;
+                alignDelta = width + 2;
                 div.style('text-align','right');
             }
             div.style('left',(x - alignDelta) + 'px');

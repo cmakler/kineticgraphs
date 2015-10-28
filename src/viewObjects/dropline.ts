@@ -66,10 +66,10 @@ module KG {
             this.viewObjectClass = 'dropline';
         }
 
-        createSubObjects(view) {
+        createSubObjects(view,scope) {
             var p = this;
             if(p.labelDiv) {
-                view.addObject(p.labelDiv);
+                view.addObject(p.labelDiv.update(scope));
             }
             return view;
         }

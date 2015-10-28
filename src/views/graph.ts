@@ -55,6 +55,7 @@ module KG
                     right: {x: g.xAxis.max, y: g.yAxis.max}
                 }
             };
+            super._update(scope);
             return g;
         }
 
@@ -97,7 +98,14 @@ module KG
         // Convert model coordinates to pixel coordinates for an array of points
         dataCoordinates(coordinateArray:ICoordinates[]) {
             var graph = this;
-            return coordinateArray.map(graph.pixelCoordinates, graph);
+            var onGraphElements:boolean[] = coordinateArray.map(graph.onGraph, graph);
+            var dataCoordinatesOnGraph = [];
+            for(var i=0; i<coordinateArray.length; i++) {
+                if(onGraphElements[i] || onGraphElements[i-1] || onGraphElements[i+1]) {
+                    dataCoordinatesOnGraph.push(graph.pixelCoordinates(coordinateArray[i]));
+                }
+            }
+            return dataCoordinatesOnGraph;
         }
 
     }

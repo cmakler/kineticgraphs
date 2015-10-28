@@ -8,12 +8,13 @@ module EconGraphs {
 
     export interface UtilityDemandDefinition extends KG.ModelDefinition
     {
-        utility: {type: string; definition: TwoGoodUtilityDefinition}
+        utility: {type: string; definition: TwoGoodUtilityDefinition};
     }
 
     export interface IUtilityDemand extends KG.IModel
     {
         utility: TwoGoodUtility;
+        utilitySelector: KG.Selector;
 
         quantityAtPrice: (price:number, good?: string) => number;
         quantityAtPricePoint: (price:number, priceParams?: any, pointParams?: KG.PointParamsDefinition) => KG.Point;
@@ -23,13 +24,19 @@ module EconGraphs {
     export class UtilityDemand extends KG.Model implements IUtilityDemand
     {
         public utility;
+        public utilitySelector;
         public optimalBundle;
 
         constructor(definition:UtilityDemandDefinition,modelPath?:string) {
+
             super(definition,modelPath);
         }
 
         quantityAtPrice(price:number, good?:string) {
+            return 0; // overridden by subclass
+        }
+
+        otherQuantityAtPrice(price:number, good?:string) {
             return 0; // overridden by subclass
         }
 
@@ -40,7 +47,7 @@ module EconGraphs {
                 good: 'x'
             });
 
-            var quantityProperty = 'quantityAtPrice(' + price + ',' + priceParams.good + ')';
+            var quantityProperty = 'quantityAtPrice(' + price + ',"' + priceParams.good + '")';
 
             return new KG.Point({
                 name: 'q'+priceParams.good + 'd',
@@ -48,8 +55,35 @@ module EconGraphs {
                 coordinates: {
                     x: d.modelProperty(quantityProperty),
                     y: price
-                }
+                },
+                params: pointParams
             })
+        }
+
+        quantitiesAtPriceSegment(price, segmentParams) {
+            var d = this;
+
+            segmentParams = _.defaults(segmentParams,{
+                good: 'x'
+            });
+
+            var quantityProperty = 'quantityAtPrice(' + price + ',' + segmentParams.good + ')';
+            var otherQuantityProperty = 'otherQuantityAtPrice(' + price + ',' + segmentParams.good + ')';
+
+            return new KG.Segment({
+                name: 'q'+segmentParams.good + 'dSegment',
+                className: 'demand',
+                a: {
+                    x: d.modelProperty(quantityProperty),
+                    y: price
+                },
+                b: {
+                    x: d.modelProperty(otherQuantityProperty),
+                    y: price
+                },
+                params: segmentParams
+            })
+
         }
 
         demandCurve(demandParams, curveParams) {
@@ -68,6 +102,8 @@ module EconGraphs {
             samplePoints.forEach(function(price) {
                 curveData.push({x: d.quantityAtPrice(price, demandParams.good), y: price});
             });
+
+            curveData = curveData.sort(KG.sortObjects('x'));
 
             return new KG.Curve({
                 name: 'demand' + demandParams.good,

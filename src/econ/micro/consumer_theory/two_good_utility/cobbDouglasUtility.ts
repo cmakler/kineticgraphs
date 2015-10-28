@@ -13,11 +13,11 @@ module EconGraphs {
     }
 
     export interface ICobbDouglasUtility extends ITwoGoodUtility {
-        coefficient;
-        xPower;
-        yPower;
-        xShare;
-        yShare;
+        coefficient: number;
+        xPower: number;
+        yPower: number;
+        xShare: number;
+        yShare: number;
     }
 
     export class CobbDouglasUtility extends TwoGoodUtility implements ICobbDouglasUtility {
@@ -27,6 +27,8 @@ module EconGraphs {
         public yPower;
         public xShare;
         public yShare;
+
+        public static title = 'Cobb-Douglas';
 
         constructor(definition:CobbDouglasUtilityDefinition, modelPath?:string) {
 
@@ -49,14 +51,12 @@ module EconGraphs {
 
             super(definition, modelPath);
 
+            this.title = CobbDouglasUtility.title;
+
         }
 
-        optimalBundleAlongSegment(budgetSegment:BudgetSegment) {
-            var u = this;
-            var constrainedX, unconstrainedX;
-            unconstrainedX = u.xShare * budgetSegment.income/budgetSegment.px;
-            constrainedX = budgetSegment.xDomain.closestValueTo(unconstrainedX);
-            return {x: constrainedX, y: budgetSegment.linear.yValue(constrainedX)};
+        _unconstrainedOptimalX(budgetSegment:BudgetSegment) {
+            return this.xShare * budgetSegment.income/budgetSegment.px;
         }
 
         lowestCostBundle(utilityConstraint:UtilityConstraint) {
@@ -68,6 +68,14 @@ module EconGraphs {
                 x: Math.pow(theta,u.yShare)*utilityConstraint.u,
                 y: Math.pow(1/theta,u.xShare)*utilityConstraint.u
             };
+        }
+
+        formula(values) {
+            if(values) {
+                return "x^{" + this.xPower.toFixed(2) +"}y^{" + this.yPower.toFixed(2) +"}";
+            } else {
+                return "x^\\alpha y^{1 - \\alpha}";
+            }
         }
 
     }

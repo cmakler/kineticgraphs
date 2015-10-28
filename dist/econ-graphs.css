@@ -109,6 +109,14 @@ a {
   color: white;
   font-size: 10pt;
 }
+.subtitle {
+  padding-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #959595;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 .demand {
   color: #1f77b4;
   stroke: #1f77b4;
@@ -158,14 +166,14 @@ a {
   fill: #bcbd22;
 }
 .utility {
-  color: #1f77b4;
-  stroke: #1f77b4;
-  fill: #1f77b4;
+  color: #6c3082;
+  stroke: #6c3082;
+  fill: #6c3082;
 }
 .utility-old {
-  color: #aec7e8;
-  stroke: #aec7e8;
-  fill: #aec7e8;
+  color: #c5b0d5;
+  stroke: #c5b0d5;
+  fill: #c5b0d5;
 }
 .expectedUtility {
   color: #2ca02c;
@@ -191,7 +199,12 @@ a {
   fill: none;
 }
 .budget {
-  color: #d62728;
-  stroke: #d62728;
-  fill: #d62728;
+  color: #014421;
+  stroke: #014421;
+  fill: #014421;
+}
+.engel {
+  color: #ff7f0e;
+  stroke: #ff7f0e;
+  fill: #ff7f0e;
 }

@@ -3,12 +3,12 @@
 module EconGraphs {
 
     export interface MarshallianDemandDefinition extends UtilityDemandDefinition{
-        budget: {type: string; definition: BudgetConstraintDefinition};
+        budget: {type: string; definition: BudgetConstraintDefinition}
     }
 
     export interface IMarshallianDemand extends IUtilityDemand {
 
-        budget: BudgetConstraint;
+        budget: BudgetConstraint | KG.Selector;
 
         priceConsumptionCurve: (pccParams: UtilityDemandCurveParams, curveParams: KG.CurveParamsDefinition) => KG.Curve;
         incomeConsumptionCurve: (iccParams: UtilityDemandCurveParams, curveParams: KG.CurveParamsDefinition) => KG.Curve;
@@ -26,8 +26,9 @@ module EconGraphs {
 
         _update(scope) {
             var d = this;
-            d.utility.update(scope);
-            d.budget.update(scope);
+            d.utility = d.utility.update(scope);
+            d.budget = d.budget.update(scope);
+            d.budget.budgetSegments.forEach(function(bs) {bs.update(scope)});
             return d;
         }
 
@@ -39,11 +40,29 @@ module EconGraphs {
             var originalPrice = d.budget['p' + good];
 
             // evaluate quantity demanded of this good at the given price
-            d.budget['p' + good] = price;
+            d.budget.setPrice(price,good);
             var quantity = d.utility.optimalBundle(d.budget)[good];
 
             // reset budget constraint to original price
-            d.budget['p' + good] = originalPrice;
+            d.budget.setPrice(originalPrice,good);
+
+            return quantity;
+
+        }
+
+        quantityAtIncome(income,good) {
+            var d = this;
+            good = good || 'x';
+
+            // store original price in budget constraint
+            var originalIncome = d.budget.income;
+
+            // evaluate quantity demanded of this good at the given price
+            d.budget.setIncome(income);
+            var quantity = d.utility.optimalBundle(d.budget)[good];
+
+            // reset budget constraint to original price
+            d.budget.setIncome(originalIncome);
 
             return quantity;
 
@@ -112,6 +131,26 @@ module EconGraphs {
             });
         }
 
+        quantityAtIncomePoint(price, incomeParams, pointParams) {
+            var d = this;
+
+            incomeParams = _.defaults(incomeParams,{
+                good: 'x'
+            });
+
+            var quantityProperty = 'quantityAtIncome(' + price + ',"' + incomeParams.good + '")';
+
+            return new KG.Point({
+                name: 'q'+incomeParams.good + 'd',
+                className: 'engel',
+                coordinates: {
+                    x: d.modelProperty(quantityProperty),
+                    y: price
+                },
+                params: pointParams
+            })
+        }
+
         engelCurve(engelParams, curveParams) {
 
             engelParams = _.defaults(engelParams, {
@@ -122,19 +161,12 @@ module EconGraphs {
             });
 
             var d = this,
-                budget = d.budget,
                 samplePoints = KG.samplePointsForDomain(engelParams),
                 curveData = [];
 
-            var initialIncome = budget.income;
-
-            samplePoints.forEach(function(income) {
-                budget.income = income;
-                curveData.push({x: d.utility.optimalBundle(budget)[engelParams.good], y: income});
+            samplePoints.forEach(function(price) {
+                curveData.push({x: d.quantityAtIncome(price, engelParams.good), y: price});
             });
-
-            // reset budget price
-            budget.income = initialIncome;
 
             return new KG.Curve({
                 name: 'Engel' + engelParams.good,

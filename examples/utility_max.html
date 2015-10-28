@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Cobb-Douglas Utility Maximization</title>
+    <title>Utility Maximization</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -17,17 +17,32 @@
 <div ng-controller="KineticGraphCtrl">
     <div class="row">
         <div class="col-md-8">
-            <h1>Cobb-Douglas Utility Maximization</h1>
+            <h1>Utility Maximization: {{ model.utility.title }}</h1>
             <hr/>
             <div id="utility"></div>
         </div>
         <div class="col-md-4">
             <div class="well">
+                <div class="subtitle">utility parameters</div>
+                <hr/>
+                <label><input type="radio" ng-model="params.selectedUtility" value="CobbDouglas"> Cobb-Douglas</label><br/>
+                <label><input type="radio" ng-model="params.selectedUtility" value="Complements"> Perfect Complements</label><br/>
+                <hr/>
+                <div class="math displayMath">u(x,y) = {{ model.utility.formula(false) }} = {{ model.utility.formula(true)}}</div>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
+                <hr/>
+                <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
+
+            </div>
+            <div class="well">
+                <div class="subtitle">budget parameters</div>
+                <hr/>
+                <div class="math displayMath">u(x,y) = {{ model.budget.formula(false) }} = {{ model.budget.formula(true)}}</div>
+                <hr/>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">I = {{params.income | number: 0}}:
                     </div>
@@ -44,11 +59,8 @@
                     <div class="col-xs-9" id="pySlider"></div>
                 </div>
             </div>
-            <equation>x^* = \alpha \frac{I}{P_x} || = {{ params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.px | number: 2}} } = {{ model.utility.optimalBundle(model.budget).x | number:2 }}</equation>
+
             <hr/>
-            <equation>y^* = (1 - \alpha) \frac{I}{P_y} || = {{ 1 - params.alpha | number: 2}} \times \frac{ {{ params.income | number: 0}} }{ {{params.py | number: 2}} } = {{ model.utility.optimalBundle(model.budget).y | number:2 }}</equation>
-            <hr/>
-            <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
 
         </div>
     </div>
@@ -58,28 +70,21 @@
         params: {
             alpha: 0.5,
             income: 120,
+            xE: 20,
+            yE: 20,
             px: 4,
             py: 3,
-            showMap: false
+            pxSell: 2,
+            pySell: 1,
+            showMap: false,
+            selectedUtility: 'CobbDouglas'
         },
-        graphParams: [],
-        restrictions: [
-            {
-            expression: 'model.utility.optimalBundle(model.budget).y',
-            restrictionType: 'range',
-            min: 0,
-            max: 50
-        },
-            {
-                expression: 'model.utility.optimalBundle(model.budget).x',
-                restrictionType: 'range',
-                min: 0,
-                max: 50
-            }],
+        graphParams: ['selectedBudget'],
+        restrictions: [],
         model: {
             type: 'EconGraphs.MarshallianDemand',
             definition: {
-                budget: {
+                budget:{
                     type: 'EconGraphs.SimpleBudgetConstraint',
                     definition: {
                         income: 'params.income',
@@ -91,9 +96,31 @@
                     }
                 },
                 utility: {
-                    type: 'EconGraphs.CobbDouglasUtility',
+                    type: 'KG.Selector',
                     definition: {
-                        xPower: 'params.alpha'
+                        selected: 'params.selectedUtility',
+                        options: [
+                            {
+                                name: 'CobbDouglas',
+                                label: 'Cobb-Douglas',
+                                selection: {
+                                    type: 'EconGraphs.CobbDouglasUtility',
+                                    definition: {
+                                        xPower: 'params.alpha'
+                                    }
+                                }
+                            },
+                            {
+                                name: 'Complements',
+                                label: 'Perfect Complements',
+                                selection: {
+                                    type: 'EconGraphs.ComplementsUtility',
+                                    definition: {
+                                        bundle: {x: 'params.alpha', y: '1-params.alpha'}
+                                    }
+                                }
+                            }
+                        ]
                     }
                 }
             }
@@ -109,7 +136,8 @@
                         "model.utility.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45],{show: params.showMap})",
                         "model.budget.budgetLine",
                         'model.utility.optimalBundlePoint(model.budget,{xAxisLabel:"x^*", yAxisLabel: "y^*"})',
-                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})'
+                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})',
+                        'model.budget.endowmentPoint'
 
                     ]
                 }

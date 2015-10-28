@@ -53,7 +53,7 @@ module KG {
             var dataPaths:D3.UpdateSelection = group
                 .select('.' + pathFamily.viewObjectClass)
                 .selectAll('path')
-                .data(this.data);
+                .data(pathFamily.data);
 
             dataPaths.enter().append('path');
 

@@ -113,16 +113,12 @@ module KGMath.Functions {
             for(var i = 0; i < numSamplePoints; i++) {
                 var x = xSamplePoints[i];
                 var yOfX = fn.yValue(x);
-                if(isNaN(yOfX) || yOfX == Infinity) {
-                    console.log(yOfX,' is not plottable')
-                } else if(view.yAxis.domain.contains(yOfX) || (i > 0 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i-1]))) || (i < numSamplePoints - 1 && view.yAxis.domain.contains(fn.yValue(xSamplePoints[i+1])))) {
+                if(yOfX && !isNaN(yOfX) && yOfX != Infinity) {
                     points.push({x: x, y: yOfX})
                 }
                 var y = ySamplePoints[i];
                 var xOfY = fn.xValue(y);
-                if(isNaN(xOfY) || xOfY == Infinity) {
-                    console.log(xOfY,' is not plottable')
-                } else if(view.xAxis.domain.contains(xOfY)) {
+                if(xOfY && !isNaN(xOfY) && xOfY != Infinity) {
                     points.push({x: xOfY, y: y})
                 }
             }

@@ -36,6 +36,7 @@ module KG
 
         _update(scope) {
             this.xAxis.update(scope);
+            super._update(scope);
             return this;
         }
 
@@ -65,6 +66,10 @@ module KG
             var control = this;
 
             var group:D3.Selection = view.objectGroup(control.name, control.initGroupFn(), true);
+
+            if(!group) {
+                return view;
+            }
 
             var controlGroup:D3.Selection = group.select('.'+ control.viewObjectClass);
 
