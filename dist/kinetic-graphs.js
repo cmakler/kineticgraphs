@@ -4589,6 +4589,26 @@ var EconGraphs;
             max = max || b.income / price;
             b['p' + good] = price;
             b.linear[good + 'Domain'].max = max;
+            if (b.linear.definition.hasOwnProperty('endowment')) {
+                b.linear.slope = -b.px / b.py;
+            }
+            else if (good == 'y') {
+                b.linear.coefficients.b = price;
+            }
+            else {
+                b.linear.coefficients.a = price;
+            }
+            return b;
+            //console.log('set price of ',good,' to ', price)
+        };
+        BudgetSegment.prototype.setIncome = function (income) {
+            var b = this;
+            b.income = income;
+            b.linear.xDomain.max = b.income / b.px;
+            b.linear.yDomain.max = b.income / b.py;
+            b.linear.coefficients.c = -income;
+            return b;
+            //console.log('set income to ',income);
         };
         return BudgetSegment;
     })(KG.Model);
@@ -4629,6 +4649,10 @@ var EconGraphs;
             var b = this;
             good = good || 'x';
             b.budgetSegments[0].setPrice(price, good);
+        };
+        SimpleBudgetConstraint.prototype.setIncome = function (income) {
+            var b = this;
+            b.budgetSegments[0].setIncome(income);
         };
         SimpleBudgetConstraint.prototype.formula = function (values) {
             var b = this;
@@ -5346,7 +5370,7 @@ var EconGraphs;
             priceParams = _.defaults(priceParams, {
                 good: 'x'
             });
-            var quantityProperty = 'quantityAtPrice(' + price + ',' + priceParams.good + ')';
+            var quantityProperty = 'quantityAtPrice(' + price + ',"' + priceParams.good + '")';
             return new KG.Point({
                 name: 'q' + priceParams.good + 'd',
                 className: 'demand',
@@ -5430,6 +5454,18 @@ var EconGraphs;
             d.budget.setPrice(originalPrice, good);
             return quantity;
         };
+        MarshallianDemand.prototype.quantityAtIncome = function (income, good) {
+            var d = this;
+            good = good || 'x';
+            // store original price in budget constraint
+            var originalIncome = d.budget.income;
+            // evaluate quantity demanded of this good at the given price
+            d.budget.setIncome(income);
+            var quantity = d.utility.optimalBundle(d.budget)[good];
+            // reset budget constraint to original price
+            d.budget.setIncome(originalIncome);
+            return quantity;
+        };
         MarshallianDemand.prototype.priceConsumptionCurve = function (pccParams, curveParams) {
             pccParams = _.defaults(pccParams, {
                 good: 'x',
@@ -5473,6 +5509,22 @@ var EconGraphs;
                 className: 'icc'
             });
         };
+        MarshallianDemand.prototype.quantityAtIncomePoint = function (price, incomeParams, pointParams) {
+            var d = this;
+            incomeParams = _.defaults(incomeParams, {
+                good: 'x'
+            });
+            var quantityProperty = 'quantityAtIncome(' + price + ',"' + incomeParams.good + '")';
+            return new KG.Point({
+                name: 'q' + incomeParams.good + 'd',
+                className: 'engel',
+                coordinates: {
+                    x: d.modelProperty(quantityProperty),
+                    y: price
+                },
+                params: pointParams
+            });
+        };
         MarshallianDemand.prototype.engelCurve = function (engelParams, curveParams) {
             engelParams = _.defaults(engelParams, {
                 good: 'x',
@@ -5480,14 +5532,10 @@ var EconGraphs;
                 max: 200,
                 numSamplePoints: 201
             });
-            var d = this, budget = d.budget, samplePoints = KG.samplePointsForDomain(engelParams), curveData = [];
-            var initialIncome = budget.income;
-            samplePoints.forEach(function (income) {
-                budget.income = income;
-                curveData.push({ x: d.utility.optimalBundle(budget)[engelParams.good], y: income });
+            var d = this, samplePoints = KG.samplePointsForDomain(engelParams), curveData = [];
+            samplePoints.forEach(function (price) {
+                curveData.push({ x: d.quantityAtIncome(price, engelParams.good), y: price });
             });
-            // reset budget price
-            budget.income = initialIncome;
             return new KG.Curve({
                 name: 'Engel' + engelParams.good,
                 data: curveData,

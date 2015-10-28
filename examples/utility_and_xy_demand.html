@@ -2,7 +2,7 @@
 <html ng-app="KineticGraphs">
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Utility Maximization</title>
+    <title>Utility and Demand</title>
     <link rel="stylesheet" href="../bower_components/bootswatch-dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="../dist/econ-graphs.css">
     <link rel="stylesheet" href="../bower_components/katex/dist/katex.min.css">
@@ -13,35 +13,33 @@
     <script type="text/javascript" src="../bower_components/katex/dist/katex.min.js"></script>
     <script type="text/javascript" src="../bower_components/underscore/underscore-min.js"></script>
 </head>
-<body ng-cloak>
+<body>
 <div ng-controller="KineticGraphCtrl">
+    <h1>Cobb-Douglas Utility and Demand</h1>
+    <hr/>
     <div class="row">
-        <div class="col-md-8">
-            <h1>Utility Maximization: {{ model.utility.title }}</h1>
-            <hr/>
-            <div id="utility"></div>
+        <div class="col-md-4">
+            <div id="utilityAndX"></div>
+        </div>
+        <div class="col-md-4">
+            <div id="incomeAndY"></div>
         </div>
         <div class="col-md-4">
             <div class="well">
                 <div class="subtitle">utility parameters</div>
                 <hr/>
-                <label><input type="radio" ng-model="params.selectedUtility" value="CobbDouglas"> Cobb-Douglas</label><br/>
-                <label><input type="radio" ng-model="params.selectedUtility" value="Complements"> Perfect Complements</label><br/>
-                <hr/>
                 <div class="math displayMath">u(x,y) = {{ model.utility.formula(false) }} = {{ model.utility.formula(true)}}</div>
+                <hr/>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">\alpha = {{params.alpha | number: 2}}:
                     </div>
                     <div class="col-xs-9" id="alphaSlider"></div>
                 </div>
-                <hr/>
-                <toggle param="showMap" class="utility"><span ng-if="params.showMap">Hide</span><span ng-if="!params.showMap">Show</span> indifference curve map</toggle>
-
             </div>
             <div class="well">
                 <div class="subtitle">budget parameters</div>
                 <hr/>
-                <div class="math displayMath">u(x,y) = {{ model.budget.formula(false) }} = {{ model.budget.formula(true)}}</div>
+                <div class="math displayMath">{{ model.budget.formula(false) }} \Rightarrow {{ model.budget.formula(true)}}</div>
                 <hr/>
                 <div class="row">
                     <div class="col-xs-3 math" style="text-align:right;font-size:12pt;padding-top:10px">I = {{params.income | number: 0}}:
@@ -59,10 +57,7 @@
                     <div class="col-xs-9" id="pySlider"></div>
                 </div>
             </div>
-
-            <hr/>
-
-        </div>
+            </div>
     </div>
 </div>
 <script>
@@ -70,76 +65,93 @@
         params: {
             alpha: 0.5,
             income: 120,
-            xE: 20,
-            yE: 20,
             px: 4,
-            py: 3,
-            pxSell: 2,
-            pySell: 1,
-            showMap: false,
-            selectedUtility: 'CobbDouglas'
+            py: 3
         },
-        graphParams: ['selectedBudget'],
-        restrictions: [],
+        graphParams: [],
+        restrictions: [
+            {
+                expression: 'model.utility.optimalBundle(model.budget).y',
+                restrictionType: 'range',
+                min: 0,
+                max: 50
+            },
+            {
+                expression: 'model.utility.optimalBundle(model.budget).x',
+                restrictionType: 'range',
+                min: 0,
+                max: 50
+            }],
         model: {
             type: 'EconGraphs.MarshallianDemand',
             definition: {
-                budget:{
+                budget: {
                     type: 'EconGraphs.SimpleBudgetConstraint',
                     definition: {
                         income: 'params.income',
                         px: 'params.px',
                         py: 'params.py',
-                        budgetConstraintLabel: 'BL',
-                        xInterceptLabel: "\\frac{I}{P_x}",
-                        yInterceptLabel: "\\frac{I}{P_y}"
+                        budgetConstraintLabel: 'BL'
                     }
                 },
                 utility: {
-                    type: 'KG.Selector',
+                    type: 'EconGraphs.CobbDouglasUtility',
                     definition: {
-                        selected: 'params.selectedUtility',
-                        options: [
-                            {
-                                name: 'CobbDouglas',
-                                label: 'Cobb-Douglas',
-                                selection: {
-                                    type: 'EconGraphs.CobbDouglasUtility',
-                                    definition: {
-                                        xPower: 'params.alpha'
-                                    }
-                                }
-                            },
-                            {
-                                name: 'Complements',
-                                label: 'Perfect Complements',
-                                selection: {
-                                    type: 'EconGraphs.ComplementsUtility',
-                                    definition: {
-                                        bundle: {x: 'params.alpha', y: '1-params.alpha'}
-                                    }
-                                }
-                            }
-                        ]
+                        xPower: 'params.alpha'
                     }
                 }
             }
         },
         views: [
             {
-                type: 'KG.Graph',
+                type: 'KG.TwoVerticalGraphs',
                 definition: {
-                    element_id: 'utility',
-                    xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
-                    yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
-                    objects: [
-                        "model.utility.indifferenceCurveFamily([5,10,15,20,25,30,35,40,45],{show: params.showMap})",
-                        "model.budget.budgetLine",
-                        'model.utility.optimalBundlePoint(model.budget,{xAxisLabel:"x^*", yAxisLabel: "y^*"})',
-                        'model.utility.optimalIndifferenceCurve(model.budget,{label: "u(x,y) = u(x^*,y^*)"})',
-                        'model.budget.endowmentPoint'
+                    element_id: 'utilityAndX',
 
-                    ]
+                    topGraph: {
+                        xAxisDef: {min: 0, max: 50, title: '\\text{Units of Good X}'},
+                        yAxisDef: {min: 0, max: 50, title: '\\text{Units of Good Y}'},
+                        objects: [
+                            "model.budget.budgetLine",
+                            'model.utility.optimalBundlePoint(model.budget,{xAxisLabel:"x^*", yAxisLabel: "y^*"})',
+                            'model.utility.optimalIndifferenceCurve(model.budget,{label: "U^*"})'
+
+                        ]
+                    },
+                    bottomGraph: {
+                        xAxisDef: {min: 0, max: 50, title: '\\text{Quantity Demanded of X at }P_x'},
+                        yAxisDef: {min: 0, max: 10, title: '\\text{Price of Good X}'},
+                        objects: [
+                            'model.demandCurve({min: 0.01, max: 10, good: "x"},{label:"D_x"})',
+                            'model.quantityAtPricePoint(params.px, {good: "x"},{yDrag: "params.px", xAxisLabel:"x^*", yAxisLabel: "P_x"})'
+                        ]
+                    },
+                    objects: []
+                }
+            },
+            {
+                type: 'KG.TwoVerticalGraphs',
+                definition: {
+                    element_id: 'incomeAndY',
+                    topGraph: {
+                        xAxisDef: {min: 0, max: 50, title: '\\text{Quantity Demanded of X and Y at }I'},
+                        yAxisDef: {min: 1, max: 200, title: '\\text{Income}'},
+                        objects: [
+                            'model.engelCurve({min:1, max: 200, good:"x"},{label: "E_x"})',
+                            'model.engelCurve({min:1, max: 200, good:"y"},{label: "E_y"})',
+                            'model.quantityAtIncomePoint(params.income, {good: "x"},{yDrag: "params.income", yAxisLabel: "I", xAxisLabel: "x^*"})',
+                            'model.quantityAtIncomePoint(params.income, {good: "y"},{yDrag: "params.income", yAxisLabel: "I", xAxisLabel: "y^*"})'
+                        ]
+                    },
+                    bottomGraph: {
+                        xAxisDef: {min: 0, max: 50, title: '\\text{Quantity Demanded of Y at }P_y'},
+                        yAxisDef: {min: 0, max: 10, title: '\\text{Price of Good Y}'},
+                        objects: [
+                            'model.demandCurve({min: 0.01, max: 10, good: "y"},{label:"D_y"})',
+                            'model.quantityAtPricePoint(params.py, {good: "y"},{yDrag: "params.py", xAxisLabel: "y^*", yAxisLabel: "P_y"})'
+                        ]
+                    },
+                    objects: []
                 }
             },
             {

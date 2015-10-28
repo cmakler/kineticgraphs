@@ -64,6 +64,11 @@ module EconGraphs {
             b.budgetSegments[0].setPrice(price,good);
         }
 
+        setIncome(income) {
+            var b = this;
+            b.budgetSegments[0].setIncome(income);
+        }
+
         formula(values) {
 
             var b = this;

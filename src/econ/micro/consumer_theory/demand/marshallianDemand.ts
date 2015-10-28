@@ -50,6 +50,24 @@ module EconGraphs {
 
         }
 
+        quantityAtIncome(income,good) {
+            var d = this;
+            good = good || 'x';
+
+            // store original price in budget constraint
+            var originalIncome = d.budget.income;
+
+            // evaluate quantity demanded of this good at the given price
+            d.budget.setIncome(income);
+            var quantity = d.utility.optimalBundle(d.budget)[good];
+
+            // reset budget constraint to original price
+            d.budget.setIncome(originalIncome);
+
+            return quantity;
+
+        }
+
         priceConsumptionCurve(pccParams, curveParams) {
 
             pccParams = _.defaults(pccParams, {
@@ -113,6 +131,26 @@ module EconGraphs {
             });
         }
 
+        quantityAtIncomePoint(price, incomeParams, pointParams) {
+            var d = this;
+
+            incomeParams = _.defaults(incomeParams,{
+                good: 'x'
+            });
+
+            var quantityProperty = 'quantityAtIncome(' + price + ',"' + incomeParams.good + '")';
+
+            return new KG.Point({
+                name: 'q'+incomeParams.good + 'd',
+                className: 'engel',
+                coordinates: {
+                    x: d.modelProperty(quantityProperty),
+                    y: price
+                },
+                params: pointParams
+            })
+        }
+
         engelCurve(engelParams, curveParams) {
 
             engelParams = _.defaults(engelParams, {
@@ -123,19 +161,12 @@ module EconGraphs {
             });
 
             var d = this,
-                budget = d.budget,
                 samplePoints = KG.samplePointsForDomain(engelParams),
                 curveData = [];
 
-            var initialIncome = budget.income;
-
-            samplePoints.forEach(function(income) {
-                budget.income = income;
-                curveData.push({x: d.utility.optimalBundle(budget)[engelParams.good], y: income});
+            samplePoints.forEach(function(price) {
+                curveData.push({x: d.quantityAtIncome(price, engelParams.good), y: price});
             });
-
-            // reset budget price
-            budget.income = initialIncome;
 
             return new KG.Curve({
                 name: 'Engel' + engelParams.good,

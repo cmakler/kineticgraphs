@@ -47,7 +47,7 @@ module EconGraphs {
                 good: 'x'
             });
 
-            var quantityProperty = 'quantityAtPrice(' + price + ',' + priceParams.good + ')';
+            var quantityProperty = 'quantityAtPrice(' + price + ',"' + priceParams.good + '")';
 
             return new KG.Point({
                 name: 'q'+priceParams.good + 'd',
