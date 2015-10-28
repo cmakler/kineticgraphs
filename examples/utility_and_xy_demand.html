@@ -15,18 +15,30 @@
 </head>
 <body>
 <div ng-controller="KineticGraphCtrl">
-    <h1>Cobb-Douglas Utility and Demand</h1>
-    <hr/>
     <div class="row">
-        <div class="col-md-4">
-            <div id="utilityAndX"></div>
+        <div class="col-md-8">
+            <h1>Demand and Engel Curves: {{ model.utility.title }}</h1>
+            <hr/>
+            <div class="row">
+                <div class="col-xs-6">
+                    <div id="utilityAndX"></div>
+                </div>
+                <div class="col-xs-6">
+                    <div id="incomeAndY"></div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-4">
-            <div id="incomeAndY"></div>
-        </div>
+
+
         <div class="col-md-4">
             <div class="well">
-                <div class="subtitle">utility parameters</div>
+                <div class="row">
+                    <div class="subtitle col-xs-6">utility parameters</div>
+                    <div class="col-xs-6">
+                        <label><input type="radio" ng-model="params.selectedUtility" value="CobbDouglas"> Cobb-Douglas</label><br/>
+                        <label><input type="radio" ng-model="params.selectedUtility" value="Complements"> Perfect Complements</label><br/>
+                    </div>
+                </div>
                 <hr/>
                 <div class="math displayMath">u(x,y) = {{ model.utility.formula(false) }} = {{ model.utility.formula(true)}}</div>
                 <hr/>
@@ -66,7 +78,8 @@
             alpha: 0.5,
             income: 120,
             px: 4,
-            py: 3
+            py: 3,
+            selectedUtility: 'CobbDouglas'
         },
         graphParams: [],
         restrictions: [
@@ -95,9 +108,31 @@
                     }
                 },
                 utility: {
-                    type: 'EconGraphs.CobbDouglasUtility',
+                    type: 'KG.Selector',
                     definition: {
-                        xPower: 'params.alpha'
+                        selected: 'params.selectedUtility',
+                        options: [
+                            {
+                                name: 'CobbDouglas',
+                                label: 'Cobb-Douglas',
+                                selection: {
+                                    type: 'EconGraphs.CobbDouglasUtility',
+                                    definition: {
+                                        xPower: 'params.alpha'
+                                    }
+                                }
+                            },
+                            {
+                                name: 'Complements',
+                                label: 'Perfect Complements',
+                                selection: {
+                                    type: 'EconGraphs.ComplementsUtility',
+                                    definition: {
+                                        bundle: {x: 'params.alpha', y: '1-params.alpha'}
+                                    }
+                                }
+                            }
+                        ]
                     }
                 }
             }
